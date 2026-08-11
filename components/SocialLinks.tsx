@@ -6,8 +6,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 
 const LINKS = [
-  // TODO: replace with the real GitHub repo URL once it's public
-  { key: "github", Icon: FaGithub, href: "#", comingSoon: false },
+  { key: "github", Icon: FaGithub, href: "https://github.com/eldella/iq-pulse", comingSoon: false },
   // TODO: replace with the real Instagram profile URL
   { key: "instagram", Icon: FaInstagram, href: "#", comingSoon: false },
   // TODO: replace with the real TikTok profile URL
