@@ -1,56 +1,27 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
-import { Header } from "@/components/landing/Header";
 import { HeroSection } from "@/components/landing/HeroSection";
-import { HowItWorks } from "@/components/landing/HowItWorks";
-import { BentoGrid } from "@/components/landing/BentoGrid";
-import { StatsTicker } from "@/components/landing/StatsTicker";
-import { LeaderboardPreview } from "@/components/landing/LeaderboardPreview";
-import { staggerContainer, fadeSlideUp } from "@/components/landing/motionVariants";
+import { ManifestoSection } from "@/components/landing/ManifestoSection";
+import { SustainmentSection } from "@/components/landing/SustainmentSection";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 /**
- * Full marketing landing page. Sections reveal in sequence via a
- * staggerChildren parent variant, skipped entirely when the user prefers
- * reduced motion (matches AnimatedBackground/AnimatedCounter elsewhere).
- * No quiz flow, store, or API behind any of this — everything here is
- * either static copy or self-contained local component state.
+ * Purely editorial landing page: hero manifesto headline, creator/mission
+ * essay, and the sustainment model with the donation CTA. No game
+ * screenshots, previews, or how-it-works explanation — that content was
+ * deliberately removed, this page's job is to sell the mission, not the
+ * quizzes. Header/footer/background are shared chrome from app/layout.tsx.
  */
 export function LandingPage() {
-  const shouldReduceMotion = useReducedMotion();
-
   return (
-    <div className="relative flex min-h-screen flex-col bg-neutral-950">
-      <AnimatedBackground />
-      <Header />
+    <main className="flex flex-1 flex-col items-center">
+      <HeroSection />
 
-      <motion.main
-        variants={staggerContainer}
-        initial={shouldReduceMotion ? false : "hidden"}
-        animate="show"
-        className="flex flex-1 flex-col items-center gap-16 px-4 pb-24 pt-8 sm:px-6"
-      >
-        <motion.div variants={fadeSlideUp} className="w-full">
-          <HeroSection />
-        </motion.div>
+      <ScrollReveal className="w-full">
+        <ManifestoSection />
+      </ScrollReveal>
 
-        <motion.div variants={fadeSlideUp} className="w-full max-w-3xl">
-          <HowItWorks />
-        </motion.div>
-
-        <motion.div variants={fadeSlideUp} className="w-full max-w-5xl">
-          <BentoGrid />
-        </motion.div>
-
-        <motion.div variants={fadeSlideUp} className="w-full max-w-3xl">
-          <StatsTicker />
-        </motion.div>
-
-        <motion.div variants={fadeSlideUp} className="flex w-full justify-center">
-          <LeaderboardPreview />
-        </motion.div>
-      </motion.main>
-    </div>
+      <ScrollReveal className="w-full">
+        <SustainmentSection />
+      </ScrollReveal>
+    </main>
   );
 }

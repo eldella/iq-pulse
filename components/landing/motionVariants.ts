@@ -18,3 +18,21 @@ export const fadeSlideUp: Variants = {
   hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: springTransition },
 };
+
+/**
+ * Word-by-word stagger container for the hero headline entrance. Faster
+ * cadence than `staggerContainer` since it's staggering short words, not
+ * whole sections.
+ */
+export const heroTextStagger: Variants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
+  },
+};
+
+/** Per-word fade + slide-up used by the hero headline's word stagger. */
+export const heroWordFade: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: springTransition },
+};

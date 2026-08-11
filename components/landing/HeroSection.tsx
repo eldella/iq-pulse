@@ -1,58 +1,49 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
-import { tapScale } from "@/lib/motion";
-import { ReactionMicroWidget } from "@/components/landing/ReactionMicroWidget";
-import { HOW_IT_WORKS_SECTION_ID } from "@/components/landing/HowItWorks";
+import { motion, useReducedMotion } from "framer-motion";
+import { springTransition } from "@/lib/motion";
+import { heroTextStagger, heroWordFade } from "@/components/landing/motionVariants";
+
+const HEADLINE = "El límite de tu mente es el primero que nunca cuestionaste.";
 
 /**
- * Snappier local press spring for the hero CTA only, per spec — intentionally
- * different from the app-wide springTransition in lib/motion.ts, so it's
- * kept local instead of changing the shared preset.
+ * Purely editorial hero — no widget, no game preview. The headline animates
+ * in word-by-word on mount via the shared stagger pattern, then the
+ * supporting line fades in once the headline has mostly settled.
  */
-const heroCtaSpring = { type: "spring" as const, stiffness: 400, damping: 25 };
-
-function scrollToHowItWorks() {
-  document
-    .getElementById(HOW_IT_WORKS_SECTION_ID)
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
 export function HeroSection() {
+  const shouldReduceMotion = useReducedMotion();
+  const words = HEADLINE.split(" ");
+  const subheadDelay = shouldReduceMotion ? 0 : words.length * 0.06 + 0.3;
+
   return (
-    <section className="flex flex-col items-center gap-8 pb-6 pt-6 text-center sm:pt-10">
-      <div className="flex max-w-2xl flex-col items-center gap-4">
-        <h1 className="text-balance bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-4xl font-semibold tracking-tight text-transparent sm:text-5xl md:text-6xl">
-          Descubre tu verdadero perfil cognitivo
-        </h1>
-        <p className="text-balance text-base text-foreground/70 sm:text-lg">
-          IQ.Pulse mide tu velocidad de reacción, tu memoria y tu lógica con
-          pruebas cortas de pocos minutos, y te muestra cómo te comparás con
-          otros jugadores.
-        </p>
-      </div>
-
-      <ReactionMicroWidget />
-
-      <motion.button
-        type="button"
-        onClick={scrollToHowItWorks}
-        whileHover={{ scale: 1.03 }}
-        whileTap={tapScale}
-        transition={heroCtaSpring}
-        className="group relative flex h-14 min-w-[220px] items-center justify-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
+    <section className="flex flex-col items-center gap-6 px-4 pb-12 pt-20 text-center sm:pt-28">
+      <motion.h1
+        variants={heroTextStagger}
+        initial={shouldReduceMotion ? false : "hidden"}
+        animate="show"
+        className="max-w-3xl text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl md:text-6xl"
       >
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 rounded-full bg-accent opacity-60 blur-xl transition-opacity duration-300 group-hover:opacity-90"
-        />
-        Comenzar Test
-        <ArrowRight
-          className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1"
-          aria-hidden="true"
-        />
-      </motion.button>
+        {words.map((word, index) => (
+          <motion.span key={`${word}-${index}`} variants={heroWordFade} className="inline-block">
+            {word}
+            {index < words.length - 1 ? " " : ""}
+          </motion.span>
+        ))}
+      </motion.h1>
+
+      <motion.p
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          transition: { ...springTransition, delay: subheadDelay },
+        }}
+        className="max-w-xl text-balance text-base text-foreground/70 sm:text-lg"
+      >
+        Construimos IQ.Pulse para que cuestionarlo sea posible: una forma
+        honesta de medir, entender y expandir tu potencial cognitivo.
+      </motion.p>
     </section>
   );
 }

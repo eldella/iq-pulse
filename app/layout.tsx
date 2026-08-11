@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProviderClient } from "@/components/ThemeProviderClient";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { Header } from "@/components/landing/Header";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -10,9 +13,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "IQ.Pulse — Descubre tu perfil cognitivo",
+  title: "IQ.Pulse — Explorá el límite de tu mente",
   description:
-    "IQ.Pulse mide tu velocidad de reacción, memoria y lógica con pruebas cortas, y te compara con otros jugadores.",
+    "IQ.Pulse es una iniciativa independiente y de acceso libre para medir y entender el potencial cognitivo, sostenida por donaciones voluntarias.",
 };
 
 export default function RootLayout({
@@ -23,7 +26,14 @@ export default function RootLayout({
   return (
     <html lang="es" className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen antialiased">
-        <ThemeProviderClient>{children}</ThemeProviderClient>
+        <ThemeProviderClient>
+          <div className="relative flex min-h-screen flex-col bg-background">
+            <AnimatedBackground />
+            <Header />
+            <div className="flex flex-1 flex-col">{children}</div>
+            <Footer />
+          </div>
+        </ThemeProviderClient>
       </body>
     </html>
   );
