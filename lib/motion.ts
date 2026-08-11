@@ -1,0 +1,24 @@
+import type { Transition } from "framer-motion";
+
+/**
+ * Shared spring preset for all screen/state transitions and microinteractions
+ * (button taps, card entrances, etc). Validated design token — do not change.
+ */
+export const springTransition: Transition = {
+  type: "spring",
+  stiffness: 300,
+  damping: 30,
+};
+
+/**
+ * Snappier spring for exits — higher damping settles faster so outgoing
+ * elements feel quicker than incoming ones.
+ */
+export const springExitTransition: Transition = {
+  type: "spring",
+  stiffness: 300,
+  damping: 40,
+};
+
+/** Tap scale-down used on every primary interactive element. */
+export const tapScale = { scale: 0.95 };
