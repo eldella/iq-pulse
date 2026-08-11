@@ -2,35 +2,28 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
-import { Navbar } from "@/components/landing/Navbar";
+import { Header } from "@/components/landing/Header";
 import { HeroSection } from "@/components/landing/HeroSection";
+import { HowItWorks } from "@/components/landing/HowItWorks";
 import { BentoGrid } from "@/components/landing/BentoGrid";
-import { LiveStatsTicker } from "@/components/landing/LiveStatsTicker";
-import { PlayerCardPreview } from "@/components/landing/PlayerCardPreview";
-import { LeaderboardExpress } from "@/components/landing/LeaderboardExpress";
+import { StatsTicker } from "@/components/landing/StatsTicker";
+import { LeaderboardPreview } from "@/components/landing/LeaderboardPreview";
 import { staggerContainer, fadeSlideUp } from "@/components/landing/motionVariants";
-
-const LEADERBOARD_SECTION_ID = "leaderboard-express";
-
-function scrollToLeaderboard() {
-  document
-    .getElementById(LEADERBOARD_SECTION_ID)
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
 
 /**
  * Full marketing landing page. Sections reveal in sequence via a
- * staggerChildren parent variant (skipped entirely when the user prefers
- * reduced motion, matching the pattern already used across the app — see
- * AnimatedBackground/StartButton/AnimatedCounter).
+ * staggerChildren parent variant, skipped entirely when the user prefers
+ * reduced motion (matches AnimatedBackground/AnimatedCounter elsewhere).
+ * No quiz flow, store, or API behind any of this — everything here is
+ * either static copy or self-contained local component state.
  */
-export function LandingScreen() {
+export function LandingPage() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className="relative flex min-h-screen flex-col bg-neutral-950">
       <AnimatedBackground />
-      <Navbar onLeaderboardClick={scrollToLeaderboard} />
+      <Header />
 
       <motion.main
         variants={staggerContainer}
@@ -42,25 +35,21 @@ export function LandingScreen() {
           <HeroSection />
         </motion.div>
 
+        <motion.div variants={fadeSlideUp} className="w-full max-w-3xl">
+          <HowItWorks />
+        </motion.div>
+
         <motion.div variants={fadeSlideUp} className="w-full max-w-5xl">
           <BentoGrid />
         </motion.div>
 
         <motion.div variants={fadeSlideUp} className="w-full max-w-3xl">
-          <LiveStatsTicker />
+          <StatsTicker />
         </motion.div>
 
         <motion.div variants={fadeSlideUp} className="flex w-full justify-center">
-          <PlayerCardPreview />
+          <LeaderboardPreview />
         </motion.div>
-
-        <motion.section
-          id={LEADERBOARD_SECTION_ID}
-          variants={fadeSlideUp}
-          className="flex w-full scroll-mt-20 justify-center"
-        >
-          <LeaderboardExpress />
-        </motion.section>
       </motion.main>
     </div>
   );

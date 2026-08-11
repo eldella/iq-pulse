@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Zap } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { springTransition, springExitTransition, tapScale } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 type WidgetPhase = "idle" | "waiting" | "ready" | "tooSoon" | "result";
 
@@ -13,7 +14,7 @@ const MAX_DELAY_MS = 2200;
 
 /**
  * Illustrative-only mock percentile, NOT a real statistic — there is no
- * player distribution backing this yet. Maps a reaction time to a plausible
+ * player distribution backing this. Maps a reaction time to a plausible
  * "faster than X%" figure via a simple monotonic curve anchored around a
  * ~280ms assumed median, so the badge varies believably with the result
  * instead of being a hardcoded string.
@@ -26,13 +27,10 @@ function mockPercentile(reactionTimeMs: number): number {
 }
 
 /**
- * Teaser-only reaction-time widget for the hero section. Deliberately
- * self-contained: it never touches useQuizStore and never counts as an
- * official run — it exists purely to give visitors a taste of the real
- * "Reacción" stage before they commit to the full quiz.
- *
- * Timing follows the same performance.now()-in-a-ref pattern as
- * components/games/ReactionTime.tsx, not Date.now() in render state.
+ * Standalone reaction-time teaser widget: click to arm it, then click again
+ * once it flips state. Purely local component state — no store, no backend,
+ * no "official" result. Timing uses performance.now() captured in a ref
+ * (not Date.now() in render state) so re-renders can't skew the measurement.
  */
 export function ReactionMicroWidget() {
   const [phase, setPhase] = useState<WidgetPhase>("idle");
@@ -78,18 +76,22 @@ export function ReactionMicroWidget() {
   }
 
   const percentile = resultMs !== null ? mockPercentile(resultMs) : null;
-  const cardColor =
-    phase === "ready" ? "bg-accent" : phase === "tooSoon" ? "bg-red-600" : "bg-glass";
 
   return (
     <GlassCard className="w-full max-w-xs p-1">
       <motion.button
         type="button"
         onClick={handleClick}
+        whileHover={{ scale: 1.02 }}
         whileTap={tapScale}
         transition={springTransition}
         aria-label="Mini prueba de reacción de ejemplo"
-        className={`flex h-40 w-full flex-col items-center justify-center gap-2 rounded-card ${cardColor} px-6 text-center transition-colors focus-visible:outline-none`}
+        className={cn(
+          "flex h-40 w-full flex-col items-center justify-center gap-2 rounded-2xl px-6 text-center transition-colors focus-visible:outline-none",
+          phase === "ready" && "bg-accent",
+          phase === "tooSoon" && "bg-red-600",
+          phase !== "ready" && phase !== "tooSoon" && "bg-white/5"
+        )}
       >
         <AnimatePresence mode="wait">
           {phase === "idle" && (
@@ -158,7 +160,8 @@ export function ReactionMicroWidget() {
         </AnimatePresence>
       </motion.button>
       <p className="px-3 pb-2 pt-1 text-center text-[11px] text-foreground/40">
-        * Estimación ilustrativa, no es un resultado oficial del test.
+        * Estimación ilustrativa y con fines de entretenimiento, no es un
+        resultado oficial.
       </p>
     </GlassCard>
   );

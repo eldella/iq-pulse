@@ -1,5 +1,5 @@
-import { QuizFlow } from "@/components/QuizFlow";
+import { LandingPage } from "@/components/landing/LandingPage";
 
 export default function Home() {
-  return <QuizFlow />;
+  return <LandingPage />;
 }

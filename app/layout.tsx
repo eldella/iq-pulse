@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Quiz de Agilidad Mental",
+  title: "IQ.Pulse — Descubre tu perfil cognitivo",
   description:
-    "Pon a prueba tus reflejos, memoria y enfoque con un breve quiz de agilidad mental y descubre tu IQ estimado.",
+    "IQ.Pulse mide tu velocidad de reacción, memoria y lógica con pruebas cortas, y te compara con otros jugadores.",
 };
 
 export default function RootLayout({
