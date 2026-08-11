@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { RankBadge } from "@/components/RankBadge";
+import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -43,37 +44,38 @@ const DATASETS: Record<LeaderboardTab, readonly { alias: string; display: string
   percentiles: PERCENTILE_ENTRIES,
 };
 
-const TABS: { id: LeaderboardTab; label: string }[] = [
-  { id: "general", label: "Top general" },
-  { id: "times", label: "Mejores tiempos" },
-  { id: "percentiles", label: "Mejores percentiles" },
-];
-
 export function LeaderboardTable() {
   const [tab, setTab] = useState<LeaderboardTab>("general");
+  const { t } = useLanguage();
   const entries = DATASETS[tab];
+  const tabs: { id: LeaderboardTab; label: string }[] = [
+    { id: "general", label: t.stats.leaderboard.tabGeneral },
+    { id: "times", label: t.stats.leaderboard.tabTimes },
+    { id: "percentiles", label: t.stats.leaderboard.tabPercentiles },
+  ];
 
   return (
-    <div className="w-full max-w-2xl">
-      <h2 className="mb-4 text-center text-xl font-semibold text-foreground sm:text-2xl">
-        Tabla clasificatoria
+    <div className="w-full max-w-3xl">
+      <h2 className="mb-4 text-center text-2xl font-semibold text-foreground sm:text-3xl">
+        {t.stats.leaderboard.heading}
       </h2>
 
       <div role="tablist" aria-label="Filtrar clasificación" className="mb-4 flex flex-wrap justify-center gap-2">
-        {TABS.map(({ id, label }) => (
+        {tabs.map(({ id, label }) => (
           <motion.button
             key={id}
             type="button"
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
+            whileHover={{ y: -1 }}
             whileTap={tapScale}
             transition={springTransition}
             className={cn(
-              "flex h-11 items-center rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-none",
+              "flex h-11 items-center rounded-full px-4 text-sm font-medium transition-all duration-300 focus-visible:outline-none",
               tab === id
-                ? "bg-accent text-accent-foreground"
-                : "border border-glass-border bg-glass text-foreground/70 backdrop-blur-xl hover:text-foreground"
+                ? "shine-hover bg-accent text-accent-foreground shadow-md shadow-accent/40"
+                : "border border-glass-border bg-glass text-muted-foreground backdrop-blur-xl hover:border-accent/30 hover:text-foreground"
             )}
           >
             {label}
@@ -81,21 +83,18 @@ export function LeaderboardTable() {
         ))}
       </div>
 
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-3">
         {entries.map((entry, index) => (
           <li
             key={entry.alias}
-            className="flex items-center gap-3 rounded-2xl border border-glass-border bg-glass px-4 py-3 backdrop-blur-xl"
+            className="flex items-center gap-4 rounded-2xl border border-glass-border bg-glass px-6 py-5 backdrop-blur-xl"
           >
             <RankBadge rank={index + 1} />
-            <span className="flex-1 truncate font-medium text-foreground">{entry.alias}</span>
-            <span className="font-semibold text-accent">{entry.display}</span>
+            <span className="flex-1 truncate text-lg font-medium text-foreground">{entry.alias}</span>
+            <span className="text-xl font-semibold text-accent">{entry.display}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-center text-[11px] text-foreground/40">
-        Datos ilustrativos de ejemplo.
-      </p>
     </div>
   );
 }

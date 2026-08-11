@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IQ.Pulse
 
-## Getting Started
+An independent, free-to-access project exploring cognitive measurement — an honest, editorial take on IQ testing without paywalls, dark patterns, or locked results.
 
-First, run the development server:
+Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Framer Motion**.
+
+> **Status:** early stage / illustrative. There is no backend yet — the ranking, metrics, and patron wall you see are mock data, clearly marked as such in the code. Login is a client-only visual demo, not real authentication.
+
+## Features
+
+- Editorial landing page (hero, mission manifesto, sustainment model)
+- Stats dashboard (metrics panel, leaderboard, patron wall) — currently mock data
+- Light/dark theme (Apple-style black / white / system blue palette)
+- ES/EN language switch (client-side, no page reload)
+- Animated, accessible UI throughout (Framer Motion, respects `prefers-reduced-motion`)
+- Donation links (PayPal, Ko-fi)
+- Terms of service and privacy policy pages
+
+## Tech stack
+
+| | |
+|---|---|
+| Framework | [Next.js](https://nextjs.org/) 16 (App Router, Turbopack) |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Animation | Framer Motion |
+| Icons | [lucide-react](https://lucide.dev/), [react-icons](https://react-icons.github.io/react-icons/) (brand icons) |
+| Theme | [next-themes](https://github.com/pacocoursey/next-themes) |
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the dev server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run start` | Run the production build |
+| `npm run lint` | Lint the codebase |
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/                  Routes (App Router)
+  page.tsx            Landing page
+  estadisticas/       Stats dashboard
+  perfil/             Demo profile
+  terminos/           Terms of service
+  privacidad/         Privacy policy
+components/
+  landing/            Landing page sections
+  stats/              Stats dashboard sections
+  legal/              Terms/privacy shell + content
+  profile/            Demo profile
+lib/
+  i18n/               ES/EN dictionary
+  motion.ts           Shared Framer Motion presets
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Real backend (accounts, real leaderboard/metrics)
+- Cognitive assessment engine (currently removed pending redesign)
+- Social presence: GitHub, Instagram, TikTok, Discord (footer/header icons already in place)
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT — see [LICENSE](./LICENSE).

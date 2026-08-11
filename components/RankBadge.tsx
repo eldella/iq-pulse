@@ -15,9 +15,9 @@ const RANK_ICONS = [
 export function RankBadge({ rank }: { rank: number }) {
   const rankIcon = RANK_ICONS[rank - 1];
   return (
-    <span className="flex h-6 w-6 items-center justify-center text-sm font-semibold text-foreground/60">
+    <span className="flex h-8 w-8 items-center justify-center text-base font-semibold text-muted-foreground">
       {rankIcon ? (
-        <rankIcon.Icon className={clsx("h-5 w-5", rankIcon.className)} aria-hidden="true" />
+        <rankIcon.Icon className={clsx("h-7 w-7", rankIcon.className)} aria-hidden="true" />
       ) : (
         rank
       )}

@@ -12,7 +12,7 @@ import { ScrollReveal } from "@/components/ScrollReveal";
  */
 export function LandingPage() {
   return (
-    <main className="flex flex-1 flex-col items-center">
+    <main className="flex flex-1 flex-col items-center overflow-x-hidden">
       <HeroSection />
 
       <ScrollReveal className="w-full">

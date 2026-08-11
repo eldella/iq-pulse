@@ -9,10 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--color-bg)",
-        foreground: "var(--color-fg)",
-        accent: "var(--color-accent)",
-        "accent-foreground": "var(--color-on-accent)",
+        // rgb(var(--x) / <alpha-value>) is the documented Tailwind pattern
+        // for CSS-variable colors that need to support `bg-accent/40`-style
+        // opacity modifiers - it requires the variable to hold bare "R G B"
+        // channel numbers (see globals.css), not a hex string.
+        background: "rgb(var(--color-bg) / <alpha-value>)",
+        foreground: "rgb(var(--color-fg) / <alpha-value>)",
+        "muted-foreground": "rgb(var(--color-muted-fg) / <alpha-value>)",
+        accent: "rgb(var(--color-accent) / <alpha-value>)",
+        "accent-foreground": "rgb(var(--color-on-accent) / <alpha-value>)",
+        // glass/glass-border are already rgba() literals and are only ever
+        // used bare (bg-glass, border-glass-border), never with a slash
+        // modifier, so they don't need the channel-value treatment.
         glass: "var(--color-glass)",
         "glass-border": "var(--color-glass-border)",
       },

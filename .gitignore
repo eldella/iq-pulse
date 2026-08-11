@@ -2,3 +2,9 @@ node_modules/
 .next/
 graphify-out/
 *.log
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db

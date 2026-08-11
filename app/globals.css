@@ -4,39 +4,54 @@
 
 /*
  * Design tokens — validated values, do not re-derive.
- * Warm gold-on-charcoal palette. Dark is the primary/default theme.
- * Dark theme: bg #0B0B0C, fg #F5F5F4, accent #E8B93F (gold).
- *   Accent-as-text on bg ≈ 10.7:1. Dark fg (#1C1917) on accent fill ≈ 9.5:1
- *   (white-on-accent would only be ~1.8:1, so on-accent stays dark here).
- * Light theme: bg #FAFAF9, fg #1C1917, accent #8F6008 (deep gold).
- *   Adjusted down from the #A16207 starting point, which only cleared
- *   ~4.71:1 against the light bg — #8F6008 reaches ~5.2:1 for a safer AA
- *   margin. White on #8F6008 fill ≈ 5.4:1.
+ * Black + White + Apple system blue. User specified the exact accent hex
+ * (#007AFF, Apple's light-mode system blue) reserved exclusively for
+ * interactive elements (primary CTA, active tab, chart/badge accents) -
+ * never for body text, matching how Apple itself uses it (large/bold UI
+ * elements, not small text, since it only reaches ~4:1 on white - passes
+ * the 3:1 large-text/UI-component threshold, not the 4.5:1 body-text one).
+ * Dark theme uses Apple's own documented dark-mode system blue (#0A84FF,
+ * brighter than #007AFF) instead of reusing the light value verbatim -
+ * this is Apple's real HIG dark-mode blue, chosen for the same reason Apple
+ * ships it: better contrast against a true-black background.
+ * Titles: #1D1D1F (light) / #F5F5F7 (dark). Secondary/description text:
+ * #86868B (light) / #98989D (dark, Apple's dark secondaryLabel approximation).
  * Glass cards use a semi-opaque tint UNDER backdrop-blur so text contrast stays >=4.5:1.
  */
+/*
+ * Color tokens are stored as space-separated RGB channels (not hex) on
+ * purpose: Tailwind's `bg-accent/40`-style opacity modifiers can only work
+ * on a CSS variable when the variable holds bare channel numbers that get
+ * wrapped as `rgb(var(--x) / <alpha-value>)` in tailwind.config.ts. A plain
+ * hex string in the variable (the previous setup) silently produces NO
+ * utility class at all for any `/opacity` variant - `bg-accent` alone
+ * worked, but `bg-accent/25`, `shadow-accent/40`, `ring-accent/20`, etc. were
+ * absent from the compiled CSS this whole time (confirmed by inspecting the
+ * served build output - none of those selectors existed). That's why the
+ * animated background/glow effects looked like plain backgrounds with no
+ * color: the classes referencing them never compiled to anything.
+ */
 :root {
-  --color-bg: #fafaf9;
-  --color-fg: #1c1917;
-  --color-accent: #8f6008;
+  --color-bg: 255 255 255;
+  --color-fg: 29 29 31;
+  --color-muted-fg: 134 134 139;
+  --color-accent: 0 122 255;
   --color-glass: rgba(255, 255, 255, 0.72);
   --color-glass-border: rgba(0, 0, 0, 0.08);
-  /* White on #8f6008 ≈ 5.4:1 — passes AA for text-on-fill. */
-  --color-on-accent: #ffffff;
+  /* White on #007aff ≈ 4.0:1 - below 4.5:1 body-text AA, fine for the
+     bold/large button and badge text this accent is scoped to. */
+  --color-on-accent: 255 255 255;
   color-scheme: light;
 }
 
 .dark {
-  --color-bg: #0b0b0c;
-  --color-fg: #f5f5f4;
-  --color-accent: #e8b93f;
-  --color-glass: rgba(28, 25, 23, 0.6);
+  --color-bg: 0 0 0;
+  --color-fg: 245 245 247;
+  --color-muted-fg: 152 152 157;
+  --color-accent: 10 132 255;
+  --color-glass: rgba(28, 28, 30, 0.6);
   --color-glass-border: rgba(255, 255, 255, 0.08);
-  /*
-   * White on #e8b93f is only ~1.8:1 (fails badly for text-on-fill).
-   * Use the dark foreground color instead, which reaches ~9.5:1.
-   * The accent hex itself is unchanged, only the text drawn on top of it.
-   */
-  --color-on-accent: #1c1917;
+  --color-on-accent: 255 255 255;
   color-scheme: dark;
 }
 
@@ -50,15 +65,62 @@ body {
 }
 
 body {
-  background-color: var(--color-bg);
-  color: var(--color-fg);
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.45s ease, color 0.45s ease;
+}
+
+/*
+ * Surfaces that carry the glass/border tokens (header, sheets, cards) don't
+ * inherit body's transition, so they'd otherwise snap instantly on theme
+ * toggle while the page background fades smoothly around them. Opt in
+ * explicitly rather than transitioning `*` globally, which would fight with
+ * components' own `transition-shadow`/`transition-transform` utilities.
+ */
+.theme-transition {
+  transition: background-color 0.45s ease, border-color 0.45s ease,
+    box-shadow 0.45s ease;
 }
 
 /* Visible focus ring using the accent color, for every interactive element. */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid rgb(var(--color-accent));
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/*
+ * Shine sweep for primary buttons - a soft diagonal highlight that sweeps
+ * across on hover, layered on top of each button's own box-shadow glow.
+ * Pure CSS (no JS/motion cost per frame). Respects reduced-motion by simply
+ * not animating the sweep (it still shows, just without the transition).
+ */
+.shine-hover {
+  position: relative;
+  overflow: hidden;
+}
+.shine-hover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  left: -150%;
+  width: 60%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+.shine-hover:hover::after {
+  left: 150%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shine-hover::after {
+    transition: none;
+  }
 }
