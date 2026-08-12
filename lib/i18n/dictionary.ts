@@ -51,6 +51,11 @@ export type Dictionary = {
     heading: string;
     subhead: string;
     footnote: string;
+    exploreMore: {
+      heading: string;
+      ranking: { title: string; body: string; cta: string };
+      performance: { title: string; body: string; cta: string };
+    };
     panorama: {
       eyebrow: string;
       heading: string;
@@ -207,6 +212,19 @@ export const dictionary: Record<Lang, Dictionary> = {
       subhead: "Un vistazo a los números detrás de IQ.Pulse.",
       footnote:
         "Todos los datos de esta página son ilustrativos de ejemplo — todavía no existe un backend de analítica en este proyecto.",
+      exploreMore: {
+        heading: "Seguí explorando",
+        ranking: {
+          title: "Ranking",
+          body: "Tabla clasificatoria y el reto del mes.",
+          cta: "Ver ranking",
+        },
+        performance: {
+          title: "Rendimiento",
+          body: "Comparación de tus resultados contra el promedio general.",
+          cta: "Ver rendimiento",
+        },
+      },
       panorama: {
         eyebrow: "Ciencia cognitiva en general",
         heading: "Panorama",
@@ -384,6 +402,19 @@ export const dictionary: Record<Lang, Dictionary> = {
       subhead: "A look at the numbers behind IQ.Pulse.",
       footnote:
         "All the data on this page is illustrative sample data — there is no analytics backend in this project yet.",
+      exploreMore: {
+        heading: "Keep exploring",
+        ranking: {
+          title: "Ranking",
+          body: "Leaderboard and the challenge of the month.",
+          cta: "View ranking",
+        },
+        performance: {
+          title: "Performance",
+          body: "Compare your results against the general average.",
+          cta: "View performance",
+        },
+      },
       panorama: {
         eyebrow: "Cognitive science, in general",
         heading: "Panorama",
