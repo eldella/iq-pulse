@@ -85,8 +85,16 @@ export type Dictionary = {
   };
   quiz: {
     reasoningTitle: string;
+    reasoningDescription: string;
     memoryTitle: string;
+    memoryDescription: string;
     speedTitle: string;
+    speedDescription: string;
+    pathfinderTitle: string;
+    pathfinderDescription: string;
+    pathfinderInstructions: string;
+    fullAssessmentCta: string;
+    exitToMenuCta: string;
     progressLabel: string;
     matrixInstructions: string;
     digitSpanMemorize: string;
@@ -247,8 +255,16 @@ export const dictionary: Record<Lang, Dictionary> = {
     },
     quiz: {
       reasoningTitle: "Matriz de patrones",
+      reasoningDescription: "Encontrá el patrón numérico y completá la grilla.",
       memoryTitle: "Retención de dígitos",
+      memoryDescription: "Memorizá una secuencia y repetila en orden.",
       speedTitle: "Stroop",
+      speedDescription: "Reaccioná rápido al color real, no al que dice la palabra.",
+      pathfinderTitle: "Camino óptimo",
+      pathfinderDescription: "Encontrá el camino que llega a la meta sin cruzar el obstáculo.",
+      pathfinderInstructions: "Elegí el camino que llega a la bandera sin pasar por la X.",
+      fullAssessmentCta: "Evaluación completa (los 3)",
+      exitToMenuCta: "← Volver a elegir",
       progressLabel: "Pregunta",
       matrixInstructions: "Encontrá el número que falta en la secuencia.",
       digitSpanMemorize: "Memorizá esta secuencia",
@@ -408,8 +424,16 @@ export const dictionary: Record<Lang, Dictionary> = {
     },
     quiz: {
       reasoningTitle: "Pattern matrix",
+      reasoningDescription: "Find the numeric pattern and fill the grid.",
       memoryTitle: "Digit span",
+      memoryDescription: "Memorize a sequence and repeat it in order.",
       speedTitle: "Stroop",
+      speedDescription: "React fast to the real color, not what the word says.",
+      pathfinderTitle: "Best path",
+      pathfinderDescription: "Find the path that reaches the goal without crossing the obstacle.",
+      pathfinderInstructions: "Pick the path that reaches the flag without crossing the X.",
+      fullAssessmentCta: "Full assessment (all 3)",
+      exitToMenuCta: "← Back to menu",
       progressLabel: "Question",
       matrixInstructions: "Find the missing number in the sequence.",
       digitSpanMemorize: "Memorize this sequence",

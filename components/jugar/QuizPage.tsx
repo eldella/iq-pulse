@@ -2,24 +2,49 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, Check, Copy, Gauge, Play, Puzzle } from "lucide-react";
+import { BrainCircuit, Check, Copy, Gauge, Loader2, MapPin, Play, Puzzle } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 import { Emoji3D } from "@/components/Emoji3D";
 import { GlassCard } from "@/components/GlassCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
+import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
 import { startSession, recordAnswer, completeSession } from "@/lib/supabase/quiz";
 import { nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
 
-const QUESTIONS_PER_DOMAIN = 4;
-const ALL_DOMAINS: readonly Domain[] = ["reasoning", "memory", "speed"];
+const QUESTIONS_PER_GAME = 4;
 
-type Phase = "idle" | Domain | "finished";
+type GameId = "matrix" | "digitSpan" | "stroop" | "pathfinder";
+
+type GameDef = {
+  id: GameId;
+  domain: Domain;
+  Icon: typeof Puzzle;
+  Component: (props: {
+    difficulty: Difficulty;
+    onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
+  }) => React.ReactElement;
+};
+
+const GAMES: Record<GameId, GameDef> = {
+  matrix: { id: "matrix", domain: "reasoning", Icon: Puzzle, Component: PatternMatrixGame },
+  pathfinder: { id: "pathfinder", domain: "reasoning", Icon: MapPin, Component: PathfinderGame },
+  digitSpan: { id: "digitSpan", domain: "memory", Icon: BrainCircuit, Component: DigitSpanGame },
+  stroop: { id: "stroop", domain: "speed", Icon: Gauge, Component: StroopGame },
+};
+
+// The default "full assessment" - one game per domain. Pathfinder is a
+// second reasoning-domain game, selectable on its own but not part of the
+// default 3-game sequence, so that sequence's meaning stays stable.
+const FULL_ASSESSMENT: readonly GameId[] = ["matrix", "digitSpan", "stroop"];
+
+type Phase = "idle" | GameId | "finished";
 
 type DomainStats = { correct: number; answered: number };
 
@@ -28,6 +53,15 @@ const EMPTY_STATS: Record<Domain, DomainStats> = {
   memory: { correct: 0, answered: 0 },
   speed: { correct: 0, answered: 0 },
 };
+
+function gameCopy(id: GameId, t: Dictionary) {
+  return {
+    matrix: { title: t.quiz.reasoningTitle, description: t.quiz.reasoningDescription },
+    pathfinder: { title: t.quiz.pathfinderTitle, description: t.quiz.pathfinderDescription },
+    digitSpan: { title: t.quiz.memoryTitle, description: t.quiz.memoryDescription },
+    stroop: { title: t.quiz.speedTitle, description: t.quiz.speedDescription },
+  }[id];
+}
 
 /**
  * Core game engine: idle (pick one game, or the full 3-domain assessment)
@@ -41,7 +75,7 @@ export function QuizPage() {
   const shouldReduceMotion = useReducedMotion();
 
   const [phase, setPhase] = useState<Phase>("idle");
-  const [plan, setPlan] = useState<readonly Domain[]>(ALL_DOMAINS);
+  const [plan, setPlan] = useState<readonly GameId[]>(FULL_ASSESSMENT);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [streak, setStreak] = useState(0);
@@ -50,9 +84,12 @@ export function QuizPage() {
   const [result, setResult] = useState<{ iqEstimate: number; percentile: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
 
-  async function handleStart(chosenPlan: readonly Domain[]) {
+  async function handleStart(chosenPlan: readonly GameId[]) {
+    if (starting) return;
     setError(null);
+    setStarting(true);
     try {
       const id = await startSession();
       setSessionId(id);
@@ -65,11 +102,19 @@ export function QuizPage() {
       setPhase(chosenPlan[0]);
     } catch {
       setError("No se pudo conectar con la base de datos.");
+    } finally {
+      setStarting(false);
     }
   }
 
-  async function handleAnswer(domain: Domain, isCorrect: boolean, responseTimeMs: number) {
+  function handleExitToMenu() {
+    setPhase("idle");
+    setSessionId(null);
+  }
+
+  async function handleAnswer(gameId: GameId, isCorrect: boolean, responseTimeMs: number) {
     if (!sessionId) return;
+    const domain = GAMES[gameId].domain;
 
     setDomainStats((prev) => ({
       ...prev,
@@ -85,18 +130,18 @@ export function QuizPage() {
     });
 
     const nextIndex = questionIndex + 1;
-    if (nextIndex < QUESTIONS_PER_DOMAIN) {
+    if (nextIndex < QUESTIONS_PER_GAME) {
       setQuestionIndex(nextIndex);
       return;
     }
 
-    const currentDomainIndex = plan.indexOf(domain);
+    const currentGameIndex = plan.indexOf(gameId);
     setQuestionIndex(0);
     setStreak(0);
     setDifficulty("medium");
 
-    if (currentDomainIndex < plan.length - 1) {
-      setPhase(plan[currentDomainIndex + 1]);
+    if (currentGameIndex < plan.length - 1) {
+      setPhase(plan[currentGameIndex + 1]);
       return;
     }
 
@@ -118,11 +163,7 @@ export function QuizPage() {
     });
   }
 
-  const domainTitle: Record<Domain, string> = {
-    reasoning: t.quiz.reasoningTitle,
-    memory: t.quiz.memoryTitle,
-    speed: t.quiz.speedTitle,
-  };
+  const activeGame = phase !== "idle" && phase !== "finished" ? GAMES[phase] : null;
 
   return (
     <main className="flex flex-1 flex-col items-center gap-8 px-4 py-16 sm:px-6">
@@ -138,75 +179,84 @@ export function QuizPage() {
           </h1>
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {(
-              [
-                { domain: "reasoning" as const, Icon: Puzzle, title: t.quiz.reasoningTitle },
-                { domain: "memory" as const, Icon: BrainCircuit, title: t.quiz.memoryTitle },
-                { domain: "speed" as const, Icon: Gauge, title: t.quiz.speedTitle },
-              ]
-            ).map(({ domain, Icon, title }) => (
-              <motion.div key={domain} whileHover={{ y: -3 }} whileTap={tapScale} transition={springTransition}>
-                <button type="button" onClick={() => handleStart([domain])} className="block w-full text-left focus-visible:outline-none">
-                  <GlassCard className="flex flex-col items-center gap-2 rounded-2xl border-0 p-5 shadow-sm transition-shadow hover:shadow-md">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    <p className="text-sm font-semibold text-foreground">{title}</p>
-                  </GlassCard>
-                </button>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {(Object.keys(GAMES) as GameId[]).map((id) => {
+              const { Icon } = GAMES[id];
+              const { title, description } = gameCopy(id, t);
+              return (
+                <motion.div key={id} whileHover={{ y: -3 }} whileTap={tapScale} transition={springTransition}>
+                  <button
+                    type="button"
+                    disabled={starting}
+                    onClick={() => handleStart([id])}
+                    className="block h-full w-full text-left focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+                  >
+                    <GlassCard className="flex h-full flex-col items-center gap-2 rounded-2xl border-0 p-5 text-center shadow-sm transition-shadow hover:shadow-md">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
+                        {starting ? (
+                          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Icon className="h-5 w-5" aria-hidden="true" />
+                        )}
+                      </span>
+                      <p className="text-sm font-semibold text-foreground">{title}</p>
+                      <p className="text-xs text-muted-foreground">{description}</p>
+                    </GlassCard>
+                  </button>
+                </motion.div>
+              );
+            })}
           </div>
 
           <motion.button
             type="button"
-            onClick={() => handleStart(ALL_DOMAINS)}
+            disabled={starting}
+            onClick={() => handleStart(FULL_ASSESSMENT)}
             whileHover={{ y: -2 }}
             whileTap={tapScale}
             transition={springTransition}
-            className="shine-hover inline-flex h-14 items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
+            className="shine-hover inline-flex h-14 items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
           >
-            <Play className="h-5 w-5" aria-hidden="true" />
-            {t.hero.play}
+            {starting ? (
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Play className="h-5 w-5" aria-hidden="true" />
+            )}
+            {t.quiz.fullAssessmentCta}
           </motion.button>
         </motion.div>
       )}
 
-      {(phase === "reasoning" || phase === "memory" || phase === "speed") && (
+      {activeGame && (
         <motion.div
           key={`${phase}-${questionIndex}`}
           initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="flex w-full max-w-md flex-col items-center gap-6"
         >
-          <div className="flex flex-col items-center gap-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
-              {domainTitle[phase]}
-            </p>
+          <div className="flex w-full items-center justify-between">
+            <button
+              type="button"
+              onClick={handleExitToMenu}
+              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none"
+            >
+              {t.quiz.exitToMenuCta}
+            </button>
             <p className="text-xs text-muted-foreground">
-              {t.quiz.progressLabel} {questionIndex + 1}/{QUESTIONS_PER_DOMAIN}
+              {t.quiz.progressLabel} {questionIndex + 1}/{QUESTIONS_PER_GAME}
             </p>
           </div>
 
-          {phase === "reasoning" && (
-            <PatternMatrixGame
-              difficulty={difficulty}
-              onAnswer={(isCorrect, ms) => handleAnswer("reasoning", isCorrect, ms)}
-            />
-          )}
-          {phase === "memory" && (
-            <DigitSpanGame
-              difficulty={difficulty}
-              onAnswer={(isCorrect, ms) => handleAnswer("memory", isCorrect, ms)}
-            />
-          )}
-          {phase === "speed" && (
-            <StroopGame
-              difficulty={difficulty}
-              onAnswer={(isCorrect, ms) => handleAnswer("speed", isCorrect, ms)}
-            />
-          )}
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+              {gameCopy(activeGame.id, t).title}
+            </p>
+          </div>
+
+          <activeGame.Component
+            difficulty={difficulty}
+            onAnswer={(isCorrect, ms) => handleAnswer(activeGame.id, isCorrect, ms)}
+          />
         </motion.div>
       )}
 
