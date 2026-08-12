@@ -5,12 +5,20 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { BarChart3, Home, Menu, TrendingUp, Trophy, X, type LucideIcon } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, springExitTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const emptySubscribe = () => () => {};
+
+/** Same icon language as each page's own Emoji3D badge (📊/🏆/📈), just as SVG instead of emoji here. */
+const NAV_ICONS: Record<string, LucideIcon> = {
+  "/": Home,
+  "/estadisticas": BarChart3,
+  "/ranking": Trophy,
+  "/rendimiento": TrendingUp,
+};
 
 /**
  * Mobile-only nav (sm:hidden, paired with the inline nav which is
@@ -59,28 +67,46 @@ export function MobileNavMenu({
           />
           <motion.div
             role="menu"
+            variants={{
+              hidden: {},
+              show: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
+            }}
             initial={{ opacity: 0, y: -12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1, transition: springTransition }}
             exit={{ opacity: 0, y: -12, scale: 0.97, transition: springExitTransition }}
-            className="fixed inset-x-3 top-[4.25rem] z-40 flex flex-col gap-1 rounded-card border border-glass-border bg-glass p-2 shadow-2xl backdrop-blur-xl"
+            className="fixed inset-x-3 top-[4.25rem] z-40 flex flex-col gap-1.5 rounded-card border border-glass-border bg-glass p-3 shadow-2xl backdrop-blur-xl"
           >
-            {navLinks.map(({ href, label }) => {
+            {navLinks.map(({ href, label }, index) => {
               const isActive = pathname === href;
+              const Icon = NAV_ICONS[href] ?? Home;
               return (
-                <Link
+                <motion.div
                   key={href}
-                  href={href}
-                  onClick={() => setIsOpen(false)}
-                  aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    "flex h-11 items-center rounded-lg px-4 text-sm font-medium transition-colors duration-300 focus-visible:outline-none",
-                    isActive
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                  )}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0, transition: { ...springTransition, delay: index * 0.05 } }}
                 >
-                  {label}
-                </Link>
+                  <Link
+                    href={href}
+                    onClick={() => setIsOpen(false)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "flex h-14 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors duration-300 focus-visible:outline-none",
+                      isActive
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                        isActive ? "bg-white/15" : "bg-accent/10 text-accent"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    {label}
+                  </Link>
+                </motion.div>
               );
             })}
           </motion.div>
