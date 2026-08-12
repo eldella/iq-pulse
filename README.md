@@ -4,7 +4,7 @@ An independent, free-to-access project exploring cognitive measurement — an ho
 
 Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Framer Motion**.
 
-> **Status:** early stage / illustrative. There is no scoring backend yet — the leaderboard, metrics, and patron wall you see are mock data, clearly marked as such in the code. Login is a client-only visual demo, not real authentication. A [Supabase](https://supabase.com/) project is wired up (`lib/supabase/client.ts`) but has no schema yet.
+> **Status:** early stage / illustrative. The leaderboard, metrics, and patron wall you see are mock data, clearly marked as such in the code. Login is a client-only visual demo, not real authentication. A [Supabase](https://supabase.com/) project is wired up with a schema (`supabase/schema.sql`) and a scoring/adaptive-difficulty algorithm (`lib/scoring.ts`), but there's no quiz UI or question bank yet - nothing in the schema is populated.
 
 ## Features
 
@@ -78,15 +78,18 @@ components/
   profile/            Demo profile
 lib/
   i18n/               ES/EN dictionary
-  supabase/           Supabase client (no schema yet)
+  supabase/           Supabase client
+  scoring.ts          Scoring + adaptive-difficulty algorithm (pure, no UI/DB dependency)
   motion.ts           Shared Framer Motion presets
+supabase/
+  schema.sql          DB schema + RLS policies (run manually in the Supabase SQL editor)
 ```
 
 ## Roadmap
 
-- Supabase schema (accounts, real leaderboard/performance data)
-- Cognitive assessment engine (currently removed pending redesign)
-- Real per-user results feeding the Rendimiento comparison
+- Cognitive assessment engine: question bank + quiz UI (schema and scoring already exist, see `supabase/schema.sql` and `lib/scoring.ts`)
+- Wire `lib/supabase/client.ts` queries into Rendimiento/Ranking/Profile to replace mock data
+- Local/national/continental leaderboard tiers once per-user location data exists
 
 ## License
 
