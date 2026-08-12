@@ -8,11 +8,9 @@
 --   Términos: "no hay resultados bloqueados"). `quiz_sessions.user_id` is
 --   nullable so anonymous play works end to end; profiles are optional.
 -- - Three cognitive domains match the ones already shown on the landing
---   page (components/landing/DomainsSection.tsx) and Panorama
---   (components/stats/PanoramaSection.tsx): reasoning, memory, speed.
--- - IQ estimates are meant to land on the same mean-100/SD-15 distribution
---   already explained on /estadisticas, so real results line up with the
---   bell-curve education already on the site instead of contradicting it.
+--   page (components/landing/DomainsSection.tsx): reasoning, memory, speed.
+-- - IQ estimates land on the standard mean-100/SD-15 distribution used by
+--   real IQ tests (see lib/scoring.ts).
 
 create extension if not exists "pgcrypto";
 

@@ -12,8 +12,8 @@ import { fetchGeneralPerformance } from "@/lib/supabase/quiz";
 import { springTransition, tapScale } from "@/lib/motion";
 
 /**
- * Split out of /estadisticas into its own page and reframed to compare
- * "you" (demo login flag, see AuthProvider) against the general/aggregate
+ * Own nav destination comparing "you" (demo login flag, see AuthProvider)
+ * against the general/aggregate
  * numbers. The "General" side is wired to a real Supabase aggregate query
  * (fetchGeneralPerformance) - falls back to these illustrative numbers only
  * when a bucket has no recorded answers yet (empty tables today, since

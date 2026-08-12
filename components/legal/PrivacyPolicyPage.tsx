@@ -46,8 +46,7 @@ export function PrivacyPolicyPage() {
 
       <LegalSection heading="Contenido ilustrativo">
         <p>
-          El ranking, el rendimiento, las métricas y el muro de mecenas que
-          ves en <span className="text-foreground">/estadisticas</span>,{" "}
+          El ranking, el rendimiento y el muro de mecenas que ves en{" "}
           <span className="text-foreground">/ranking</span> y{" "}
           <span className="text-foreground">/rendimiento</span> son datos de
           demostración fijos, no información real de usuarios. No hay

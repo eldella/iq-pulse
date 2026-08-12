@@ -31,7 +31,6 @@ export function Header() {
   const { t } = useLanguage();
   const navLinks = [
     { href: "/", label: t.header.nav.home },
-    { href: "/estadisticas", label: t.header.nav.stats },
     { href: "/ranking", label: t.header.nav.ranking },
     { href: "/rendimiento", label: t.header.nav.performance },
   ] as const;

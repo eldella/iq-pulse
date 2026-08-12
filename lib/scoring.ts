@@ -83,11 +83,9 @@ export function normalizeScore(totalPoints: number, answeredCount: number): numb
 }
 
 /**
- * Maps a 0-1 accuracy-weighted score into an IQ estimate on the same
- * mean-100/SD-15 scale already explained on /estadisticas (Panorama's bell
- * curve), via an inverse-normal-CDF approximation (Acklam's algorithm) -
- * so a real session's result lines up with the percentile education
- * already on the site instead of using an unrelated ad hoc scale.
+ * Maps a 0-1 accuracy-weighted score into an IQ estimate on the standard
+ * mean-100/SD-15 scale used by real IQ tests, via an inverse-normal-CDF
+ * approximation (Acklam's algorithm) rather than an unrelated ad hoc scale.
  */
 export function scoreToIQEstimate(normalizedScore: number): number {
   const p = Math.min(0.999, Math.max(0.001, normalizedScore));

@@ -7,9 +7,9 @@ import { Emoji3D } from "@/components/Emoji3D";
 import { useLanguage } from "@/components/LanguageProvider";
 
 /**
- * Split out from /estadisticas so the leaderboard and the monthly challenge
- * are reachable from their own nav link instead of buried at the bottom of
- * a long stats scroll where they were easy to miss.
+ * Own nav destination for the leaderboard and monthly challenge, split out
+ * of the (since-removed) stats page so they're reachable directly instead
+ * of buried at the bottom of a long scroll.
  */
 export function RankingPage() {
   const { t } = useLanguage();

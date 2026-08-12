@@ -3,7 +3,7 @@ export type Lang = "es" | "en";
 export type Dictionary = {
   header: {
     navAriaLabel: string;
-    nav: { home: string; stats: string; ranking: string; performance: string };
+    nav: { home: string; ranking: string; performance: string };
     openMenu: string;
     closeMenu: string;
     preferences: string;
@@ -49,34 +49,6 @@ export type Dictionary = {
     privacy: string;
   };
   stats: {
-    heading: string;
-    subhead: string;
-    footnote: string;
-    exploreMore: {
-      heading: string;
-      ranking: { title: string; body: string; cta: string };
-      performance: { title: string; body: string; cta: string };
-    };
-    panorama: {
-      eyebrow: string;
-      heading: string;
-      subhead: string;
-      curveHeading: string;
-      marker1: string;
-      marker2: string;
-      marker3: string;
-      marker4: string;
-      marker5: string;
-      factorsHeading: string;
-      factor1: { title: string; body: string };
-      factor2: { title: string; body: string };
-      factor3: { title: string; body: string };
-      mythsHeading: string;
-      myth1: { myth: string; reality: string };
-      myth2: { myth: string; reality: string };
-      myth3: { myth: string; reality: string };
-      revealCta: string;
-    };
     performance: {
       eyebrow: string;
       heading: string;
@@ -150,7 +122,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       navAriaLabel: "Principal",
       nav: {
         home: "Inicio",
-        stats: "Estadísticas",
         ranking: "Ranking",
         performance: "Rendimiento",
       },
@@ -218,65 +189,10 @@ export const dictionary: Record<Lang, Dictionary> = {
       privacy: "Privacidad",
     },
     stats: {
-      heading: "Estadísticas",
-      subhead: "Un vistazo a los números detrás de IQ.Pulse.",
-      footnote:
-        "Todos los datos de esta página son ilustrativos de ejemplo — todavía no existe un backend de analítica en este proyecto.",
-      exploreMore: {
-        heading: "Seguí explorando",
-        ranking: {
-          title: "Ranking",
-          body: "Tabla clasificatoria y el reto del mes.",
-          cta: "Ver ranking",
-        },
-        performance: {
-          title: "Rendimiento",
-          body: "Comparación de tus resultados contra el promedio general.",
-          cta: "Ver rendimiento",
-        },
-      },
-      panorama: {
-        eyebrow: "Ciencia cognitiva en general",
-        heading: "Panorama",
-        subhead: "Esto es ciencia general sobre la inteligencia — no son números de IQ.Pulse, son datos válidos para cualquier persona en cualquier test.",
-        curveHeading: "Qué significa cada percentil",
-        marker1: "Corresponde al extremo inferior de la distribución: alrededor del 14% de las personas puntúa en este rango.",
-        marker2: "El tramo justo por debajo del promedio, donde se ubica cerca de un tercio de la población.",
-        marker3: "El tramo justo por encima del promedio — junto con el anterior, agrupa a casi 7 de cada 10 personas.",
-        marker4: "Un rendimiento notablemente por encima del promedio, propio de aproximadamente 1 de cada 7 personas.",
-        marker5: "El extremo superior de la distribución: menos del 5% de la población alcanza este rango.",
-        factorsHeading: "Factores que influyen",
-        factor1: {
-          title: "Sueño y rendimiento cognitivo",
-          body: "La privación de sueño afecta de forma medible la memoria de trabajo y la velocidad de procesamiento — es uno de los factores ambientales más estudiados en la cognición.",
-        },
-        factor2: {
-          title: "Memoria de trabajo vs. razonamiento fluido",
-          body: "Son capacidades relacionadas pero distintas: la memoria de trabajo es cuánta información retenés activamente; el razonamiento fluido es tu capacidad de resolver problemas nuevos sin depender de esa información.",
-        },
-        factor3: {
-          title: "Por qué fluctúan los resultados",
-          body: "Ningún test cognitivo da un número perfectamente estable: el estrés, el cansancio y hasta la hora del día introducen variación entre una medición y otra.",
-        },
-        mythsHeading: "Mitos vs. realidades",
-        myth1: {
-          myth: "El CI es un número fijo que no cambia nunca.",
-          reality: "El puntaje medido sí puede variar con la práctica, el estado de ánimo o el entorno — la capacidad subyacente es más estable que cualquier medición puntual.",
-        },
-        myth2: {
-          myth: "Un test de CI mide qué tan inteligente sos en general.",
-          reality: "Mide capacidades cognitivas específicas (razonamiento, memoria, velocidad) — no creatividad, inteligencia emocional ni habilidades prácticas.",
-        },
-        myth3: {
-          myth: "Un solo resultado es una medición exacta y definitiva.",
-          reality: "Todo test tiene un margen de error: un mismo puntaje puede variar unos puntos entre una toma y otra, por eso importa más la tendencia que un número aislado.",
-        },
-        revealCta: "Ver la realidad",
-      },
       performance: {
         eyebrow: "Sobre el test de IQ.Pulse",
         heading: "Rendimiento",
-        subhead: "A diferencia del Panorama de arriba, esto sí es específico de IQ.Pulse: cómo se comporta nuestra propia medición en la práctica.",
+        subhead: "Cómo se comporta nuestra propia medición en la práctica.",
         precisionHeading: "Precisión promedio por dominio",
         timeHeading: "Tiempo promedio por dificultad",
         easy: "Fácil",
@@ -349,7 +265,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       navAriaLabel: "Main",
       nav: {
         home: "Home",
-        stats: "Stats",
         ranking: "Ranking",
         performance: "Performance",
       },
@@ -417,65 +332,10 @@ export const dictionary: Record<Lang, Dictionary> = {
       privacy: "Privacy",
     },
     stats: {
-      heading: "Stats",
-      subhead: "A look at the numbers behind IQ.Pulse.",
-      footnote:
-        "All the data on this page is illustrative sample data — there is no analytics backend in this project yet.",
-      exploreMore: {
-        heading: "Keep exploring",
-        ranking: {
-          title: "Ranking",
-          body: "Leaderboard and the challenge of the month.",
-          cta: "View ranking",
-        },
-        performance: {
-          title: "Performance",
-          body: "Compare your results against the general average.",
-          cta: "View performance",
-        },
-      },
-      panorama: {
-        eyebrow: "Cognitive science, in general",
-        heading: "Panorama",
-        subhead: "This is general science about intelligence — not IQ.Pulse's own numbers, but data that holds true for anyone on any test.",
-        curveHeading: "What each percentile means",
-        marker1: "The lower end of the distribution: around 14% of people score in this range.",
-        marker2: "The band just below average, where close to a third of the population sits.",
-        marker3: "The band just above average — together with the previous one, it groups almost 7 out of 10 people.",
-        marker4: "A performance notably above average, typical of roughly 1 in 7 people.",
-        marker5: "The upper end of the distribution: fewer than 5% of the population reaches this range.",
-        factorsHeading: "Factors that play a role",
-        factor1: {
-          title: "Sleep and cognitive performance",
-          body: "Sleep deprivation measurably affects working memory and processing speed — it's one of the most studied environmental factors in cognition research.",
-        },
-        factor2: {
-          title: "Working memory vs. fluid reasoning",
-          body: "These are related but distinct abilities: working memory is how much information you actively hold; fluid reasoning is your ability to solve new problems without relying on that information.",
-        },
-        factor3: {
-          title: "Why results fluctuate",
-          body: "No cognitive test gives a perfectly stable number: stress, fatigue, and even the time of day introduce variation between one measurement and the next.",
-        },
-        mythsHeading: "Myths vs. facts",
-        myth1: {
-          myth: "IQ is a fixed number that never changes.",
-          reality: "The measured score can vary with practice, mood, or environment — the underlying ability is more stable than any single measurement.",
-        },
-        myth2: {
-          myth: "An IQ test measures how smart you are overall.",
-          reality: "It measures specific cognitive abilities (reasoning, memory, speed) — not creativity, emotional intelligence, or practical skills.",
-        },
-        myth3: {
-          myth: "A single result is an exact, definitive measurement.",
-          reality: "Every test has a margin of error: the same score can vary by a few points between one sitting and the next, which is why the trend matters more than any one number.",
-        },
-        revealCta: "See the reality",
-      },
       performance: {
         eyebrow: "About the IQ.Pulse test",
         heading: "Performance",
-        subhead: "Unlike the Panorama above, this part IS specific to IQ.Pulse: how our own measurement behaves in practice.",
+        subhead: "How our own measurement behaves in practice.",
         precisionHeading: "Average precision by domain",
         timeHeading: "Average time by difficulty",
         easy: "Easy",

@@ -8,13 +8,12 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 
 ## Features
 
-- Editorial landing page (hero, mission manifesto, "what IQ.Pulse measures" domain grid, sustainment model)
-- **Panorama** (`/estadisticas`): general cognitive-science content — interactive bell-curve percentile explainer, cognitive factors, myths vs. facts
+- Editorial landing page (hero, mission manifesto, "what IQ.Pulse measures" domain grid, sustainment model, patron wall)
 - **Ranking** (`/ranking`): leaderboard + monthly challenge card
 - **Rendimiento** (`/rendimiento`): personal vs. general performance comparison (precision by domain, time by difficulty), gated behind the demo login
 - Demo login/profile flow (`/perfil`) — client-only session flag, no real accounts yet
 - Light/dark theme (Apple-style black / white / system blue palette)
-- ES/EN language switch (client-side, no page reload), with a mobile hamburger nav once there were 4+ destinations
+- ES/EN language switch (client-side, no page reload), with a mobile hamburger nav
 - Animated, accessible UI throughout (Framer Motion, respects `prefers-reduced-motion`)
 - Donation links (PayPal, Ko-fi) and social links (GitHub, Instagram, TikTok; Discord marked "soon")
 - Terms of service and privacy policy pages
@@ -63,7 +62,6 @@ Only the anon/public key goes here — never the service role key or DB password
 ```
 app/                  Routes (App Router)
   page.tsx            Landing page
-  estadisticas/       Panorama (general cognitive-science content)
   ranking/            Leaderboard + monthly challenge
   rendimiento/        Personal vs. general performance comparison
   perfil/             Demo profile
@@ -71,7 +69,7 @@ app/                  Routes (App Router)
   privacidad/         Privacy policy
 components/
   landing/            Landing page sections + header/nav
-  stats/              Panorama + shared stats pieces
+  stats/              Shared leaderboard/patron-wall pieces
   ranking/            Ranking page
   rendimiento/        Rendimiento page
   legal/              Terms/privacy shell + content

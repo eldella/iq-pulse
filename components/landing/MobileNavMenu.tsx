@@ -5,17 +5,16 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart3, Home, Menu, TrendingUp, Trophy, X, type LucideIcon } from "lucide-react";
+import { Home, Menu, TrendingUp, Trophy, X, type LucideIcon } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, springExitTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const emptySubscribe = () => () => {};
 
-/** Same icon language as each page's own Emoji3D badge (📊/🏆/📈), just as SVG instead of emoji here. */
+/** Same icon language as each page's own Emoji3D badge (🏆/📈), just as SVG instead of emoji here. */
 const NAV_ICONS: Record<string, LucideIcon> = {
   "/": Home,
-  "/estadisticas": BarChart3,
   "/ranking": Trophy,
   "/rendimiento": TrendingUp,
 };
