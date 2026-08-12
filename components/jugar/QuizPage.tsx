@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Copy, Play } from "lucide-react";
+import { BrainCircuit, Check, Copy, Gauge, Play, Puzzle } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Emoji3D } from "@/components/Emoji3D";
+import { GlassCard } from "@/components/GlassCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
@@ -16,17 +17,23 @@ import { nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
 
 const QUESTIONS_PER_DOMAIN = 4;
-const DOMAIN_ORDER: readonly Domain[] = ["reasoning", "memory", "speed"];
+const ALL_DOMAINS: readonly Domain[] = ["reasoning", "memory", "speed"];
 
 type Phase = "idle" | Domain | "finished";
 
 type DomainStats = { correct: number; answered: number };
 
+const EMPTY_STATS: Record<Domain, DomainStats> = {
+  reasoning: { correct: 0, answered: 0 },
+  memory: { correct: 0, answered: 0 },
+  speed: { correct: 0, answered: 0 },
+};
+
 /**
- * Core game engine: idle -> sequential reasoning/memory/speed rounds ->
- * finished. One assessment run = the whole sequence, not per-game entry
- * points - keeps the state machine to a single linear flow for this first
- * version instead of an open-ended game picker.
+ * Core game engine: idle (pick one game, or the full 3-domain assessment)
+ * -> sequential rounds through `plan` -> finished. Free play lets people
+ * choose what to play; only the (separate, not-yet-built) Daily Challenge
+ * is meant to be a fixed, no-choice sequence.
  */
 export function QuizPage() {
   const { t } = useLanguage();
@@ -34,34 +41,28 @@ export function QuizPage() {
   const shouldReduceMotion = useReducedMotion();
 
   const [phase, setPhase] = useState<Phase>("idle");
+  const [plan, setPlan] = useState<readonly Domain[]>(ALL_DOMAINS);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [streak, setStreak] = useState(0);
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [domainStats, setDomainStats] = useState<Record<Domain, DomainStats>>({
-    reasoning: { correct: 0, answered: 0 },
-    memory: { correct: 0, answered: 0 },
-    speed: { correct: 0, answered: 0 },
-  });
+  const [domainStats, setDomainStats] = useState<Record<Domain, DomainStats>>(EMPTY_STATS);
   const [result, setResult] = useState<{ iqEstimate: number; percentile: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleStart() {
+  async function handleStart(chosenPlan: readonly Domain[]) {
     setError(null);
     try {
       const id = await startSession();
       setSessionId(id);
+      setPlan(chosenPlan);
       setDifficulty("medium");
       setStreak(0);
       setQuestionIndex(0);
-      setDomainStats({
-        reasoning: { correct: 0, answered: 0 },
-        memory: { correct: 0, answered: 0 },
-        speed: { correct: 0, answered: 0 },
-      });
+      setDomainStats(EMPTY_STATS);
       setResult(null);
-      setPhase("reasoning");
+      setPhase(chosenPlan[0]);
     } catch {
       setError("No se pudo conectar con la base de datos.");
     }
@@ -89,13 +90,13 @@ export function QuizPage() {
       return;
     }
 
-    const currentDomainIndex = DOMAIN_ORDER.indexOf(domain);
+    const currentDomainIndex = plan.indexOf(domain);
     setQuestionIndex(0);
     setStreak(0);
     setDifficulty("medium");
 
-    if (currentDomainIndex < DOMAIN_ORDER.length - 1) {
-      setPhase(DOMAIN_ORDER[currentDomainIndex + 1]);
+    if (currentDomainIndex < plan.length - 1) {
+      setPhase(plan[currentDomainIndex + 1]);
       return;
     }
 
@@ -129,23 +130,42 @@ export function QuizPage() {
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0, transition: springTransition }}
-          className="flex flex-col items-center gap-4 text-center"
+          className="flex flex-col items-center gap-6 text-center"
         >
           <Emoji3D emoji="🎮" size="lg" className="mb-1" />
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
             {t.hero.play}
           </h1>
-          <p className="max-w-md text-balance text-muted-foreground">
-            {t.quiz.reasoningTitle} · {t.quiz.memoryTitle} · {t.quiz.speedTitle}
-          </p>
           {error && <p className="text-sm text-red-500">{error}</p>}
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {(
+              [
+                { domain: "reasoning" as const, Icon: Puzzle, title: t.quiz.reasoningTitle },
+                { domain: "memory" as const, Icon: BrainCircuit, title: t.quiz.memoryTitle },
+                { domain: "speed" as const, Icon: Gauge, title: t.quiz.speedTitle },
+              ]
+            ).map(({ domain, Icon, title }) => (
+              <motion.div key={domain} whileHover={{ y: -3 }} whileTap={tapScale} transition={springTransition}>
+                <button type="button" onClick={() => handleStart([domain])} className="block w-full text-left focus-visible:outline-none">
+                  <GlassCard className="flex flex-col items-center gap-2 rounded-2xl border-0 p-5 shadow-sm transition-shadow hover:shadow-md">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <p className="text-sm font-semibold text-foreground">{title}</p>
+                  </GlassCard>
+                </button>
+              </motion.div>
+            ))}
+          </div>
+
           <motion.button
             type="button"
-            onClick={handleStart}
+            onClick={() => handleStart(ALL_DOMAINS)}
             whileHover={{ y: -2 }}
             whileTap={tapScale}
             transition={springTransition}
-            className="shine-hover mt-2 inline-flex h-14 items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
+            className="shine-hover inline-flex h-14 items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
           >
             <Play className="h-5 w-5" aria-hidden="true" />
             {t.hero.play}
@@ -235,7 +255,7 @@ export function QuizPage() {
 
             <motion.button
               type="button"
-              onClick={handleStart}
+              onClick={() => handleStart(plan)}
               whileHover={{ y: -1 }}
               whileTap={tapScale}
               transition={springTransition}
