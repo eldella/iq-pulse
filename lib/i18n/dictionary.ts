@@ -89,6 +89,8 @@ export type Dictionary = {
       avgTimeUnit: string;
       generalLabel: string;
       yourLabel: string;
+      lockedTitle: string;
+      lockedCta: string;
     };
     leaderboard: {
       heading: string;
@@ -283,6 +285,8 @@ export const dictionary: Record<Lang, Dictionary> = {
         avgTimeUnit: "seg. promedio",
         generalLabel: "General",
         yourLabel: "Vos",
+        lockedTitle: "Iniciá sesión para ver tus stats",
+        lockedCta: "Iniciar sesión",
       },
       leaderboard: {
         heading: "Tabla clasificatoria",
@@ -480,6 +484,8 @@ export const dictionary: Record<Lang, Dictionary> = {
         avgTimeUnit: "sec. avg",
         generalLabel: "General",
         yourLabel: "You",
+        lockedTitle: "Log in to see your stats",
+        lockedCta: "Log in",
       },
       leaderboard: {
         heading: "Leaderboard",

@@ -1,18 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { Lock } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Emoji3D } from "@/components/Emoji3D";
+import { GlassCard } from "@/components/GlassCard";
 import { springTransition, tapScale } from "@/lib/motion";
 
 /**
  * Split out of /estadisticas into its own page and reframed to compare
  * "you" (demo login flag, see AuthProvider) against the general/aggregate
- * numbers - illustrative on both sides, no scoring backend yet, but the
- * personal row only makes sense once "logged in" so it's gated the same
- * way the demo profile is.
+ * numbers - illustrative on both sides, no scoring backend yet. Unlike the
+ * quiz result itself (never gated - see Sostenimiento/Términos: "no hay
+ * resultados bloqueados"), seeing yourself compared or ranked inherently
+ * needs a persistent identity, so this whole comparison blurs out behind a
+ * login prompt instead of showing per-row placeholders.
  */
 const GENERAL_PRECISION = [70, 79, 66] as const;
 const YOUR_PRECISION = [76, 88, 61] as const;
@@ -26,7 +30,6 @@ function ComparisonRow({
   yourValue,
   maxValue,
   suffix,
-  isLoggedIn,
   generalLabel,
   yourLabel,
   delay,
@@ -36,7 +39,6 @@ function ComparisonRow({
   yourValue: number;
   maxValue: number;
   suffix: string;
-  isLoggedIn: boolean;
   generalLabel: string;
   yourLabel: string;
   delay: number;
@@ -47,9 +49,7 @@ function ComparisonRow({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground">{label}</span>
-      </div>
+      <span className="text-sm font-medium text-foreground">{label}</span>
 
       <div className="flex items-center gap-3">
         <span className="w-14 shrink-0 text-xs text-muted-foreground">{generalLabel}</span>
@@ -71,18 +71,17 @@ function ComparisonRow({
       <div className="flex items-center gap-3">
         <span className="w-14 shrink-0 text-xs font-medium text-accent">{yourLabel}</span>
         <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
-          {isLoggedIn ? (
-            <motion.span
-              initial={shouldReduceMotion ? false : { width: 0 }}
-              whileInView={{ width: `${yourPercent}%` }}
-              viewport={{ once: true }}
-              transition={{ ...springTransition, delay: delay + 0.06 }}
-              className="block h-full rounded-full bg-accent"
-            />
-          ) : null}
+          <motion.span
+            initial={shouldReduceMotion ? false : { width: 0 }}
+            whileInView={{ width: `${yourPercent}%` }}
+            viewport={{ once: true }}
+            transition={{ ...springTransition, delay: delay + 0.06 }}
+            className="block h-full rounded-full bg-accent"
+          />
         </span>
         <span className="w-14 shrink-0 text-right text-xs font-medium text-accent">
-          {isLoggedIn ? `${yourValue}${suffix}` : "—"}
+          {yourValue}
+          {suffix}
         </span>
       </div>
     </div>
@@ -118,70 +117,83 @@ export function RendimientoPage() {
         <p className="max-w-2xl text-balance text-lg text-muted-foreground">
           {t.stats.performance.subhead}
         </p>
+      </div>
+
+      <div className="relative mx-auto flex w-full max-w-2xl flex-col gap-10">
+        <div
+          className={
+            isLoggedIn
+              ? "flex flex-col gap-10 transition-[filter] duration-300"
+              : "pointer-events-none flex select-none flex-col gap-10 blur-md transition-[filter] duration-300"
+          }
+          aria-hidden={!isLoggedIn}
+        >
+          <div>
+            <p className="mb-4 text-center text-sm font-medium text-muted-foreground">
+              {t.stats.performance.precisionHeading}
+            </p>
+            <div className="flex flex-col gap-6">
+              {precisionRows.map((row, index) => (
+                <ComparisonRow
+                  key={row.id}
+                  label={row.label}
+                  generalValue={row.general}
+                  yourValue={row.yours}
+                  maxValue={100}
+                  suffix="%"
+                  generalLabel={t.stats.performance.generalLabel}
+                  yourLabel={t.stats.performance.yourLabel}
+                  delay={index * 0.08}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-4 text-center text-sm font-medium text-muted-foreground">
+              {t.stats.performance.timeHeading}
+            </p>
+            <div className="flex flex-col gap-6">
+              {timeRows.map((row, index) => (
+                <ComparisonRow
+                  key={row.id}
+                  label={row.label}
+                  generalValue={row.general}
+                  yourValue={row.yours}
+                  maxValue={Math.max(...GENERAL_TIME, ...YOUR_TIME)}
+                  suffix={` ${t.stats.performance.avgTimeUnit}`}
+                  generalLabel={t.stats.performance.generalLabel}
+                  yourLabel={t.stats.performance.yourLabel}
+                  delay={index * 0.08}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
 
         {!isLoggedIn && (
-          <motion.button
-            type="button"
-            onClick={login}
-            whileHover={{ y: -1 }}
-            whileTap={tapScale}
-            transition={springTransition}
-            className="shine-hover mt-2 inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
-          >
-            {t.hero.login}
-          </motion.button>
+          <div className="absolute inset-0 flex items-center justify-center px-4">
+            <GlassCard className="flex flex-col items-center gap-3 rounded-2xl p-6 text-center shadow-2xl">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
+                <Lock className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <p className="text-sm font-semibold text-foreground">
+                {t.stats.performance.lockedTitle}
+              </p>
+              <motion.button
+                type="button"
+                onClick={login}
+                whileHover={{ y: -1 }}
+                whileTap={tapScale}
+                transition={springTransition}
+                className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
+              >
+                {t.stats.performance.lockedCta}
+              </motion.button>
+            </GlassCard>
+          </div>
         )}
       </div>
-
-      <div className="mx-auto w-full max-w-2xl">
-        <p className="mb-4 text-center text-sm font-medium text-muted-foreground">
-          {t.stats.performance.precisionHeading}
-        </p>
-        <div className="flex flex-col gap-6">
-          {precisionRows.map((row, index) => (
-            <ComparisonRow
-              key={row.id}
-              label={row.label}
-              generalValue={row.general}
-              yourValue={row.yours}
-              maxValue={100}
-              suffix="%"
-              isLoggedIn={isLoggedIn}
-              generalLabel={t.stats.performance.generalLabel}
-              yourLabel={t.stats.performance.yourLabel}
-              delay={index * 0.08}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="mx-auto w-full max-w-2xl">
-        <p className="mb-4 text-center text-sm font-medium text-muted-foreground">
-          {t.stats.performance.timeHeading}
-        </p>
-        <div className="flex flex-col gap-6">
-          {timeRows.map((row, index) => (
-            <ComparisonRow
-              key={row.id}
-              label={row.label}
-              generalValue={row.general}
-              yourValue={row.yours}
-              maxValue={Math.max(...GENERAL_TIME, ...YOUR_TIME)}
-              suffix={` ${t.stats.performance.avgTimeUnit}`}
-              isLoggedIn={isLoggedIn}
-              generalLabel={t.stats.performance.generalLabel}
-              yourLabel={t.stats.performance.yourLabel}
-              delay={index * 0.08}
-            />
-          ))}
-        </div>
-      </div>
-
-      {!isLoggedIn && (
-        <p className="max-w-md text-center text-xs text-muted-foreground">
-          {t.profile.loggedOutBody}
-        </p>
-      )}
 
       <Link
         href="/perfil"
