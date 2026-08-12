@@ -9,7 +9,6 @@ import {
   useReducedMotion,
   useScroll,
 } from "framer-motion";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { DonationModal } from "@/components/DonationModal";
 import { HeaderMoreMenu } from "@/components/landing/HeaderMoreMenu";
 import { HeaderProfileLink } from "@/components/landing/HeaderProfileLink";
@@ -20,8 +19,11 @@ import { cn } from "@/lib/utils";
 
 /**
  * Shared top bar rendered once from app/layout.tsx: wordmark, route nav,
- * donation trigger, theme toggle. Active route gets a filled pill so the
- * current page is always obvious.
+ * donation trigger, profile link, and the "more" overflow menu (theme,
+ * language, social). Active route gets a filled pill so the current page is
+ * always obvious. Theme/language live inside HeaderMoreMenu rather than as
+ * their own persistent buttons - keeps the mobile actions row to 3 items
+ * even after adding the profile link.
  */
 export function Header() {
   const pathname = usePathname();
@@ -131,7 +133,6 @@ export function Header() {
 
       <div className="flex shrink-0 items-center justify-self-end gap-1 sm:gap-2">
         <DonationModal compactOnMobile />
-        <ThemeToggle />
         <HeaderProfileLink />
         <HeaderMoreMenu />
       </div>

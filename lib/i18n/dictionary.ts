@@ -6,6 +6,7 @@ export type Dictionary = {
     nav: { home: string; stats: string; ranking: string; performance: string };
     openMenu: string;
     closeMenu: string;
+    preferences: string;
   };
   hero: {
     headline: string;
@@ -153,6 +154,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       },
       openMenu: "Abrir menú",
       closeMenu: "Cerrar menú",
+      preferences: "Preferencias",
     },
     hero: {
       headline: "El límite de tu mente es el primero que nunca cuestionaste.",
@@ -349,6 +351,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       },
       openMenu: "Open menu",
       closeMenu: "Close menu",
+      preferences: "Preferences",
     },
     hero: {
       headline: "The limit of your mind is the first one you never questioned.",

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Globe, X } from "lucide-react";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { SocialLinks } from "@/components/SocialLinks";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, springExitTransition, tapScale } from "@/lib/motion";
@@ -59,11 +60,22 @@ export function HeaderMoreMenu() {
           >
             <div className="flex items-center justify-between gap-6">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t.header.preferences}
+              </span>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <LanguageToggle />
+              </div>
+            </div>
+            <div className="h-px bg-black/5 dark:bg-white/5" aria-hidden="true" />
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t.social.heading}
               </span>
-              <LanguageToggle />
+              <div className="mt-2">
+                <SocialLinks />
+              </div>
             </div>
-            <SocialLinks />
           </motion.div>
         </>
       )}
@@ -80,7 +92,7 @@ export function HeaderMoreMenu() {
         transition={springTransition}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        aria-label={t.social.heading}
+        aria-label={t.header.preferences}
         className="theme-transition relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-glass-border bg-glass text-foreground hover:shadow-lg hover:shadow-accent/20 focus-visible:outline-none"
       >
         <AnimatePresence mode="wait" initial={false}>
