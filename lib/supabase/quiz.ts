@@ -5,7 +5,11 @@ import {
   scoreToIQEstimate,
   iqToPercentile,
   type Difficulty,
+  type Domain,
 } from "@/lib/scoring";
+
+const DOMAINS: readonly Domain[] = ["reasoning", "memory", "speed"];
+const DIFFICULTIES: readonly Difficulty[] = ["easy", "medium", "hard"];
 
 /**
  * Thin data-access layer over the tables in supabase/schema.sql - kept
@@ -90,7 +94,7 @@ export async function completeSession(
   return { iqEstimate, percentile };
 }
 
-export async function fetchQuestions(domain: "reasoning" | "memory" | "speed", difficulty: Difficulty) {
+export async function fetchQuestions(domain: Domain, difficulty: Difficulty) {
   const { data, error } = await supabase
     .from("questions")
     .select("id, prompt, correct_answer")
@@ -99,4 +103,43 @@ export async function fetchQuestions(domain: "reasoning" | "memory" | "speed", d
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * Site-wide averages across every recorded answer - "General" in
+ * RendimientoPage. `null` per bucket means no answers exist yet for that
+ * domain/difficulty (empty tables today), the caller falls back to the
+ * illustrative placeholder in that case rather than showing 0%/0s, which
+ * would misleadingly read as "everyone scored zero."
+ */
+export async function fetchGeneralPerformance(): Promise<{
+  precisionByDomain: Record<Domain, number | null>;
+  avgTimeByDifficulty: Record<Difficulty, number | null>;
+}> {
+  const { data, error } = await supabase
+    .from("quiz_answers")
+    .select("is_correct, response_time_ms, difficulty_at_time, questions(domain)");
+
+  if (error) throw error;
+
+  const precisionByDomain = {} as Record<Domain, number | null>;
+  const avgTimeByDifficulty = {} as Record<Difficulty, number | null>;
+
+  for (const domain of DOMAINS) {
+    const rows = (data ?? []).filter((row) => row.questions?.[0]?.domain === domain);
+    precisionByDomain[domain] =
+      rows.length === 0
+        ? null
+        : Math.round((rows.filter((row) => row.is_correct).length / rows.length) * 100);
+  }
+
+  for (const difficulty of DIFFICULTIES) {
+    const rows = (data ?? []).filter((row) => row.difficulty_at_time === difficulty);
+    avgTimeByDifficulty[difficulty] =
+      rows.length === 0
+        ? null
+        : Math.round(rows.reduce((sum, row) => sum + row.response_time_ms, 0) / rows.length / 1000);
+  }
+
+  return { precisionByDomain, avgTimeByDifficulty };
 }

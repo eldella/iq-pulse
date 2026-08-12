@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Lock } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -7,21 +8,28 @@ import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Emoji3D } from "@/components/Emoji3D";
 import { GlassCard } from "@/components/GlassCard";
+import { fetchGeneralPerformance } from "@/lib/supabase/quiz";
 import { springTransition, tapScale } from "@/lib/motion";
 
 /**
  * Split out of /estadisticas into its own page and reframed to compare
  * "you" (demo login flag, see AuthProvider) against the general/aggregate
- * numbers - illustrative on both sides, no scoring backend yet. Unlike the
- * quiz result itself (never gated - see Sostenimiento/Términos: "no hay
+ * numbers. The "General" side is wired to a real Supabase aggregate query
+ * (fetchGeneralPerformance) - falls back to these illustrative numbers only
+ * when a bucket has no recorded answers yet (empty tables today, since
+ * there's no quiz UI/question bank feeding them yet). "Vos" stays
+ * illustrative: the demo login is a client-only flag with no real Supabase
+ * Auth user behind it, so there's no real identity to query per-user data
+ * for yet - that needs real auth first, a separate piece of work. Unlike
+ * the quiz result itself (never gated - see Sostenimiento/Términos: "no hay
  * resultados bloqueados"), seeing yourself compared or ranked inherently
  * needs a persistent identity, so this whole comparison blurs out behind a
  * login prompt instead of showing per-row placeholders.
  */
-const GENERAL_PRECISION = [70, 79, 66] as const;
+const FALLBACK_GENERAL_PRECISION = [70, 79, 66] as const;
 const YOUR_PRECISION = [76, 88, 61] as const;
 
-const GENERAL_TIME = [9, 15, 24] as const;
+const FALLBACK_GENERAL_TIME = [9, 15, 24] as const;
 const YOUR_TIME = [8, 13, 26] as const;
 
 function ComparisonRow({
@@ -91,17 +99,50 @@ function ComparisonRow({
 export function RendimientoPage() {
   const { t } = useLanguage();
   const { isLoggedIn, login } = useAuth();
+  const [generalPrecision, setGeneralPrecision] = useState<
+    readonly [number, number, number]
+  >(FALLBACK_GENERAL_PRECISION);
+  const [generalTime, setGeneralTime] = useState<readonly [number, number, number]>(
+    FALLBACK_GENERAL_TIME
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchGeneralPerformance()
+      .then(({ precisionByDomain, avgTimeByDifficulty }) => {
+        if (cancelled) return;
+        setGeneralPrecision([
+          precisionByDomain.reasoning ?? FALLBACK_GENERAL_PRECISION[0],
+          precisionByDomain.memory ?? FALLBACK_GENERAL_PRECISION[1],
+          precisionByDomain.speed ?? FALLBACK_GENERAL_PRECISION[2],
+        ]);
+        setGeneralTime([
+          avgTimeByDifficulty.easy ?? FALLBACK_GENERAL_TIME[0],
+          avgTimeByDifficulty.medium ?? FALLBACK_GENERAL_TIME[1],
+          avgTimeByDifficulty.hard ?? FALLBACK_GENERAL_TIME[2],
+        ]);
+      })
+      .catch(() => {
+        // Falls back to the illustrative constants already in state - a
+        // failed fetch shouldn't break the page, just keep the placeholder.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const precisionRows = [
-    { id: "reasoning", label: t.domains.item1.title, general: GENERAL_PRECISION[0], yours: YOUR_PRECISION[0] },
-    { id: "memory", label: t.domains.item2.title, general: GENERAL_PRECISION[1], yours: YOUR_PRECISION[1] },
-    { id: "speed", label: t.domains.item3.title, general: GENERAL_PRECISION[2], yours: YOUR_PRECISION[2] },
+    { id: "reasoning", label: t.domains.item1.title, general: generalPrecision[0], yours: YOUR_PRECISION[0] },
+    { id: "memory", label: t.domains.item2.title, general: generalPrecision[1], yours: YOUR_PRECISION[1] },
+    { id: "speed", label: t.domains.item3.title, general: generalPrecision[2], yours: YOUR_PRECISION[2] },
   ];
 
   const timeRows = [
-    { id: "easy", label: t.stats.performance.easy, general: GENERAL_TIME[0], yours: YOUR_TIME[0] },
-    { id: "medium", label: t.stats.performance.medium, general: GENERAL_TIME[1], yours: YOUR_TIME[1] },
-    { id: "hard", label: t.stats.performance.hard, general: GENERAL_TIME[2], yours: YOUR_TIME[2] },
+    { id: "easy", label: t.stats.performance.easy, general: generalTime[0], yours: YOUR_TIME[0] },
+    { id: "medium", label: t.stats.performance.medium, general: generalTime[1], yours: YOUR_TIME[1] },
+    { id: "hard", label: t.stats.performance.hard, general: generalTime[2], yours: YOUR_TIME[2] },
   ];
 
   return (
@@ -160,7 +201,7 @@ export function RendimientoPage() {
                   label={row.label}
                   generalValue={row.general}
                   yourValue={row.yours}
-                  maxValue={Math.max(...GENERAL_TIME, ...YOUR_TIME)}
+                  maxValue={Math.max(...generalTime, ...YOUR_TIME)}
                   suffix={` ${t.stats.performance.avgTimeUnit}`}
                   generalLabel={t.stats.performance.generalLabel}
                   yourLabel={t.stats.performance.yourLabel}

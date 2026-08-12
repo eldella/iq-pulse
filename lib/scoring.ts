@@ -12,6 +12,7 @@
  */
 
 export type Difficulty = "easy" | "medium" | "hard";
+export type Domain = "reasoning" | "memory" | "speed";
 
 const DIFFICULTY_BASE_POINTS: Record<Difficulty, number> = {
   easy: 100,
