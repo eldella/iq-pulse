@@ -69,7 +69,7 @@ export function HeroSection() {
         {isLoggedIn ? (
           <motion.div whileHover={ctaHoverLift} whileTap={tapScale} className="inline-block">
             <Link
-              href="/ranking"
+              href="/jugar"
               className="shine-hover inline-flex h-14 min-w-[44px] items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 transition-shadow duration-300 hover:shadow-2xl hover:shadow-accent/60 focus-visible:outline-none"
             >
               <Play className="h-5 w-5" aria-hidden="true" />

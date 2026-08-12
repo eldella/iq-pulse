@@ -31,14 +31,16 @@ export async function startSession(userId?: string): Promise<string> {
 
 export async function recordAnswer(params: {
   sessionId: string;
-  questionId: string;
+  domain: Domain;
   isCorrect: boolean;
   responseTimeMs: number;
   difficulty: Difficulty;
+  questionId?: string;
 }): Promise<void> {
   const { error } = await supabase.from("quiz_answers").insert({
     session_id: params.sessionId,
-    question_id: params.questionId,
+    question_id: params.questionId ?? null,
+    domain: params.domain,
     is_correct: params.isCorrect,
     response_time_ms: params.responseTimeMs,
     difficulty_at_time: params.difficulty,
@@ -118,7 +120,7 @@ export async function fetchGeneralPerformance(): Promise<{
 }> {
   const { data, error } = await supabase
     .from("quiz_answers")
-    .select("is_correct, response_time_ms, difficulty_at_time, questions(domain)");
+    .select("is_correct, response_time_ms, difficulty_at_time, domain");
 
   if (error) throw error;
 
@@ -126,7 +128,7 @@ export async function fetchGeneralPerformance(): Promise<{
   const avgTimeByDifficulty = {} as Record<Difficulty, number | null>;
 
   for (const domain of DOMAINS) {
-    const rows = (data ?? []).filter((row) => row.questions?.[0]?.domain === domain);
+    const rows = (data ?? []).filter((row) => row.domain === domain);
     precisionByDomain[domain] =
       rows.length === 0
         ? null

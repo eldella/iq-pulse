@@ -83,6 +83,24 @@ export type Dictionary = {
     heading: string;
     subhead: string;
   };
+  quiz: {
+    reasoningTitle: string;
+    memoryTitle: string;
+    speedTitle: string;
+    progressLabel: string;
+    matrixInstructions: string;
+    digitSpanMemorize: string;
+    digitSpanRecall: string;
+    digitSpanClear: string;
+    digitSpanSubmit: string;
+    stroopInstructions: string;
+    resultsHeading: string;
+    resultsIqLabel: string;
+    resultsPercentileLabel: string;
+    resultsBody: string;
+    playAgainCta: string;
+    viewProfileCta: string;
+  };
   notFound: {
     heading: string;
     subhead: string;
@@ -227,6 +245,24 @@ export const dictionary: Record<Lang, Dictionary> = {
       heading: "Ranking",
       subhead: "La tabla clasificatoria y el reto del mes, en un solo lugar.",
     },
+    quiz: {
+      reasoningTitle: "Matriz de patrones",
+      memoryTitle: "Retención de dígitos",
+      speedTitle: "Stroop",
+      progressLabel: "Pregunta",
+      matrixInstructions: "Encontrá el número que falta en la secuencia.",
+      digitSpanMemorize: "Memorizá esta secuencia",
+      digitSpanRecall: "Escribila en el mismo orden",
+      digitSpanClear: "Borrar",
+      digitSpanSubmit: "Confirmar",
+      stroopInstructions: "Tocá el color de la TINTA, no lo que dice la palabra.",
+      resultsHeading: "Resultado",
+      resultsIqLabel: "CI estimado",
+      resultsPercentileLabel: "Percentil",
+      resultsBody: "Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.",
+      playAgainCta: "Jugar de nuevo",
+      viewProfileCta: "Ver tu perfil",
+    },
     notFound: {
       heading: "Esta página no existe",
       subhead: "El enlace puede estar roto o la página se movió de lugar.",
@@ -369,6 +405,24 @@ export const dictionary: Record<Lang, Dictionary> = {
     ranking: {
       heading: "Ranking",
       subhead: "The leaderboard and the challenge of the month, in one place.",
+    },
+    quiz: {
+      reasoningTitle: "Pattern matrix",
+      memoryTitle: "Digit span",
+      speedTitle: "Stroop",
+      progressLabel: "Question",
+      matrixInstructions: "Find the missing number in the sequence.",
+      digitSpanMemorize: "Memorize this sequence",
+      digitSpanRecall: "Type it in the same order",
+      digitSpanClear: "Clear",
+      digitSpanSubmit: "Submit",
+      stroopInstructions: "Tap the INK color, not what the word says.",
+      resultsHeading: "Result",
+      resultsIqLabel: "Estimated IQ",
+      resultsPercentileLabel: "Percentile",
+      resultsBody: "Illustrative result — while the quiz engine is still being built, this number doesn't replace a validated cognitive test.",
+      playAgainCta: "Play again",
+      viewProfileCta: "View your profile",
     },
     notFound: {
       heading: "This page doesn't exist",

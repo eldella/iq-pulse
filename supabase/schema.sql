@@ -45,11 +45,17 @@ create table public.quiz_sessions (
   percentile numeric(5, 2)
 );
 
--- One row per answered question within a session.
+-- One row per answered question within a session. `question_id` is
+-- nullable: the first 3 minigames (pattern matrix, digit span, Stroop)
+-- generate their content procedurally on the client instead of drawing
+-- from the `questions` bank, so there's often no pre-existing row to point
+-- to - `domain` is stored directly on the answer instead so aggregate
+-- queries don't depend on a `questions` join that may not exist.
 create table public.quiz_answers (
   id uuid primary key default gen_random_uuid(),
   session_id uuid not null references public.quiz_sessions (id) on delete cascade,
-  question_id uuid not null references public.questions (id),
+  question_id uuid references public.questions (id),
+  domain text not null check (domain in ('reasoning', 'memory', 'speed')),
   is_correct boolean not null,
   response_time_ms integer not null,
   difficulty_at_time text not null check (difficulty_at_time in ('easy', 'medium', 'hard')),
