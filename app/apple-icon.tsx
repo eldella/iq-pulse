@@ -13,8 +13,8 @@ export default function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#000000",
-          color: "#FFFFFF",
+          background: "#FFFFFF",
+          color: "#1D1D1F",
           fontFamily: "sans-serif",
           fontWeight: 700,
           fontSize: 90,
@@ -22,6 +22,7 @@ export default function AppleIcon() {
         }}
       >
         IQ
+        <span style={{ color: "#007AFF" }}>.</span>
       </div>
     ),
     { ...size }

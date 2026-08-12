@@ -7,6 +7,7 @@ import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/Footer";
+import { PersistentLanguageToggle } from "@/components/PersistentLanguageToggle";
 import "./globals.css";
 
 const inter = Inter({
@@ -64,6 +65,7 @@ export default function RootLayout({
                 <AnimatedBackground />
                 <ScrollProgressBar />
                 <Header />
+                <PersistentLanguageToggle />
                 <div className="flex flex-1 flex-col">{children}</div>
                 <Footer />
               </div>
