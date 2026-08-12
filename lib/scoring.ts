@@ -68,6 +68,20 @@ export function nextDifficulty(
 }
 
 /**
+ * Normalizes a session's total points into the 0-1 range scoreToIQEstimate
+ * expects, against a ceiling of every question answered at "hard" with a
+ * full time bonus. Difficulty is adaptive, so this is intentional: staying
+ * at "hard" the whole session scores higher than acing "easy" the whole
+ * way through, even at 100% accuracy in both cases - the ceiling rewards
+ * the difficulty level you sustained, not just correctness.
+ */
+export function normalizeScore(totalPoints: number, answeredCount: number): number {
+  if (answeredCount <= 0) return 0;
+  const ceiling = answeredCount * DIFFICULTY_BASE_POINTS.hard * (1 + TIME_BONUS_MAX_FACTOR);
+  return totalPoints / ceiling;
+}
+
+/**
  * Maps a 0-1 accuracy-weighted score into an IQ estimate on the same
  * mean-100/SD-15 scale already explained on /estadisticas (Panorama's bell
  * curve), via an inverse-normal-CDF approximation (Acklam's algorithm) -
