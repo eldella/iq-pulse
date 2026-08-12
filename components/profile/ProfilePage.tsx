@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, LogOut, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, LogOut, User } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -61,6 +61,36 @@ export function ProfilePage() {
               </p>
               <RankBadge rank={4} />
             </div>
+          </div>
+
+          <div className="flex w-full items-center gap-3 rounded-2xl border border-glass-border bg-glass px-5 py-4 text-left backdrop-blur-xl">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+              <Award className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent">
+                {t.profile.badgeHeading}
+              </p>
+              <p className="text-sm font-medium text-foreground">{t.profile.badgeTitle}</p>
+              <p className="text-xs text-muted-foreground">{t.profile.badgeBody}</p>
+            </div>
+          </div>
+
+          <div className="flex w-full flex-col gap-2">
+            <Link
+              href="/ranking"
+              className="flex h-11 items-center justify-between rounded-xl px-3 text-sm text-muted-foreground transition-colors duration-300 hover:bg-white/5 hover:text-foreground focus-visible:outline-none"
+            >
+              {t.profile.viewRankingCta}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/rendimiento"
+              className="flex h-11 items-center justify-between rounded-xl px-3 text-sm text-muted-foreground transition-colors duration-300 hover:bg-white/5 hover:text-foreground focus-visible:outline-none"
+            >
+              {t.profile.viewPerformanceCta}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
 
           <motion.button

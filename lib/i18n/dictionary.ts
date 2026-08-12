@@ -122,6 +122,12 @@ export type Dictionary = {
     rank: string;
     logout: string;
     backHome: string;
+    badgeHeading: string;
+    badgeTitle: string;
+    badgeBody: string;
+    viewRankingCta: string;
+    viewPerformanceCta: string;
+    headerAriaLabel: string;
   };
   themeToggle: { toLight: string; toDark: string };
   languageToggle: { switchTo: string };
@@ -314,6 +320,12 @@ export const dictionary: Record<Lang, Dictionary> = {
       rank: "Puesto en el ranking",
       logout: "Cerrar sesión",
       backHome: "Volver al inicio",
+      badgeHeading: "Logros",
+      badgeTitle: "Top 10 en Rendimiento",
+      badgeBody: "Entre los mejores puntajes registrados en la comparación de rendimiento.",
+      viewRankingCta: "Ver tu posición en el ranking",
+      viewPerformanceCta: "Ver tu comparación de rendimiento",
+      headerAriaLabel: "Ir a tu perfil",
     },
     themeToggle: { toLight: "Cambiar a modo claro", toDark: "Cambiar a modo oscuro" },
     languageToggle: { switchTo: "Switch to English" },
@@ -504,6 +516,12 @@ export const dictionary: Record<Lang, Dictionary> = {
       rank: "Leaderboard position",
       logout: "Log out",
       backHome: "Back to home",
+      badgeHeading: "Achievements",
+      badgeTitle: "Top 10 in Performance",
+      badgeBody: "Among the top scores recorded in the performance comparison.",
+      viewRankingCta: "View your ranking position",
+      viewPerformanceCta: "View your performance comparison",
+      headerAriaLabel: "Go to your profile",
     },
     themeToggle: { toLight: "Switch to light mode", toDark: "Switch to dark mode" },
     languageToggle: { switchTo: "Cambiar a español" },

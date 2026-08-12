@@ -12,6 +12,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { DonationModal } from "@/components/DonationModal";
 import { HeaderMoreMenu } from "@/components/landing/HeaderMoreMenu";
+import { HeaderProfileLink } from "@/components/landing/HeaderProfileLink";
 import { MobileNavMenu } from "@/components/landing/MobileNavMenu";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
@@ -131,6 +132,7 @@ export function Header() {
       <div className="flex shrink-0 items-center justify-self-end gap-1 sm:gap-2">
         <DonationModal compactOnMobile />
         <ThemeToggle />
+        <HeaderProfileLink />
         <HeaderMoreMenu />
       </div>
     </motion.header>
