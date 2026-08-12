@@ -14,8 +14,8 @@ import { useLanguage } from "@/components/LanguageProvider";
  * Purely editorial hero — no widget, no game preview. The headline animates
  * in word-by-word on mount via the shared stagger pattern, then the
  * supporting line fades in once the headline has mostly settled. A primary
- * CTA follows, pointing at /estadisticas: the quiz engine was removed in a
- * prior reset, so the stats page is the only real functional destination —
+ * CTA follows, pointing at /ranking: the quiz engine was removed in a prior
+ * reset, so the leaderboard is the closest real, functional destination —
  * this is the honest "start here" action rather than a fake test flow.
  */
 export function HeroSection() {
@@ -69,7 +69,7 @@ export function HeroSection() {
         {isLoggedIn ? (
           <motion.div whileHover={ctaHoverLift} whileTap={tapScale} className="inline-block">
             <Link
-              href="/estadisticas"
+              href="/ranking"
               className="shine-hover inline-flex h-14 min-w-[44px] items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 transition-shadow duration-300 hover:shadow-2xl hover:shadow-accent/60 focus-visible:outline-none"
             >
               <Play className="h-5 w-5" aria-hidden="true" />
@@ -79,7 +79,7 @@ export function HeroSection() {
         ) : (
           <motion.div whileHover={ctaHoverLift} whileTap={tapScale} className="inline-block">
             <Link
-              href="/estadisticas"
+              href="/ranking"
               className="shine-hover inline-flex h-12 min-w-[44px] items-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 transition-shadow duration-300 hover:shadow-2xl hover:shadow-accent/60 focus-visible:outline-none"
             >
               {t.hero.viewRanking}
@@ -92,7 +92,7 @@ export function HeroSection() {
           {isLoggedIn ? (
             <>
               <Link
-                href="/estadisticas"
+                href="/ranking"
                 className="rounded text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none"
               >
                 {t.hero.viewRanking}

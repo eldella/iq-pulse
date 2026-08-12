@@ -4,16 +4,19 @@ An independent, free-to-access project exploring cognitive measurement — an ho
 
 Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Framer Motion**.
 
-> **Status:** early stage / illustrative. There is no backend yet — the ranking, metrics, and patron wall you see are mock data, clearly marked as such in the code. Login is a client-only visual demo, not real authentication.
+> **Status:** early stage / illustrative. There is no scoring backend yet — the leaderboard, metrics, and patron wall you see are mock data, clearly marked as such in the code. Login is a client-only visual demo, not real authentication. A [Supabase](https://supabase.com/) project is wired up (`lib/supabase/client.ts`) but has no schema yet.
 
 ## Features
 
-- Editorial landing page (hero, mission manifesto, sustainment model)
-- Stats dashboard (metrics panel, leaderboard, patron wall) — currently mock data
+- Editorial landing page (hero, mission manifesto, "what IQ.Pulse measures" domain grid, sustainment model)
+- **Panorama** (`/estadisticas`): general cognitive-science content — interactive bell-curve percentile explainer, cognitive factors, myths vs. facts
+- **Ranking** (`/ranking`): leaderboard + monthly challenge card
+- **Rendimiento** (`/rendimiento`): personal vs. general performance comparison (precision by domain, time by difficulty), gated behind the demo login
+- Demo login/profile flow (`/perfil`) — client-only session flag, no real accounts yet
 - Light/dark theme (Apple-style black / white / system blue palette)
-- ES/EN language switch (client-side, no page reload)
+- ES/EN language switch (client-side, no page reload), with a mobile hamburger nav once there were 4+ destinations
 - Animated, accessible UI throughout (Framer Motion, respects `prefers-reduced-motion`)
-- Donation links (PayPal, Ko-fi)
+- Donation links (PayPal, Ko-fi) and social links (GitHub, Instagram, TikTok; Discord marked "soon")
 - Terms of service and privacy policy pages
 
 ## Tech stack
@@ -26,6 +29,7 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 | Animation | Framer Motion |
 | Icons | [lucide-react](https://lucide.dev/), [react-icons](https://react-icons.github.io/react-icons/) (brand icons) |
 | Theme | [next-themes](https://github.com/pacocoursey/next-themes) |
+| Backend (wired, unused) | [Supabase](https://supabase.com/) |
 
 ## Getting started
 
@@ -35,6 +39,15 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+If you want the Supabase client to initialize without throwing, create `.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Only the anon/public key goes here — never the service role key or DB password.
 
 ### Scripts
 
@@ -50,25 +63,30 @@ Open [http://localhost:3000](http://localhost:3000).
 ```
 app/                  Routes (App Router)
   page.tsx            Landing page
-  estadisticas/       Stats dashboard
+  estadisticas/       Panorama (general cognitive-science content)
+  ranking/            Leaderboard + monthly challenge
+  rendimiento/        Personal vs. general performance comparison
   perfil/             Demo profile
   terminos/           Terms of service
   privacidad/         Privacy policy
 components/
-  landing/            Landing page sections
-  stats/              Stats dashboard sections
+  landing/            Landing page sections + header/nav
+  stats/              Panorama + shared stats pieces
+  ranking/            Ranking page
+  rendimiento/        Rendimiento page
   legal/              Terms/privacy shell + content
   profile/            Demo profile
 lib/
   i18n/               ES/EN dictionary
+  supabase/           Supabase client (no schema yet)
   motion.ts           Shared Framer Motion presets
 ```
 
 ## Roadmap
 
-- Real backend (accounts, real leaderboard/metrics)
+- Supabase schema (accounts, real leaderboard/performance data)
 - Cognitive assessment engine (currently removed pending redesign)
-- Social presence: GitHub, Instagram, TikTok, Discord (footer/header icons already in place)
+- Real per-user results feeding the Rendimiento comparison
 
 ## License
 

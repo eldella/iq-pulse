@@ -7,7 +7,6 @@ import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/Footer";
-import { FloatingActionBar } from "@/components/FloatingActionBar";
 import "./globals.css";
 
 const inter = Inter({
@@ -48,7 +47,6 @@ export default function RootLayout({
                 <Header />
                 <div className="flex flex-1 flex-col">{children}</div>
                 <Footer />
-                <FloatingActionBar />
               </div>
             </AuthProvider>
           </LanguageProvider>

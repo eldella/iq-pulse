@@ -1,0 +1,194 @@
+"use client";
+
+import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
+import { useAuth } from "@/components/AuthProvider";
+import { useLanguage } from "@/components/LanguageProvider";
+import { Emoji3D } from "@/components/Emoji3D";
+import { springTransition, tapScale } from "@/lib/motion";
+
+/**
+ * Split out of /estadisticas into its own page and reframed to compare
+ * "you" (demo login flag, see AuthProvider) against the general/aggregate
+ * numbers - illustrative on both sides, no scoring backend yet, but the
+ * personal row only makes sense once "logged in" so it's gated the same
+ * way the demo profile is.
+ */
+const GENERAL_PRECISION = [70, 79, 66] as const;
+const YOUR_PRECISION = [76, 88, 61] as const;
+
+const GENERAL_TIME = [9, 15, 24] as const;
+const YOUR_TIME = [8, 13, 26] as const;
+
+function ComparisonRow({
+  label,
+  generalValue,
+  yourValue,
+  maxValue,
+  suffix,
+  isLoggedIn,
+  generalLabel,
+  yourLabel,
+  delay,
+}: {
+  label: string;
+  generalValue: number;
+  yourValue: number;
+  maxValue: number;
+  suffix: string;
+  isLoggedIn: boolean;
+  generalLabel: string;
+  yourLabel: string;
+  delay: number;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+  const generalPercent = Math.round((generalValue / maxValue) * 100);
+  const yourPercent = Math.round((yourValue / maxValue) * 100);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground">{label}</span>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <span className="w-14 shrink-0 text-xs text-muted-foreground">{generalLabel}</span>
+        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
+          <motion.span
+            initial={shouldReduceMotion ? false : { width: 0 }}
+            whileInView={{ width: `${generalPercent}%` }}
+            viewport={{ once: true }}
+            transition={{ ...springTransition, delay }}
+            className="block h-full rounded-full bg-muted-foreground/40"
+          />
+        </span>
+        <span className="w-14 shrink-0 text-right text-xs text-muted-foreground">
+          {generalValue}
+          {suffix}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <span className="w-14 shrink-0 text-xs font-medium text-accent">{yourLabel}</span>
+        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
+          {isLoggedIn ? (
+            <motion.span
+              initial={shouldReduceMotion ? false : { width: 0 }}
+              whileInView={{ width: `${yourPercent}%` }}
+              viewport={{ once: true }}
+              transition={{ ...springTransition, delay: delay + 0.06 }}
+              className="block h-full rounded-full bg-accent"
+            />
+          ) : null}
+        </span>
+        <span className="w-14 shrink-0 text-right text-xs font-medium text-accent">
+          {isLoggedIn ? `${yourValue}${suffix}` : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function RendimientoPage() {
+  const { t } = useLanguage();
+  const { isLoggedIn, login } = useAuth();
+
+  const precisionRows = [
+    { id: "reasoning", label: t.domains.item1.title, general: GENERAL_PRECISION[0], yours: YOUR_PRECISION[0] },
+    { id: "memory", label: t.domains.item2.title, general: GENERAL_PRECISION[1], yours: YOUR_PRECISION[1] },
+    { id: "speed", label: t.domains.item3.title, general: GENERAL_PRECISION[2], yours: YOUR_PRECISION[2] },
+  ];
+
+  const timeRows = [
+    { id: "easy", label: t.stats.performance.easy, general: GENERAL_TIME[0], yours: YOUR_TIME[0] },
+    { id: "medium", label: t.stats.performance.medium, general: GENERAL_TIME[1], yours: YOUR_TIME[1] },
+    { id: "hard", label: t.stats.performance.hard, general: GENERAL_TIME[2], yours: YOUR_TIME[2] },
+  ];
+
+  return (
+    <main className="flex flex-1 flex-col items-center gap-10 px-4 py-16 sm:px-6">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Emoji3D emoji="📈" size="lg" className="mb-1" />
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+          {t.stats.performance.eyebrow}
+        </p>
+        <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          {t.stats.performance.heading}
+        </h1>
+        <p className="max-w-2xl text-balance text-lg text-muted-foreground">
+          {t.stats.performance.subhead}
+        </p>
+
+        {!isLoggedIn && (
+          <motion.button
+            type="button"
+            onClick={login}
+            whileHover={{ y: -1 }}
+            whileTap={tapScale}
+            transition={springTransition}
+            className="shine-hover mt-2 inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
+          >
+            {t.hero.login}
+          </motion.button>
+        )}
+      </div>
+
+      <div className="mx-auto w-full max-w-2xl">
+        <p className="mb-4 text-center text-sm font-medium text-muted-foreground">
+          {t.stats.performance.precisionHeading}
+        </p>
+        <div className="flex flex-col gap-6">
+          {precisionRows.map((row, index) => (
+            <ComparisonRow
+              key={row.id}
+              label={row.label}
+              generalValue={row.general}
+              yourValue={row.yours}
+              maxValue={100}
+              suffix="%"
+              isLoggedIn={isLoggedIn}
+              generalLabel={t.stats.performance.generalLabel}
+              yourLabel={t.stats.performance.yourLabel}
+              delay={index * 0.08}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mx-auto w-full max-w-2xl">
+        <p className="mb-4 text-center text-sm font-medium text-muted-foreground">
+          {t.stats.performance.timeHeading}
+        </p>
+        <div className="flex flex-col gap-6">
+          {timeRows.map((row, index) => (
+            <ComparisonRow
+              key={row.id}
+              label={row.label}
+              generalValue={row.general}
+              yourValue={row.yours}
+              maxValue={Math.max(...GENERAL_TIME, ...YOUR_TIME)}
+              suffix={` ${t.stats.performance.avgTimeUnit}`}
+              isLoggedIn={isLoggedIn}
+              generalLabel={t.stats.performance.generalLabel}
+              yourLabel={t.stats.performance.yourLabel}
+              delay={index * 0.08}
+            />
+          ))}
+        </div>
+      </div>
+
+      {!isLoggedIn && (
+        <p className="max-w-md text-center text-xs text-muted-foreground">
+          {t.profile.loggedOutBody}
+        </p>
+      )}
+
+      <Link
+        href="/perfil"
+        className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+      >
+        {t.hero.viewProfile}
+      </Link>
+    </main>
+  );
+}

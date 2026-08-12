@@ -12,6 +12,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { DonationModal } from "@/components/DonationModal";
 import { HeaderMoreMenu } from "@/components/landing/HeaderMoreMenu";
+import { MobileNavMenu } from "@/components/landing/MobileNavMenu";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,8 @@ export function Header() {
   const navLinks = [
     { href: "/", label: t.header.nav.home },
     { href: "/estadisticas", label: t.header.nav.stats },
+    { href: "/ranking", label: t.header.nav.ranking },
+    { href: "/rendimiento", label: t.header.nav.performance },
   ] as const;
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
@@ -57,7 +60,7 @@ export function Header() {
         transition: springTransition,
       }}
       className={cn(
-        "theme-transition sticky top-0 z-20 flex items-center justify-between gap-x-1.5 border-b px-2.5 py-2.5 backdrop-blur-xl sm:gap-x-3 sm:px-6 sm:py-3",
+        "theme-transition sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-1.5 border-b px-2.5 py-2.5 backdrop-blur-xl sm:gap-x-3 sm:px-6 sm:py-3",
         scrolled
           ? "border-glass-border bg-glass shadow-sm shadow-black/5 dark:shadow-black/20"
           : "border-transparent bg-glass/60"
@@ -65,7 +68,7 @@ export function Header() {
     >
       <Link
         href="/"
-        className="group shrink-0 rounded-full text-base font-semibold tracking-tight text-foreground focus-visible:outline-none sm:text-lg"
+        className="group shrink-0 justify-self-start rounded-full text-base font-semibold tracking-tight text-foreground focus-visible:outline-none sm:text-lg"
       >
         IQ
         <motion.span
@@ -78,41 +81,54 @@ export function Header() {
         Pulse
       </Link>
 
-      <nav aria-label="Principal" className="flex min-w-0 items-center gap-0.5 sm:gap-1">
-        {navLinks.map(({ href, label }) => {
-          const isActive = pathname === href;
-          return (
-            <motion.div
-              key={href}
-              whileHover={{ y: -1 }}
-              whileTap={tapScale}
-              transition={springTransition}
-            >
-              <Link
-                href={href}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "relative flex h-11 items-center whitespace-nowrap rounded-full px-2 text-sm font-medium transition-colors duration-300 focus-visible:outline-none sm:px-4",
-                  isActive
-                    ? "text-accent-foreground"
-                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                )}
+      <div className="flex min-w-0 items-center justify-self-center">
+        {/*
+          4 destinations no longer fit as inline pills in a compact mobile
+          header alongside donate/theme/more-menu - desktop keeps the
+          inline row (hidden below sm), mobile collapses it behind
+          MobileNavMenu's hamburger trigger instead of shrinking further.
+        */}
+        <nav
+          aria-label={t.header.navAriaLabel}
+          className="hidden items-center gap-0.5 sm:flex sm:gap-1"
+        >
+          {navLinks.map(({ href, label }) => {
+            const isActive = pathname === href;
+            return (
+              <motion.div
+                key={href}
+                whileHover={{ y: -1 }}
+                whileTap={tapScale}
+                transition={springTransition}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId="header-active-pill"
-                    transition={springTransition}
-                    className="absolute inset-0 rounded-full bg-accent shadow-md shadow-accent/40"
-                  />
-                )}
-                <span className="relative z-10">{label}</span>
-              </Link>
-            </motion.div>
-          );
-        })}
-      </nav>
+                <Link
+                  href={href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "relative flex h-11 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium transition-colors duration-300 focus-visible:outline-none",
+                    isActive
+                      ? "text-accent-foreground"
+                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  )}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="header-active-pill"
+                      transition={springTransition}
+                      className="absolute inset-0 rounded-full bg-accent shadow-md shadow-accent/40"
+                    />
+                  )}
+                  <span className="relative z-10">{label}</span>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </nav>
 
-      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <MobileNavMenu navLinks={navLinks} />
+      </div>
+
+      <div className="flex shrink-0 items-center justify-self-end gap-1 sm:gap-2">
         <DonationModal compactOnMobile />
         <ThemeToggle />
         <HeaderMoreMenu />

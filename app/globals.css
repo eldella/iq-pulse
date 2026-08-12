@@ -61,8 +61,26 @@
 
 html,
 body {
-  height: 100%;
+  /*
+   * Belt-and-suspenders against horizontal scroll: individual <main>
+   * elements already carry overflow-x-hidden, but decorative bleeding
+   * elements (AmbientBlob, AnimatedBackground) live in layout.tsx as
+   * siblings of <main> - if any of them overflow by even a few px, the
+   * page becomes horizontally scrollable, which is exactly what triggers
+   * Edge/Chrome's swipe-navigation arrow overlays at the viewport edges.
+   */
+  overflow-x: hidden;
 }
+
+/*
+ * No `height: 100%` here on purpose: setting it on BOTH html and body while
+ * page content is taller than one viewport makes each one an independent
+ * scroll container in some engines - that's what produced two separate
+ * vertical scrollbars (one per element, each computing "full" differently).
+ * `min-h-screen` on the layout wrapper already handles short pages filling
+ * the viewport; the document itself should just grow naturally with content
+ * and scroll once, at the `html` level.
+ */
 
 body {
   background-color: rgb(var(--color-bg));
@@ -123,4 +141,32 @@ body {
   .shine-hover::after {
     transition: none;
   }
+}
+
+/*
+ * Custom scrollbar - the default Windows/Chrome scrollbar renders visible
+ * up/down arrow buttons at each end, which reads as dated chrome against
+ * the rest of the site's minimal look. This swaps in a thin, borderless
+ * thumb with no arrow buttons, using the same fg-tinted tokens as the rest
+ * of the UI so it matches both themes automatically.
+ */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--color-fg) / 0.2) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--color-fg) / 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--color-fg) / 0.35);
+}
+::-webkit-scrollbar-button {
+  display: none;
 }

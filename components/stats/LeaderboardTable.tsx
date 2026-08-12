@@ -60,7 +60,7 @@ export function LeaderboardTable() {
         {t.stats.leaderboard.heading}
       </h2>
 
-      <div role="tablist" aria-label="Filtrar clasificación" className="mb-4 flex flex-wrap justify-center gap-2">
+      <div role="tablist" aria-label={t.stats.leaderboard.filterAriaLabel} className="mb-4 flex flex-wrap justify-center gap-2">
         {tabs.map(({ id, label }) => (
           <motion.button
             key={id}

@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/components/LanguageProvider";
-import { LanguageToggle } from "@/components/LanguageToggle";
 import { SocialLinks } from "@/components/SocialLinks";
 
 /**
- * Shared footer rendered once from app/layout.tsx. The language toggle
- * lives here rather than the header - the header is already tight on
- * mobile (wordmark + nav + donation + theme toggle), and a footer switch
- * is a common, easily-discoverable pattern that doesn't risk re-cramping it.
+ * Shared footer rendered once from app/layout.tsx. Language switching lives
+ * in the header's "more" menu (HeaderMoreMenu) instead of here, so it isn't
+ * duplicated in two places.
  */
 export function Footer() {
   const { t } = useLanguage();
@@ -25,27 +23,9 @@ export function Footer() {
         <SocialLinks />
 
         <nav
-          aria-label="Enlaces del pie de página"
+          aria-label={t.footer.navAriaLabel}
           className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm"
         >
-          <Link
-            href="/estadisticas"
-            className="rounded text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none"
-          >
-            {t.footer.viewRanking}
-          </Link>
-          <span aria-hidden="true" className="text-foreground/30">
-            ·
-          </span>
-          <Link
-            href="/#sostenimiento"
-            className="rounded text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none"
-          >
-            {t.footer.collaborate}
-          </Link>
-          <span aria-hidden="true" className="text-foreground/30">
-            ·
-          </span>
           <Link
             href="/terminos"
             className="rounded text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none"
@@ -62,8 +42,6 @@ export function Footer() {
             {t.footer.privacy}
           </Link>
         </nav>
-
-        <LanguageToggle />
       </div>
     </footer>
   );
