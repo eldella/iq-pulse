@@ -103,6 +103,11 @@ export type Dictionary = {
     heading: string;
     subhead: string;
   };
+  notFound: {
+    heading: string;
+    subhead: string;
+    cta: string;
+  };
   profile: {
     loggedOutTitle: string;
     loggedOutBody: string;
@@ -276,6 +281,11 @@ export const dictionary: Record<Lang, Dictionary> = {
       heading: "Ranking",
       subhead: "La tabla clasificatoria y el reto del mes, en un solo lugar.",
     },
+    notFound: {
+      heading: "Esta página no existe",
+      subhead: "El enlace puede estar roto o la página se movió de lugar.",
+      cta: "Volver al inicio",
+    },
     profile: {
       loggedOutTitle: "No iniciaste sesión",
       loggedOutBody:
@@ -447,6 +457,11 @@ export const dictionary: Record<Lang, Dictionary> = {
     ranking: {
       heading: "Ranking",
       subhead: "The leaderboard and the challenge of the month, in one place.",
+    },
+    notFound: {
+      heading: "This page doesn't exist",
+      subhead: "The link might be broken, or the page moved somewhere else.",
+      cta: "Back to home",
     },
     profile: {
       loggedOutTitle: "You're not logged in",

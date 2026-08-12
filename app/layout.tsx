@@ -15,10 +15,29 @@ const inter = Inter({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const title = "IQ.Pulse — Explorá el límite de tu mente";
+const description =
+  "IQ.Pulse es una iniciativa independiente y de acceso libre para medir y entender el potencial cognitivo, sostenida por donaciones voluntarias.";
+
 export const metadata: Metadata = {
-  title: "IQ.Pulse — Explorá el límite de tu mente",
-  description:
-    "IQ.Pulse es una iniciativa independiente y de acceso libre para medir y entender el potencial cognitivo, sostenida por donaciones voluntarias.",
+  // Falls back to localhost until a real production domain exists - set
+  // NEXT_PUBLIC_SITE_URL once this is actually deployed somewhere permanent,
+  // otherwise Open Graph image URLs resolve against the wrong origin.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    siteName: "IQ.Pulse",
+    locale: "es_AR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export default function RootLayout({
