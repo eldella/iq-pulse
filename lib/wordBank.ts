@@ -1,0 +1,23 @@
+/** Shared ES/EN word list for WordBurstGame and WordTypingGame - short, concrete nouns, easy to flash and recall. */
+export const WORD_BANK: readonly { es: string; en: string }[] = [
+  { es: "gato", en: "cat" },
+  { es: "silla", en: "chair" },
+  { es: "puente", en: "bridge" },
+  { es: "nube", en: "cloud" },
+  { es: "río", en: "river" },
+  { es: "llave", en: "key" },
+  { es: "montaña", en: "mountain" },
+  { es: "espejo", en: "mirror" },
+  { es: "fuego", en: "fire" },
+  { es: "papel", en: "paper" },
+  { es: "reloj", en: "clock" },
+  { es: "camino", en: "road" },
+  { es: "ventana", en: "window" },
+  { es: "botella", en: "bottle" },
+  { es: "estrella", en: "star" },
+  { es: "barco", en: "boat" },
+  { es: "jardín", en: "garden" },
+  { es: "lámpara", en: "lamp" },
+  { es: "puerta", en: "door" },
+  { es: "árbol", en: "tree" },
+];

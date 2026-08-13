@@ -2,7 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, Check, Copy, Flame, Gauge, Loader2, MapPin, Play, Puzzle, Sparkles, Timer } from "lucide-react";
+import {
+  BrainCircuit,
+  Check,
+  CircleDot,
+  Copy,
+  Flame,
+  Gauge,
+  Grid3x3,
+  Keyboard,
+  ListOrdered,
+  Loader2,
+  MapPin,
+  Play,
+  Puzzle,
+  Scale,
+  Sparkles,
+  Timer,
+} from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -16,6 +33,11 @@ import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
 import { WordBurstGame } from "@/components/jugar/games/WordBurstGame";
+import { NumberSequenceGame } from "@/components/jugar/games/NumberSequenceGame";
+import { SpatialMemoryGame } from "@/components/jugar/games/SpatialMemoryGame";
+import { QuickCompareGame } from "@/components/jugar/games/QuickCompareGame";
+import { ReactionCircleGame } from "@/components/jugar/games/ReactionCircleGame";
+import { WordTypingGame } from "@/components/jugar/games/WordTypingGame";
 import { startSession, recordAnswer, completeSession, upsertDailyResult } from "@/lib/supabase/quiz";
 import { classifyIQ, nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
@@ -40,7 +62,17 @@ const GAME_DURATION_MS = 30_000;
 /** Hard cap regardless of remaining time, so rapid-fire guessing can't inflate answeredCount. */
 const MAX_QUESTIONS_PER_GAME = 10;
 
-export type GameId = "matrix" | "digitSpan" | "stroop" | "pathfinder" | "wordBurst";
+export type GameId =
+  | "matrix"
+  | "digitSpan"
+  | "stroop"
+  | "pathfinder"
+  | "wordBurst"
+  | "numberSequence"
+  | "spatialMemory"
+  | "quickCompare"
+  | "reactionCircle"
+  | "wordTyping";
 
 type GameDef = {
   id: GameId;
@@ -55,9 +87,14 @@ type GameDef = {
 const GAMES: Record<GameId, GameDef> = {
   matrix: { id: "matrix", domain: "reasoning", Icon: Puzzle, Component: PatternMatrixGame },
   pathfinder: { id: "pathfinder", domain: "reasoning", Icon: MapPin, Component: PathfinderGame },
+  numberSequence: { id: "numberSequence", domain: "reasoning", Icon: ListOrdered, Component: NumberSequenceGame },
   digitSpan: { id: "digitSpan", domain: "memory", Icon: BrainCircuit, Component: DigitSpanGame },
   wordBurst: { id: "wordBurst", domain: "memory", Icon: Sparkles, Component: WordBurstGame },
+  spatialMemory: { id: "spatialMemory", domain: "memory", Icon: Grid3x3, Component: SpatialMemoryGame },
+  wordTyping: { id: "wordTyping", domain: "memory", Icon: Keyboard, Component: WordTypingGame },
   stroop: { id: "stroop", domain: "speed", Icon: Gauge, Component: StroopGame },
+  quickCompare: { id: "quickCompare", domain: "speed", Icon: Scale, Component: QuickCompareGame },
+  reactionCircle: { id: "reactionCircle", domain: "speed", Icon: CircleDot, Component: ReactionCircleGame },
 };
 
 // The default "full assessment" - one game per domain. Pathfinder is a
@@ -86,9 +123,14 @@ function gameCopy(id: GameId, t: Dictionary) {
   return {
     matrix: { title: t.quiz.reasoningTitle, description: t.quiz.reasoningDescription },
     pathfinder: { title: t.quiz.pathfinderTitle, description: t.quiz.pathfinderDescription },
+    numberSequence: { title: t.quiz.numberSequenceTitle, description: t.quiz.numberSequenceDescription },
     digitSpan: { title: t.quiz.memoryTitle, description: t.quiz.memoryDescription },
     wordBurst: { title: t.quiz.wordBurstTitle, description: t.quiz.wordBurstDescription },
+    spatialMemory: { title: t.quiz.spatialMemoryTitle, description: t.quiz.spatialMemoryDescription },
+    wordTyping: { title: t.quiz.wordTypingTitle, description: t.quiz.wordTypingDescription },
     stroop: { title: t.quiz.speedTitle, description: t.quiz.speedDescription },
+    quickCompare: { title: t.quiz.quickCompareTitle, description: t.quiz.quickCompareDescription },
+    reactionCircle: { title: t.quiz.reactionCircleTitle, description: t.quiz.reactionCircleDescription },
   }[id];
 }
 

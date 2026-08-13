@@ -124,6 +124,27 @@ export type Dictionary = {
     wordBurstDescription: string;
     wordBurstMemorize: string;
     wordBurstRecall: string;
+    numberSequenceTitle: string;
+    numberSequenceDescription: string;
+    numberSequenceInstructions: string;
+    spatialMemoryTitle: string;
+    spatialMemoryDescription: string;
+    spatialMemoryMemorize: string;
+    spatialMemoryRecall: string;
+    quickCompareTitle: string;
+    quickCompareDescription: string;
+    quickCompareInstructions: string;
+    reactionCircleTitle: string;
+    reactionCircleDescription: string;
+    reactionCircleInstructions: string;
+    reactionCircleWait: string;
+    reactionCircleGo: string;
+    reactionCircleEarly: string;
+    wordTypingTitle: string;
+    wordTypingDescription: string;
+    wordTypingFlash: string;
+    wordTypingRecall: string;
+    wordTypingCorrectWord: string;
     dailyHeading: string;
     dailyProgressLabel: string;
     dailyDoneToday: string;
@@ -355,6 +376,27 @@ export const dictionary: Record<Lang, Dictionary> = {
       wordBurstDescription: "Memorizá las palabras que aparecen y luego marcalas entre las opciones.",
       wordBurstMemorize: "Memorizá estas palabras",
       wordBurstRecall: "Tocá todas las que viste",
+      numberSequenceTitle: "Secuencia numérica",
+      numberSequenceDescription: "Encontrá el número que sigue en la secuencia.",
+      numberSequenceInstructions: "¿Qué número sigue?",
+      spatialMemoryTitle: "Memoria espacial",
+      spatialMemoryDescription: "Memorizá qué casillas se iluminan y marcalas de nuevo.",
+      spatialMemoryMemorize: "Memorizá estas casillas",
+      spatialMemoryRecall: "Marcá las casillas que se iluminaron",
+      quickCompareTitle: "Comparación rápida",
+      quickCompareDescription: "Elegí rápido el lado con más figuras.",
+      quickCompareInstructions: "¿Qué lado tiene más?",
+      reactionCircleTitle: "Reacción",
+      reactionCircleDescription: "Esperá el círculo verde y tocá lo más rápido posible.",
+      reactionCircleInstructions: "Esperá a que se ponga verde.",
+      reactionCircleWait: "Esperá…",
+      reactionCircleGo: "¡Ahora!",
+      reactionCircleEarly: "Muy pronto — esperá al verde",
+      wordTypingTitle: "Palabra rápida",
+      wordTypingDescription: "Mirá las letras que aparecen una por una y escribí la palabra.",
+      wordTypingFlash: "Memorizá las letras",
+      wordTypingRecall: "Escribí la palabra",
+      wordTypingCorrectWord: "Era:",
       dailyHeading: "Entrenamiento de hoy",
       dailyProgressLabel: "completados hoy",
       dailyDoneToday: "Completaste el entrenamiento de hoy",
@@ -585,6 +627,27 @@ export const dictionary: Record<Lang, Dictionary> = {
       wordBurstDescription: "Memorize the words that appear, then tap them out of a larger grid.",
       wordBurstMemorize: "Memorize these words",
       wordBurstRecall: "Tap all the ones you saw",
+      numberSequenceTitle: "Number sequence",
+      numberSequenceDescription: "Find the number that comes next in the sequence.",
+      numberSequenceInstructions: "What comes next?",
+      spatialMemoryTitle: "Spatial memory",
+      spatialMemoryDescription: "Memorize which cells light up, then mark them again.",
+      spatialMemoryMemorize: "Memorize these cells",
+      spatialMemoryRecall: "Mark the cells that lit up",
+      quickCompareTitle: "Quick compare",
+      quickCompareDescription: "Quickly pick the side with more shapes.",
+      quickCompareInstructions: "Which side has more?",
+      reactionCircleTitle: "Reaction",
+      reactionCircleDescription: "Wait for the green circle and tap as fast as you can.",
+      reactionCircleInstructions: "Wait for it to turn green.",
+      reactionCircleWait: "Wait…",
+      reactionCircleGo: "Go!",
+      reactionCircleEarly: "Too soon — wait for green",
+      wordTypingTitle: "Quick word",
+      wordTypingDescription: "Watch the letters flash one by one, then type the word.",
+      wordTypingFlash: "Memorize the letters",
+      wordTypingRecall: "Type the word",
+      wordTypingCorrectWord: "It was:",
       dailyHeading: "Today's training",
       dailyProgressLabel: "completed today",
       dailyDoneToday: "You've completed today's training",

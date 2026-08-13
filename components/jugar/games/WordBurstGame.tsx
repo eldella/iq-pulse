@@ -7,34 +7,12 @@ import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
+import { WORD_BANK } from "@/lib/wordBank";
 import type { Difficulty } from "@/lib/scoring";
 
 const WORD_COUNT: Record<Difficulty, number> = { easy: 3, medium: 4, hard: 5 };
 const OPTION_COUNT: Record<Difficulty, number> = { easy: 6, medium: 8, hard: 10 };
 const WORD_INTERVAL_MS = 900;
-
-const WORD_BANK: readonly { es: string; en: string }[] = [
-  { es: "gato", en: "cat" },
-  { es: "silla", en: "chair" },
-  { es: "puente", en: "bridge" },
-  { es: "nube", en: "cloud" },
-  { es: "río", en: "river" },
-  { es: "llave", en: "key" },
-  { es: "montaña", en: "mountain" },
-  { es: "espejo", en: "mirror" },
-  { es: "fuego", en: "fire" },
-  { es: "papel", en: "paper" },
-  { es: "reloj", en: "clock" },
-  { es: "camino", en: "road" },
-  { es: "ventana", en: "window" },
-  { es: "botella", en: "bottle" },
-  { es: "estrella", en: "star" },
-  { es: "barco", en: "boat" },
-  { es: "jardín", en: "garden" },
-  { es: "lámpara", en: "lamp" },
-  { es: "puerta", en: "door" },
-  { es: "árbol", en: "tree" },
-];
 
 function generateRound(difficulty: Difficulty, lang: "es" | "en") {
   const pool = shuffle(WORD_BANK);

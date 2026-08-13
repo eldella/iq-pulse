@@ -3,7 +3,18 @@ import { notFound } from "next/navigation";
 import { QuizPage, type GameId } from "@/components/jugar/QuizPage";
 import { dictionary } from "@/lib/i18n/dictionary";
 
-const GAME_IDS: readonly GameId[] = ["matrix", "digitSpan", "stroop", "pathfinder", "wordBurst"];
+const GAME_IDS: readonly GameId[] = [
+  "matrix",
+  "digitSpan",
+  "stroop",
+  "pathfinder",
+  "wordBurst",
+  "numberSequence",
+  "spatialMemory",
+  "quickCompare",
+  "reactionCircle",
+  "wordTyping",
+];
 
 // Server-rendered metadata has no per-request language signal (the language
 // toggle is client-only, localStorage-based - see LanguageProvider), so this
@@ -17,6 +28,11 @@ function gameTitle(gameId: GameId) {
     stroop: quiz.speedTitle,
     pathfinder: quiz.pathfinderTitle,
     wordBurst: quiz.wordBurstTitle,
+    numberSequence: quiz.numberSequenceTitle,
+    spatialMemory: quiz.spatialMemoryTitle,
+    quickCompare: quiz.quickCompareTitle,
+    reactionCircle: quiz.reactionCircleTitle,
+    wordTyping: quiz.wordTypingTitle,
   }[gameId];
 }
 
