@@ -28,7 +28,7 @@ import {
 } from "@/lib/dailyTraining";
 import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
 
-const QUESTIONS_PER_GAME = 4;
+const QUESTIONS_PER_GAME = 3;
 
 export type GameId = "matrix" | "digitSpan" | "stroop" | "pathfinder" | "wordBurst";
 
