@@ -33,7 +33,6 @@ export function Header() {
     { href: "/", label: t.header.nav.home },
     { href: "/jugar", label: t.header.nav.play },
     { href: "/ranking", label: t.header.nav.ranking },
-    { href: "/rendimiento", label: t.header.nav.performance },
   ] as const;
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
