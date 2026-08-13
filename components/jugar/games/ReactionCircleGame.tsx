@@ -33,12 +33,33 @@ export function ReactionCircleGame({
     const delay = min + Math.random() * (max - min);
     goTimeoutRef.current = window.setTimeout(() => {
       setStage("go");
-      goTimeRef.current = now();
     }, delay);
     return () => {
       if (goTimeoutRef.current !== null) window.clearTimeout(goTimeoutRef.current);
     };
   }, []);
+
+  // setStage("go") firing is not the same moment the green circle actually
+  // reaches the screen - React still has to re-render, and the browser
+  // still has to paint. Stamping goTimeRef right in the timeout callback
+  // (like this used to) measured from "JS decided to show green", not from
+  // "green is visible", which consistently overstated every reading by
+  // however long that render+paint took. A double rAF runs after the frame
+  // containing the change has actually been painted, same technique real
+  // reaction-time tools use to avoid this exact bias.
+  useEffect(() => {
+    if (stage !== "go") return;
+    let innerFrame = 0;
+    const outerFrame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => {
+        goTimeRef.current = now();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outerFrame);
+      cancelAnimationFrame(innerFrame);
+    };
+  }, [stage]);
 
   function handleClick() {
     if (stage === "waiting") {
