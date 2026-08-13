@@ -1,209 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Lock } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
-import { GlassCard } from "@/components/GlassCard";
-import { fetchGeneralPerformance } from "@/lib/supabase/quiz";
-import { springTransition, tapScale } from "@/lib/motion";
+import { springTransition } from "@/lib/motion";
 
 /**
- * Own nav destination comparing "you" (demo login flag, see AuthProvider)
- * against the general/aggregate
- * numbers. The "General" side is wired to a real Supabase aggregate query
- * (fetchGeneralPerformance) - falls back to these illustrative numbers only
- * when a bucket has no recorded answers yet (empty tables today, since
- * there's no quiz UI/question bank feeding them yet). "Vos" stays
- * illustrative: the demo login is a client-only flag with no real Supabase
- * Auth user behind it, so there's no real identity to query per-user data
- * for yet - that needs real auth first, a separate piece of work. Unlike
- * the quiz result itself (never gated - see Sostenimiento/Términos: "no hay
- * resultados bloqueados"), seeing yourself compared or ranked inherently
- * needs a persistent identity, so this whole comparison blurs out behind a
- * login prompt instead of showing per-row placeholders.
+ * Own nav destination for the "General vs Vos" comparison - the
+ * comparison itself isn't shown yet (pulled per feedback that mixing %
+ * and seconds on one chart was confusing even after a few redesign
+ * passes; a two-section version exists in git history, commit
+ * c2983b8, ready to pick back up later) - see the ready commit rather
+ * than rebuilding from scratch when this comes back.
  */
-const FALLBACK_GENERAL_PRECISION = [70, 79, 66] as const;
-const YOUR_PRECISION = [76, 88, 61] as const;
-
-const FALLBACK_GENERAL_TIME = [9, 15, 24] as const;
-const YOUR_TIME = [8, 13, 26] as const;
-
-/**
- * Vertical paired bars: "General" and "Vos" as two columns rising from a
- * shared baseline, height proportional to value within THIS row's own
- * maxValue. Precision and time are rendered as two separate groups (see
- * PerformanceSection below), each with its own scale, rather than one
- * combined axis - mixing % and seconds on a single scale was flagged as
- * misleading even after normalizing/inverting the time values, since a
- * continuous connecting line still implied a sequence across categories
- * that aren't actually a timeline.
- */
-function ComparisonBars({
-  label,
-  generalValue,
-  yourValue,
-  maxValue,
-  suffix,
-  generalLabel,
-  yourLabel,
-  delay,
-}: {
-  label: string;
-  generalValue: number;
-  yourValue: number;
-  maxValue: number;
-  suffix: string;
-  generalLabel: string;
-  yourLabel: string;
-  delay: number;
-}) {
-  const shouldReduceMotion = useReducedMotion();
-  const generalPercent = Math.min(100, Math.max(0, (generalValue / maxValue) * 100));
-  const yourPercent = Math.min(100, Math.max(0, (yourValue / maxValue) * 100));
-
-  return (
-    <div className="flex w-24 flex-col items-center gap-3">
-      <span className="text-center text-xs font-medium leading-tight text-foreground">{label}</span>
-      <div className="flex items-end gap-4">
-        <div className="flex flex-col items-center gap-2">
-          <span className="tabular-nums text-xs text-muted-foreground">
-            {generalValue}
-            {suffix}
-          </span>
-          <div className="flex h-24 w-8 items-end overflow-hidden rounded-t-md bg-surface-hover">
-            <motion.div
-              initial={shouldReduceMotion ? false : { height: 0 }}
-              whileInView={{ height: `${generalPercent}%` }}
-              viewport={{ once: true }}
-              transition={{ ...springTransition, delay }}
-              className="w-full rounded-t-md bg-muted-foreground/40"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          <span className="tabular-nums text-xs font-semibold text-accent">
-            {yourValue}
-            {suffix}
-          </span>
-          <div className="flex h-24 w-8 items-end overflow-hidden rounded-t-md bg-surface-hover">
-            <motion.div
-              initial={shouldReduceMotion ? false : { height: 0 }}
-              whileInView={{ height: `${yourPercent}%` }}
-              viewport={{ once: true }}
-              transition={{ ...springTransition, delay: delay + 0.06 }}
-              className="w-full rounded-t-md bg-accent shadow-accent-sm"
-            />
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" aria-hidden="true" />
-        {generalLabel}
-        <span className="mx-0.5 h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
-        <span className="font-medium text-accent">{yourLabel}</span>
-      </div>
-    </div>
-  );
-}
-
-function PerformanceSection({
-  heading,
-  subhead,
-  rows,
-  maxValue,
-  suffix,
-  generalLabel,
-  yourLabel,
-}: {
-  heading: string;
-  subhead: string;
-  rows: readonly { id: string; label: string; general: number; yours: number }[];
-  maxValue: number;
-  suffix: string;
-  generalLabel: string;
-  yourLabel: string;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex flex-col items-center gap-0.5">
-        <p className="text-sm font-medium text-foreground">{heading}</p>
-        <p className="text-xs text-muted-foreground">{subhead}</p>
-      </div>
-      <div className="flex flex-wrap justify-center gap-x-8 gap-y-6">
-        {rows.map((row, index) => (
-          <ComparisonBars
-            key={row.id}
-            label={row.label}
-            generalValue={row.general}
-            yourValue={row.yours}
-            maxValue={maxValue}
-            suffix={suffix}
-            generalLabel={generalLabel}
-            yourLabel={yourLabel}
-            delay={index * 0.08}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function RendimientoPage() {
   const { t } = useLanguage();
-  const { isLoggedIn, login } = useAuth();
   const shouldReduceMotion = useReducedMotion();
-  const [generalPrecision, setGeneralPrecision] = useState<
-    readonly [number, number, number]
-  >(FALLBACK_GENERAL_PRECISION);
-  const [generalTime, setGeneralTime] = useState<readonly [number, number, number]>(
-    FALLBACK_GENERAL_TIME
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchGeneralPerformance()
-      .then(({ precisionByDomain, avgTimeByDifficulty }) => {
-        if (cancelled) return;
-        setGeneralPrecision([
-          precisionByDomain.reasoning ?? FALLBACK_GENERAL_PRECISION[0],
-          precisionByDomain.memory ?? FALLBACK_GENERAL_PRECISION[1],
-          precisionByDomain.speed ?? FALLBACK_GENERAL_PRECISION[2],
-        ]);
-        setGeneralTime([
-          avgTimeByDifficulty.easy ?? FALLBACK_GENERAL_TIME[0],
-          avgTimeByDifficulty.medium ?? FALLBACK_GENERAL_TIME[1],
-          avgTimeByDifficulty.hard ?? FALLBACK_GENERAL_TIME[2],
-        ]);
-      })
-      .catch(() => {
-        // Falls back to the illustrative constants already in state - a
-        // failed fetch shouldn't break the page, just keep the placeholder.
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const precisionRows = [
-    { id: "reasoning", label: t.domains.item1.title, general: generalPrecision[0], yours: YOUR_PRECISION[0] },
-    { id: "memory", label: t.domains.item2.title, general: generalPrecision[1], yours: YOUR_PRECISION[1] },
-    { id: "speed", label: t.domains.item3.title, general: generalPrecision[2], yours: YOUR_PRECISION[2] },
-  ];
-
-  const timeRows = [
-    { id: "easy", label: t.stats.performance.easy, general: generalTime[0], yours: YOUR_TIME[0] },
-    { id: "medium", label: t.stats.performance.medium, general: generalTime[1], yours: YOUR_TIME[1] },
-    { id: "hard", label: t.stats.performance.hard, general: generalTime[2], yours: YOUR_TIME[2] },
-  ];
 
   return (
-    <main className="flex flex-1 flex-col items-center gap-10 px-4 py-16 sm:px-6">
+    <main className="flex flex-1 flex-col items-center gap-6 px-4 py-16 sm:px-6">
       <motion.div
         initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0, transition: springTransition }}
@@ -219,60 +34,6 @@ export function RendimientoPage() {
           {t.stats.performance.subhead}
         </p>
       </motion.div>
-
-      <div className="relative mx-auto flex w-full max-w-2xl flex-col gap-10">
-        <div
-          className={
-            isLoggedIn
-              ? "flex flex-col items-center gap-10 transition-[filter] duration-300"
-              : "pointer-events-none flex select-none flex-col items-center gap-10 blur-md transition-[filter] duration-300"
-          }
-          aria-hidden={!isLoggedIn}
-        >
-          <PerformanceSection
-            heading={t.stats.performance.precisionHeading}
-            subhead={t.stats.performance.precisionSubhead}
-            rows={precisionRows}
-            maxValue={100}
-            suffix="%"
-            generalLabel={t.stats.performance.generalLabel}
-            yourLabel={t.stats.performance.yourLabel}
-          />
-
-          <PerformanceSection
-            heading={t.stats.performance.timeHeading}
-            subhead={t.stats.performance.timeSubhead}
-            rows={timeRows}
-            maxValue={Math.max(...generalTime, ...YOUR_TIME)}
-            suffix={` ${t.stats.performance.avgTimeUnit}`}
-            generalLabel={t.stats.performance.generalLabel}
-            yourLabel={t.stats.performance.yourLabel}
-          />
-        </div>
-
-        {!isLoggedIn && (
-          <div className="absolute inset-0 flex items-center justify-center px-4">
-            <GlassCard className="flex flex-col items-center gap-3 p-6 text-center shadow-2xl">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
-                <Lock className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <p className="text-sm font-semibold text-foreground">
-                {t.stats.performance.lockedTitle}
-              </p>
-              <motion.button
-                type="button"
-                onClick={login}
-                whileHover={{ y: -1 }}
-                whileTap={tapScale}
-                transition={springTransition}
-                className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none"
-              >
-                {t.stats.performance.lockedCta}
-              </motion.button>
-            </GlassCard>
-          </div>
-        )}
-      </div>
 
       <Link
         href="/perfil"

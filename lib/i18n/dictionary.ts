@@ -246,7 +246,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       performance: {
         eyebrow: "Sobre el test de IQ.Pulse",
         heading: "Rendimiento",
-        subhead: "Cómo se comporta nuestra propia medición en la práctica.",
+        subhead: "Estamos afinando cómo mostrar tu comparación con el resto — vuelve pronto.",
         precisionHeading: "Precisión promedio por dominio",
         precisionSubhead: "% de respuestas correctas",
         timeHeading: "Tiempo promedio por dificultad",
@@ -442,7 +442,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       performance: {
         eyebrow: "About the IQ.Pulse test",
         heading: "Performance",
-        subhead: "How our own measurement behaves in practice.",
+        subhead: "We're fine-tuning how to show your comparison against everyone else — check back soon.",
         precisionHeading: "Average precision by domain",
         precisionSubhead: "% of correct answers",
         timeHeading: "Average time by difficulty",
