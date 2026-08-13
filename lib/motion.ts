@@ -22,3 +22,11 @@ export const springExitTransition: Transition = {
 
 /** Tap scale-down used on every primary interactive element. */
 export const tapScale = { scale: 0.95 };
+
+/**
+ * How long the minigames hold on the green/red correct-answer reveal before
+ * calling onAnswer (which triggers the parent to remount into the next
+ * question) - long enough to register, short enough not to slow down a
+ * 30-second timed round.
+ */
+export const ANSWER_FEEDBACK_MS = 650;

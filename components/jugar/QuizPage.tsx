@@ -37,6 +37,8 @@ import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
  * variable number of answered questions per run doesn't skew the score.
  */
 const GAME_DURATION_MS = 30_000;
+/** Hard cap regardless of remaining time, so rapid-fire guessing can't inflate answeredCount. */
+const MAX_QUESTIONS_PER_GAME = 10;
 
 export type GameId = "matrix" | "digitSpan" | "stroop" | "pathfinder" | "wordBurst";
 
@@ -189,7 +191,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       // Non-fatal: the run continues locally even if one write fails.
     });
 
-    if (now() - gameStartRef.current < GAME_DURATION_MS) {
+    if (questionIndex + 1 < MAX_QUESTIONS_PER_GAME && now() - gameStartRef.current < GAME_DURATION_MS) {
       setQuestionIndex((i) => i + 1);
       return;
     }

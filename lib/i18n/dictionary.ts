@@ -139,6 +139,7 @@ export type Dictionary = {
     digitSpanRecall: string;
     digitSpanClear: string;
     digitSpanSubmit: string;
+    digitSpanCorrectSequence: string;
     stroopInstructions: string;
     resultsHeading: string;
     resultsIqLabel: string;
@@ -370,6 +371,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       digitSpanRecall: "Escribila en el mismo orden",
       digitSpanClear: "Borrar",
       digitSpanSubmit: "Confirmar",
+      digitSpanCorrectSequence: "Era:",
       stroopInstructions: "Tocá el color de la TINTA, no lo que dice la palabra.",
       resultsHeading: "Resultado",
       resultsIqLabel: "CI estimado",
@@ -600,6 +602,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       digitSpanRecall: "Type it in the same order",
       digitSpanClear: "Clear",
       digitSpanSubmit: "Submit",
+      digitSpanCorrectSequence: "It was:",
       stroopInstructions: "Tap the INK color, not what the word says.",
       resultsHeading: "Result",
       resultsIqLabel: "Estimated IQ",

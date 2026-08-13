@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
-import { springTransition, tapScale } from "@/lib/motion";
+import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
+import { cn } from "@/lib/utils";
 import type { Difficulty } from "@/lib/scoring";
 
 const WORD_COUNT: Record<Difficulty, number> = { easy: 3, medium: 4, hard: 5 };
@@ -61,6 +62,7 @@ export function WordBurstGame({
   const [phase, setPhase] = useState<"memorize" | "recall">("memorize");
   const [visibleIndex, setVisibleIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
+  const [submitted, setSubmitted] = useState(false);
   const recallStartRef = useRef(0);
 
   useEffect(() => {
@@ -79,15 +81,19 @@ export function WordBurstGame({
   }, [round]);
 
   function toggleWord(word: string) {
+    if (submitted) return;
     setSelected((prev) => (prev.includes(word) ? prev.filter((w) => w !== word) : [...prev, word]));
   }
 
   function handleSubmit() {
+    if (submitted) return;
     const shownSet = new Set(round.shown);
     const selectedSet = new Set(selected);
     const isCorrect =
       shownSet.size === selectedSet.size && [...shownSet].every((word) => selectedSet.has(word));
-    onAnswer(isCorrect, Math.round(now() - recallStartRef.current));
+    const responseTimeMs = Math.round(now() - recallStartRef.current);
+    setSubmitted(true);
+    window.setTimeout(() => onAnswer(isCorrect, responseTimeMs), ANSWER_FEEDBACK_MS);
   }
 
   return (
@@ -118,19 +124,28 @@ export function WordBurstGame({
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {round.options.map((word) => {
               const isSelected = selected.includes(word);
+              const isShownWord = round.shown.includes(word);
               return (
                 <motion.button
                   key={word}
                   type="button"
                   onClick={() => toggleWord(word)}
-                  whileHover={{ y: -1 }}
-                  whileTap={tapScale}
+                  disabled={submitted}
+                  whileHover={!submitted ? { y: -1 } : undefined}
+                  whileTap={!submitted ? tapScale : undefined}
                   transition={springTransition}
-                  className={`flex h-11 items-center justify-center rounded-control border px-3 text-sm font-medium backdrop-blur-xl focus-visible:outline-none ${
-                    isSelected
-                      ? "border-accent bg-accent/15 text-accent"
-                      : "border-glass-border bg-glass text-foreground"
-                  }`}
+                  className={cn(
+                    "flex h-11 items-center justify-center rounded-control border px-3 text-sm font-medium backdrop-blur-xl focus-visible:outline-none",
+                    submitted
+                      ? isShownWord
+                        ? "border-success bg-success/15 text-success"
+                        : isSelected
+                          ? "border-danger bg-danger/15 text-danger"
+                          : "border-glass-border bg-glass text-muted-foreground opacity-50"
+                      : isSelected
+                        ? "border-accent bg-accent/15 text-accent"
+                        : "border-glass-border bg-glass text-foreground"
+                  )}
                 >
                   {word}
                 </motion.button>
@@ -141,9 +156,9 @@ export function WordBurstGame({
           <motion.button
             type="button"
             onClick={handleSubmit}
-            disabled={selected.length === 0}
-            whileHover={selected.length > 0 ? { y: -1 } : undefined}
-            whileTap={selected.length > 0 ? tapScale : undefined}
+            disabled={submitted || selected.length === 0}
+            whileHover={!submitted && selected.length > 0 ? { y: -1 } : undefined}
+            whileTap={!submitted && selected.length > 0 ? tapScale : undefined}
             transition={springTransition}
             className="shine-hover inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-accent-foreground shadow-accent-md disabled:opacity-30 focus-visible:outline-none"
           >

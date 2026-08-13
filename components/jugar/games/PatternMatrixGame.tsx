@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
-import { springTransition, tapScale } from "@/lib/motion";
+import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
+import { cn } from "@/lib/utils";
 import type { Difficulty } from "@/lib/scoring";
 
 /**
@@ -59,9 +60,13 @@ export function PatternMatrixGame({
   // question index), so a ref seeded once at mount is the start time -
   // no effect needed to "reset" it.
   const startTimeRef = useRef(now());
+  const [selected, setSelected] = useState<number | null>(null);
 
   function handleChoice(value: number) {
-    onAnswer(value === puzzle.answer, Math.round(now() - startTimeRef.current));
+    if (selected !== null) return;
+    const responseTimeMs = Math.round(now() - startTimeRef.current);
+    setSelected(value);
+    window.setTimeout(() => onAnswer(value === puzzle.answer, responseTimeMs), ANSWER_FEEDBACK_MS);
   }
 
   return (
@@ -76,26 +81,46 @@ export function PatternMatrixGame({
               key={index}
               className="flex h-20 w-20 items-center justify-center rounded-card border border-glass-border bg-glass text-2xl font-semibold text-foreground backdrop-blur-xl sm:h-24 sm:w-24"
             >
-              {isMissing ? <span className="text-accent">?</span> : value}
+              {isMissing ? (
+                <span className={selected === null ? "text-accent" : "text-success"}>
+                  {selected === null ? "?" : puzzle.answer}
+                </span>
+              ) : (
+                value
+              )}
             </div>
           );
         })}
       </div>
 
       <div className="grid grid-cols-4 gap-2">
-        {puzzle.options.map((option) => (
-          <motion.button
-            key={option}
-            type="button"
-            onClick={() => handleChoice(option)}
-            whileHover={{ y: -2 }}
-            whileTap={tapScale}
-            transition={springTransition}
-            className="shine-hover flex h-14 w-16 items-center justify-center rounded-control border border-glass-border bg-glass text-lg font-semibold text-foreground backdrop-blur-xl hover:border-accent/40 focus-visible:outline-none"
-          >
-            {option}
-          </motion.button>
-        ))}
+        {puzzle.options.map((option) => {
+          const isCorrectOption = option === puzzle.answer;
+          const isSelectedOption = option === selected;
+          return (
+            <motion.button
+              key={option}
+              type="button"
+              onClick={() => handleChoice(option)}
+              disabled={selected !== null}
+              whileHover={selected === null ? { y: -2 } : undefined}
+              whileTap={selected === null ? tapScale : undefined}
+              transition={springTransition}
+              className={cn(
+                "shine-hover flex h-14 w-16 items-center justify-center rounded-control border text-lg font-semibold backdrop-blur-xl focus-visible:outline-none",
+                selected === null
+                  ? "border-glass-border bg-glass text-foreground hover:border-accent/40"
+                  : isCorrectOption
+                    ? "border-success bg-success/15 text-success"
+                    : isSelectedOption
+                      ? "border-danger bg-danger/15 text-danger"
+                      : "border-glass-border bg-glass text-foreground opacity-50"
+              )}
+            >
+              {option}
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );

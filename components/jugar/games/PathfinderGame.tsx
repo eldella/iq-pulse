@@ -1,18 +1,25 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowRight, Flag, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
-import { springTransition, tapScale } from "@/lib/motion";
+import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
+import { cn } from "@/lib/utils";
 import type { Difficulty } from "@/lib/scoring";
 
 type Move = "R" | "D";
 
+// steps=3 only yields 3 distinct paths total, which makes the obstacle
+// search below (needs >=1 valid AND >=3 invalid, i.e. more paths than
+// exist) mathematically unsatisfiable - it silently fell through to the
+// fully-fixed fallback puzzle every single time at "easy", which is why the
+// same pathfinder kept repeating. 4 steps (6 distinct paths) gives the
+// search room to actually find a real, varied obstacle placement.
 const CONFIG: Record<Difficulty, { size: number; steps: number }> = {
-  easy: { size: 4, steps: 3 },
+  easy: { size: 4, steps: 4 },
   medium: { size: 5, steps: 4 },
   hard: { size: 6, steps: 5 },
 };
@@ -80,13 +87,17 @@ function generatePuzzle(difficulty: Difficulty) {
     }
   }
 
-  // Fallback (shouldn't happen given the ranges above): no obstacle, first path is "correct".
+  // Fallback (shouldn't happen given the ranges above, kept randomized
+  // anyway so this branch can never freeze into one repeating puzzle):
+  // no obstacle, but the "correct" path and option order are still random.
+  const correct = allPaths[Math.floor(Math.random() * allPaths.length)];
+  const distractors = shuffle(allPaths.filter((path) => path !== correct)).slice(0, 3);
   return {
     size,
     goal: [goalX, goalY] as [number, number],
     obstacle: null as [number, number] | null,
-    options: allPaths.slice(0, 4),
-    correct: allPaths[0],
+    options: shuffle([correct, ...distractors]),
+    correct,
   };
 }
 
@@ -100,9 +111,13 @@ export function PathfinderGame({
   const { t } = useLanguage();
   const puzzle = useMemo(() => generatePuzzle(difficulty), [difficulty]);
   const startTimeRef = useRef(now());
+  const [selected, setSelected] = useState<Move[] | null>(null);
 
   function handleChoice(path: Move[]) {
-    onAnswer(path.join("") === puzzle.correct.join(""), Math.round(now() - startTimeRef.current));
+    if (selected) return;
+    const responseTimeMs = Math.round(now() - startTimeRef.current);
+    setSelected(path);
+    window.setTimeout(() => onAnswer(path.join("") === puzzle.correct.join(""), responseTimeMs), ANSWER_FEEDBACK_MS);
   }
 
   const cells = Array.from({ length: puzzle.size }, (_, y) =>
@@ -139,25 +154,47 @@ export function PathfinderGame({
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {puzzle.options.map((option, index) => (
+        {puzzle.options.map((option, index) => {
+          const isCorrectOption = option.join("") === puzzle.correct.join("");
+          const isSelectedOption = selected !== null && option.join("") === selected.join("");
+          return (
           <motion.button
             key={index}
             type="button"
             onClick={() => handleChoice(option)}
-            whileHover={{ y: -2 }}
-            whileTap={tapScale}
+            disabled={selected !== null}
+            whileHover={selected === null ? { y: -2 } : undefined}
+            whileTap={selected === null ? tapScale : undefined}
             transition={springTransition}
-            className="shine-hover flex h-12 items-center justify-center gap-0.5 rounded-control border border-glass-border bg-glass px-3 backdrop-blur-xl hover:border-accent/40 focus-visible:outline-none"
-          >
-            {option.map((move, i) =>
-              move === "R" ? (
-                <ArrowRight key={i} className="h-4 w-4 text-foreground" aria-hidden="true" />
-              ) : (
-                <ArrowDown key={i} className="h-4 w-4 text-foreground" aria-hidden="true" />
-              )
+            className={cn(
+              "shine-hover flex h-12 items-center justify-center gap-0.5 rounded-control border px-3 backdrop-blur-xl focus-visible:outline-none",
+              selected === null
+                ? "border-glass-border bg-glass hover:border-accent/40"
+                : isCorrectOption
+                  ? "border-success bg-success/15"
+                  : isSelectedOption
+                    ? "border-danger bg-danger/15"
+                    : "border-glass-border bg-glass opacity-50"
             )}
+          >
+            {option.map((move, i) => {
+              const arrowClass = cn(
+                "h-4 w-4",
+                selected !== null && isCorrectOption
+                  ? "text-success"
+                  : selected !== null && isSelectedOption
+                    ? "text-danger"
+                    : "text-foreground"
+              );
+              return move === "R" ? (
+                <ArrowRight key={i} className={arrowClass} aria-hidden="true" />
+              ) : (
+                <ArrowDown key={i} className={arrowClass} aria-hidden="true" />
+              );
+            })}
           </motion.button>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

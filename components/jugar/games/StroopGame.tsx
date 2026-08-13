@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
-import { springTransition, tapScale } from "@/lib/motion";
+import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
+import { shuffle } from "@/lib/random";
+import { cn } from "@/lib/utils";
 import type { Difficulty } from "@/lib/scoring";
 
 // Red + standard green is the classic confusion pair for protanopia/
@@ -23,7 +25,10 @@ const COLORS = [
 const OPTION_COUNT: Record<Difficulty, number> = { easy: 3, medium: 4, hard: 5 };
 
 function generateTrial(difficulty: Difficulty) {
-  const pool = COLORS.slice(0, OPTION_COUNT[difficulty]);
+  // Shuffled so the option buttons don't sit in the same fixed order every
+  // single trial - the word/ink pairing was already random, but the layout
+  // wasn't.
+  const pool = shuffle(COLORS.slice(0, OPTION_COUNT[difficulty]));
   const wordIndex = Math.floor(Math.random() * pool.length);
   let inkIndex = Math.floor(Math.random() * pool.length);
   while (inkIndex === wordIndex) {
@@ -42,9 +47,13 @@ export function StroopGame({
   const { t, lang } = useLanguage();
   const trial = useMemo(() => generateTrial(difficulty), [difficulty]);
   const startTimeRef = useRef(now());
+  const [selected, setSelected] = useState<string | null>(null);
 
   function handleChoice(colorKey: string) {
-    onAnswer(colorKey === trial.ink.key, Math.round(now() - startTimeRef.current));
+    if (selected !== null) return;
+    const responseTimeMs = Math.round(now() - startTimeRef.current);
+    setSelected(colorKey);
+    window.setTimeout(() => onAnswer(colorKey === trial.ink.key, responseTimeMs), ANSWER_FEEDBACK_MS);
   }
 
   return (
@@ -59,24 +68,38 @@ export function StroopGame({
       </p>
 
       <div className="flex flex-wrap justify-center gap-2">
-        {trial.pool.map((color) => (
-          <motion.button
-            key={color.key}
-            type="button"
-            onClick={() => handleChoice(color.key)}
-            whileHover={{ y: -2 }}
-            whileTap={tapScale}
-            transition={springTransition}
-            className="shine-hover flex h-12 items-center gap-2 rounded-full border border-glass-border bg-glass px-4 text-sm font-medium text-foreground backdrop-blur-xl hover:border-accent/40 focus-visible:outline-none"
-          >
-            <span
-              className="h-4 w-4 rounded-full"
-              style={{ backgroundColor: color.hex }}
-              aria-hidden="true"
-            />
-            {lang === "es" ? color.es : color.en}
-          </motion.button>
-        ))}
+        {trial.pool.map((color) => {
+          const isCorrectOption = color.key === trial.ink.key;
+          const isSelectedOption = color.key === selected;
+          return (
+            <motion.button
+              key={color.key}
+              type="button"
+              onClick={() => handleChoice(color.key)}
+              disabled={selected !== null}
+              whileHover={selected === null ? { y: -2 } : undefined}
+              whileTap={selected === null ? tapScale : undefined}
+              transition={springTransition}
+              className={cn(
+                "shine-hover flex h-12 items-center gap-2 rounded-full border px-4 text-sm font-medium backdrop-blur-xl focus-visible:outline-none",
+                selected === null
+                  ? "border-glass-border bg-glass text-foreground hover:border-accent/40"
+                  : isCorrectOption
+                    ? "border-success bg-success/15 text-success"
+                    : isSelectedOption
+                      ? "border-danger bg-danger/15 text-danger"
+                      : "border-glass-border bg-glass text-foreground opacity-50"
+              )}
+            >
+              <span
+                className="h-4 w-4 rounded-full"
+                style={{ backgroundColor: color.hex }}
+                aria-hidden="true"
+              />
+              {lang === "es" ? color.es : color.en}
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );
