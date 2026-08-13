@@ -8,7 +8,8 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 
 ## Features
 
-- **`/jugar`**: playable quiz with 4 minigames — Matriz de patrones and Camino óptimo (reasoning), Retención de dígitos (memory), Stroop (speed) — players pick any single game or the full 3-domain assessment, 4 questions each, adaptive difficulty (`lib/scoring.ts`), real IQ estimate/percentile computed from actual answers and written to Supabase, results shown with a radar chart and a copy-result action
+- **`/jugar`**: playable quiz with 5 minigames — Matriz de patrones and Camino óptimo (reasoning), Retención de dígitos and Ráfaga de palabras (memory), Stroop (speed) — players pick any single game or the full 3-domain assessment, 4 questions each, adaptive difficulty (`lib/scoring.ts`), an exit-to-menu link during play, real IQ estimate/percentile computed from actual answers and written to Supabase, results shown with a radar chart, total time taken, and a copy-result action
+- **`/jugar/[gameId]`**: deep link straight into a single minigame (e.g. `/jugar/wordBurst`), skipping the selection screen — 404s on an unknown id
 - Editorial landing page (hero, mission manifesto, "what IQ.Pulse measures" domain grid, sustainment model, patron wall)
 - **Ranking** (`/ranking`): leaderboard + monthly challenge card
 - **Rendimiento** (`/rendimiento`): personal vs. general performance comparison (precision by domain, time by difficulty), gated behind the demo login

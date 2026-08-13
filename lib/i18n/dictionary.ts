@@ -93,6 +93,10 @@ export type Dictionary = {
     pathfinderTitle: string;
     pathfinderDescription: string;
     pathfinderInstructions: string;
+    wordBurstTitle: string;
+    wordBurstDescription: string;
+    wordBurstMemorize: string;
+    wordBurstRecall: string;
     fullAssessmentCta: string;
     exitToMenuCta: string;
     progressLabel: string;
@@ -105,6 +109,7 @@ export type Dictionary = {
     resultsHeading: string;
     resultsIqLabel: string;
     resultsPercentileLabel: string;
+    resultsTimeLabel: string;
     resultsBody: string;
     playAgainCta: string;
     viewProfileCta: string;
@@ -263,6 +268,10 @@ export const dictionary: Record<Lang, Dictionary> = {
       pathfinderTitle: "Camino óptimo",
       pathfinderDescription: "Encontrá el camino que llega a la meta sin cruzar el obstáculo.",
       pathfinderInstructions: "Elegí el camino que llega a la bandera sin pasar por la X.",
+      wordBurstTitle: "Ráfaga de palabras",
+      wordBurstDescription: "Memorizá las palabras que aparecen y luego marcalas entre las opciones.",
+      wordBurstMemorize: "Memorizá estas palabras",
+      wordBurstRecall: "Tocá todas las que viste",
       fullAssessmentCta: "Evaluación completa (los 3)",
       exitToMenuCta: "← Volver a elegir",
       progressLabel: "Pregunta",
@@ -275,6 +284,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsHeading: "Resultado",
       resultsIqLabel: "CI estimado",
       resultsPercentileLabel: "Percentil",
+      resultsTimeLabel: "Tiempo total",
       resultsBody: "Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.",
       playAgainCta: "Jugar de nuevo",
       viewProfileCta: "Ver tu perfil",
@@ -432,6 +442,10 @@ export const dictionary: Record<Lang, Dictionary> = {
       pathfinderTitle: "Best path",
       pathfinderDescription: "Find the path that reaches the goal without crossing the obstacle.",
       pathfinderInstructions: "Pick the path that reaches the flag without crossing the X.",
+      wordBurstTitle: "Word Burst",
+      wordBurstDescription: "Memorize the words that appear, then tap them out of a larger grid.",
+      wordBurstMemorize: "Memorize these words",
+      wordBurstRecall: "Tap all the ones you saw",
       fullAssessmentCta: "Full assessment (all 3)",
       exitToMenuCta: "← Back to menu",
       progressLabel: "Question",
@@ -444,6 +458,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsHeading: "Result",
       resultsIqLabel: "Estimated IQ",
       resultsPercentileLabel: "Percentile",
+      resultsTimeLabel: "Total time",
       resultsBody: "Illustrative result — while the quiz engine is still being built, this number doesn't replace a validated cognitive test.",
       playAgainCta: "Play again",
       viewProfileCta: "View your profile",

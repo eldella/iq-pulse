@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, Check, Copy, Gauge, Loader2, MapPin, Play, Puzzle } from "lucide-react";
+import { BrainCircuit, Check, Copy, Gauge, Loader2, MapPin, Play, Puzzle, Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -14,13 +14,15 @@ import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
+import { WordBurstGame } from "@/components/jugar/games/WordBurstGame";
 import { startSession, recordAnswer, completeSession } from "@/lib/supabase/quiz";
 import { nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
+import { now } from "@/lib/timing";
 
 const QUESTIONS_PER_GAME = 4;
 
-type GameId = "matrix" | "digitSpan" | "stroop" | "pathfinder";
+export type GameId = "matrix" | "digitSpan" | "stroop" | "pathfinder" | "wordBurst";
 
 type GameDef = {
   id: GameId;
@@ -36,6 +38,7 @@ const GAMES: Record<GameId, GameDef> = {
   matrix: { id: "matrix", domain: "reasoning", Icon: Puzzle, Component: PatternMatrixGame },
   pathfinder: { id: "pathfinder", domain: "reasoning", Icon: MapPin, Component: PathfinderGame },
   digitSpan: { id: "digitSpan", domain: "memory", Icon: BrainCircuit, Component: DigitSpanGame },
+  wordBurst: { id: "wordBurst", domain: "memory", Icon: Sparkles, Component: WordBurstGame },
   stroop: { id: "stroop", domain: "speed", Icon: Gauge, Component: StroopGame },
 };
 
@@ -54,11 +57,19 @@ const EMPTY_STATS: Record<Domain, DomainStats> = {
   speed: { correct: 0, answered: 0 },
 };
 
+function formatElapsed(ms: number) {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+}
+
 function gameCopy(id: GameId, t: Dictionary) {
   return {
     matrix: { title: t.quiz.reasoningTitle, description: t.quiz.reasoningDescription },
     pathfinder: { title: t.quiz.pathfinderTitle, description: t.quiz.pathfinderDescription },
     digitSpan: { title: t.quiz.memoryTitle, description: t.quiz.memoryDescription },
+    wordBurst: { title: t.quiz.wordBurstTitle, description: t.quiz.wordBurstDescription },
     stroop: { title: t.quiz.speedTitle, description: t.quiz.speedDescription },
   }[id];
 }
@@ -69,7 +80,7 @@ function gameCopy(id: GameId, t: Dictionary) {
  * choose what to play; only the (separate, not-yet-built) Daily Challenge
  * is meant to be a fixed, no-choice sequence.
  */
-export function QuizPage() {
+export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const { t } = useLanguage();
   const { isLoggedIn } = useAuth();
   const shouldReduceMotion = useReducedMotion();
@@ -82,9 +93,11 @@ export function QuizPage() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [domainStats, setDomainStats] = useState<Record<Domain, DomainStats>>(EMPTY_STATS);
   const [result, setResult] = useState<{ iqEstimate: number; percentile: number } | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const startTimeRef = useRef(0);
 
   async function handleStart(chosenPlan: readonly GameId[]) {
     if (starting) return;
@@ -92,6 +105,7 @@ export function QuizPage() {
     setStarting(true);
     try {
       const id = await startSession();
+      startTimeRef.current = now();
       setSessionId(id);
       setPlan(chosenPlan);
       setDifficulty("medium");
@@ -106,6 +120,14 @@ export function QuizPage() {
       setStarting(false);
     }
   }
+
+  useEffect(() => {
+    if (!initialGameId) return;
+    const timer = setTimeout(() => handleStart([initialGameId]), 0);
+    return () => clearTimeout(timer);
+    // Only meant to fire once, on mount, for deep-linked single-game plays.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleExitToMenu() {
     setPhase("idle");
@@ -144,6 +166,8 @@ export function QuizPage() {
       setPhase(plan[currentGameIndex + 1]);
       return;
     }
+
+    setElapsedMs(Math.round(now() - startTimeRef.current));
 
     try {
       const finalResult = await completeSession(sessionId);
@@ -277,6 +301,9 @@ export function QuizPage() {
               </p>
               <p className="text-sm text-muted-foreground">
                 {t.quiz.resultsIqLabel} · {t.quiz.resultsPercentileLabel} {result.percentile}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
               </p>
             </div>
           )}

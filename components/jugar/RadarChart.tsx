@@ -16,7 +16,9 @@ export function RadarChart({
   speed: number;
   labels: readonly [string, string, string];
 }) {
-  const center = 100;
+  // center/radius leave enough margin (radius + label offset + text height)
+  // inside the viewBox so axis labels never clip against the SVG edge.
+  const center = 110;
   const radius = 80;
   const angles = [-90, 30, 150].map((deg) => (deg * Math.PI) / 180);
   const values = [reasoning, memory, speed];
@@ -37,7 +39,7 @@ export function RadarChart({
   ]);
 
   return (
-    <svg viewBox="0 0 200 200" className="h-56 w-56" aria-hidden="true">
+    <svg viewBox="0 0 220 220" className="h-56 w-56" aria-hidden="true">
       {[0.33, 0.66, 1].map((scale) => (
         <polygon
           key={scale}
