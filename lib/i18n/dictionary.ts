@@ -90,6 +90,18 @@ export type Dictionary = {
         solvedLabel: string;
         failedLabel: string;
         nextInLabel: string;
+        thisWeekLabel: string;
+        gameNames: {
+          oddHexagon: string;
+          mirror: string;
+          sequence: string;
+          flashCount: string;
+        };
+        mirrorHint: string;
+        sequenceRevealHint: string;
+        sequenceAnswerHint: string;
+        flashCountRevealHint: string;
+        flashCountAnswerHint: string;
       };
     };
     patrons: { heading: string; subhead: string; top: string };
@@ -294,6 +306,18 @@ export const dictionary: Record<Lang, Dictionary> = {
           solvedLabel: "¡Completaste el reto de esta semana!",
           failedLabel: "No llegaste esta vez.",
           nextInLabel: "Próximo reto en",
+          thisWeekLabel: "Esta semana:",
+          gameNames: {
+            oddHexagon: "Figura distinta",
+            mirror: "Espejo",
+            sequence: "Secuencia",
+            flashCount: "Conteo veloz",
+          },
+          mirrorHint: "Encontrá la figura espejada, no solo rotada.",
+          sequenceRevealHint: "Memorizá el orden.",
+          sequenceAnswerHint: "Repetilo en el mismo orden.",
+          flashCountRevealHint: "Contá rápido las figuras.",
+          flashCountAnswerHint: "¿Cuántas viste?",
         },
       },
       patrons: {
@@ -501,6 +525,18 @@ export const dictionary: Record<Lang, Dictionary> = {
           solvedLabel: "You completed this week's challenge!",
           failedLabel: "Not this time.",
           nextInLabel: "Next challenge in",
+          thisWeekLabel: "This week:",
+          gameNames: {
+            oddHexagon: "Odd shape out",
+            mirror: "Mirror",
+            sequence: "Sequence",
+            flashCount: "Flash count",
+          },
+          mirrorHint: "Find the mirrored shape, not just a rotated one.",
+          sequenceRevealHint: "Memorize the order.",
+          sequenceAnswerHint: "Repeat it in the same order.",
+          flashCountRevealHint: "Count the shapes fast.",
+          flashCountAnswerHint: "How many did you see?",
         },
       },
       patrons: {
