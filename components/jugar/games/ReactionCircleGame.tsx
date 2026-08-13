@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
-import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
+import { ANSWER_FEEDBACK_MS } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { cn } from "@/lib/utils";
 
@@ -85,13 +84,19 @@ export function ReactionCircleGame({
         {stage === "early" ? t.quiz.reactionCircleEarly : t.quiz.reactionCircleInstructions}
       </p>
 
-      <motion.button
+      {/*
+        Plain button, not motion.button: this is the one place in the app
+        where render/composite cost directly pollutes the number shown to
+        the player, so it skips Framer Motion's tap gesture handling and the
+        backdrop-blur compositing layer entirely - both were candidate
+        sources of the measurement bias reported, and neither is worth the
+        risk here even if hard to pin down for certain without profiling.
+      */}
+      <button
         type="button"
         onClick={handleClick}
-        whileTap={stage === "waiting" || stage === "go" ? tapScale : undefined}
-        transition={springTransition}
         className={cn(
-          "flex h-40 w-40 items-center justify-center rounded-full border-4 text-sm font-semibold backdrop-blur-xl focus-visible:outline-none sm:h-48 sm:w-48",
+          "flex h-40 w-40 items-center justify-center rounded-full border-4 text-sm font-semibold focus-visible:outline-none active:scale-95 sm:h-48 sm:w-48",
           stage === "waiting"
             ? "border-glass-border bg-glass text-muted-foreground"
             : stage === "go"
@@ -105,7 +110,7 @@ export function ReactionCircleGame({
         {stage === "go" && t.quiz.reactionCircleGo}
         {stage === "early" && t.quiz.reactionCircleEarly}
         {stage === "done" && reactionMs !== null && `${reactionMs} ms`}
-      </motion.button>
+      </button>
     </div>
   );
 }
