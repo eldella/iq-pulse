@@ -3,7 +3,7 @@ export type Lang = "es" | "en";
 export type Dictionary = {
   header: {
     navAriaLabel: string;
-    nav: { home: string; ranking: string; performance: string };
+    nav: { home: string; play: string; ranking: string; performance: string };
     openMenu: string;
     closeMenu: string;
     preferences: string;
@@ -162,6 +162,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       navAriaLabel: "Principal",
       nav: {
         home: "Inicio",
+        play: "Jugar",
         ranking: "Ranking",
         performance: "Rendimiento",
       },
@@ -345,6 +346,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       navAriaLabel: "Main",
       nav: {
         home: "Home",
+        play: "Play",
         ranking: "Ranking",
         performance: "Performance",
       },

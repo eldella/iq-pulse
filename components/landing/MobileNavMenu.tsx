@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Home, Menu, TrendingUp, Trophy, X, type LucideIcon } from "lucide-react";
+import { Home, Menu, Play, TrendingUp, Trophy, X, type LucideIcon } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, springExitTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ const emptySubscribe = () => () => {};
 /** One lucide icon per top-level destination. */
 const NAV_ICONS: Record<string, LucideIcon> = {
   "/": Home,
+  "/jugar": Play,
   "/ranking": Trophy,
   "/rendimiento": TrendingUp,
 };
@@ -76,7 +77,7 @@ export function MobileNavMenu({
             className="fixed inset-x-3 top-[4.25rem] z-40 flex flex-col gap-1.5 rounded-card border border-glass-border bg-glass p-3 shadow-2xl backdrop-blur-xl"
           >
             {navLinks.map(({ href, label }, index) => {
-              const isActive = pathname === href;
+              const isActive = href === "/" ? pathname === href : pathname.startsWith(href);
               const Icon = NAV_ICONS[href] ?? Home;
               return (
                 <motion.div

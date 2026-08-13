@@ -31,6 +31,7 @@ export function Header() {
   const { t } = useLanguage();
   const navLinks = [
     { href: "/", label: t.header.nav.home },
+    { href: "/jugar", label: t.header.nav.play },
     { href: "/ranking", label: t.header.nav.ranking },
     { href: "/rendimiento", label: t.header.nav.performance },
   ] as const;
@@ -93,7 +94,7 @@ export function Header() {
           className="hidden items-center gap-0.5 sm:flex sm:gap-1"
         >
           {navLinks.map(({ href, label }) => {
-            const isActive = pathname === href;
+            const isActive = href === "/" ? pathname === href : pathname.startsWith(href);
             return (
               <motion.div
                 key={href}
