@@ -8,7 +8,7 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 
 ## Features
 
-- **`/jugar`**: playable quiz with 5 minigames — Matriz de patrones and Camino óptimo (reasoning), Retención de dígitos and Ráfaga de palabras (memory), Stroop (speed) — players pick any single game or the full 3-domain assessment, 4 questions each, adaptive difficulty (`lib/scoring.ts`), an exit-to-menu link during play, real IQ estimate/percentile computed from actual answers and written to Supabase, results shown with a radar chart, total time taken, and a copy-result action
+- **`/jugar`**: reframed as a daily training screen — "Today's training" heading with the date, a 🔥-streak counter and `done/3` progress line (`lib/dailyTraining.ts`, localStorage-backed), and a single "Start daily challenge" CTA for the 3-domain assessment. The 5 minigames — Matriz de patrones and Camino óptimo (reasoning), Retención de dígitos and Ráfaga de palabras (memory), Stroop (speed) — sit below under "Free practice" for picking one at a time (practice play doesn't count toward the streak, only the daily CTA does). 4 questions each, adaptive difficulty (`lib/scoring.ts`), an exit-to-menu link during play, real IQ estimate/percentile computed from actual answers and written to Supabase, results shown with a radar chart, total time taken, and a copy-result action
 - **`/jugar/[gameId]`**: deep link straight into a single minigame (e.g. `/jugar/wordBurst`), skipping the selection screen — 404s on an unknown id
 - Editorial landing page (hero, mission manifesto, "what IQ.Pulse measures" domain grid, sustainment model, patron wall)
 - **Ranking** (`/ranking`): leaderboard + monthly challenge card
@@ -88,13 +88,14 @@ lib/
   scoring.ts          Scoring + adaptive-difficulty algorithm (pure, no UI/DB dependency)
   timing.ts           performance.now() wrapper (works around an ESLint purity rule)
   motion.ts           Shared Framer Motion presets
+  dailyTraining.ts    Daily streak/progress state (localStorage, useSyncExternalStore)
 supabase/
   schema.sql          DB schema + RLS policies (run manually in the Supabase SQL editor)
 ```
 
 ## Roadmap
 
-- Daily Challenge: seeded daily game rotation, no-restart anti-cheat, 0-1000 normalized score, Hoy/Ayer/Histórico leaderboard
+- Daily Challenge (full version): a seeded, identical-for-everyone daily game rotation with no-restart anti-cheat, a 0-1000 normalized score, and a Hoy/Ayer/Histórico leaderboard. `/jugar`'s current streak/progress habit layer (`lib/dailyTraining.ts`) is a lighter, local-only precursor to this — it reuses the existing free-choice 3-game assessment rather than a seeded daily puzzle, and has no server-side leaderboard or anti-cheat
 - Real per-user auth so Rendimiento's "you" column and leaderboard placement can be real
 - Local/national/continental leaderboard tiers once per-user location data exists
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, Check, Copy, Gauge, Loader2, MapPin, Play, Puzzle, Sparkles } from "lucide-react";
+import { BrainCircuit, Check, Copy, Flame, Gauge, Loader2, MapPin, Play, Puzzle, Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -20,6 +20,7 @@ import { startSession, recordAnswer, completeSession } from "@/lib/supabase/quiz
 import { nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
+import { DAILY_TARGET_COUNT, markGameCompleted, useDailyTraining } from "@/lib/dailyTraining";
 
 const QUESTIONS_PER_GAME = 4;
 
@@ -82,12 +83,14 @@ function gameCopy(id: GameId, t: Dictionary) {
  * is meant to be a fixed, no-choice sequence.
  */
 export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { isLoggedIn } = useAuth();
   const shouldReduceMotion = useReducedMotion();
+  const { streak: dailyStreak, completedCount: dailyCompletedCount, completedIds: dailyCompletedIds } = useDailyTraining();
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [plan, setPlan] = useState<readonly GameId[]>(FULL_ASSESSMENT);
+  const [isDailyRun, setIsDailyRun] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [streak, setStreak] = useState(0);
@@ -100,7 +103,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [starting, setStarting] = useState(false);
   const startTimeRef = useRef(0);
 
-  async function handleStart(chosenPlan: readonly GameId[]) {
+  async function handleStart(chosenPlan: readonly GameId[], { daily = false }: { daily?: boolean } = {}) {
     if (starting) return;
     setError(null);
     setStarting(true);
@@ -109,6 +112,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       startTimeRef.current = now();
       setSessionId(id);
       setPlan(chosenPlan);
+      setIsDailyRun(daily);
       setDifficulty("medium");
       setStreak(0);
       setQuestionIndex(0);
@@ -158,6 +162,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       return;
     }
 
+    if (isDailyRun) markGameCompleted(gameId);
+
     const currentGameIndex = plan.indexOf(gameId);
     setQuestionIndex(0);
     setStreak(0);
@@ -189,6 +195,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   }
 
   const activeGame = phase !== "idle" && phase !== "finished" ? GAMES[phase] : null;
+  const todayLabel = new Intl.DateTimeFormat(lang === "es" ? "es-AR" : "en-US", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
 
   return (
     <main className="flex flex-1 flex-col items-center gap-8 px-4 py-16 sm:px-6">
@@ -198,14 +209,60 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="flex flex-col items-center gap-6 text-center"
         >
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            {t.hero.play}
-          </h1>
-          {error && (
-            <p role="status" aria-live="polite" className="text-sm text-danger">
-              {error}
+          <div className="flex w-full max-w-md flex-col items-center gap-4">
+            <div className="flex w-full items-start justify-between gap-4">
+              <div className="flex flex-col items-start text-left">
+                <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                  {t.quiz.dailyHeading}
+                </h1>
+                <p className="text-sm capitalize text-muted-foreground">{todayLabel}</p>
+              </div>
+              <div
+                role="status"
+                aria-label={`${dailyStreak} ${t.quiz.streakDaysLabel}`}
+                className="theme-transition flex shrink-0 items-center gap-1.5 rounded-full border border-glass-border bg-glass px-3 py-1.5 backdrop-blur-xl"
+              >
+                <Flame className="h-4 w-4 text-accent" aria-hidden="true" />
+                <span className="tabular-nums text-sm font-semibold text-foreground">{dailyStreak}</span>
+              </div>
+            </div>
+
+            {error && (
+              <p role="status" aria-live="polite" className="text-sm text-danger">
+                {error}
+              </p>
+            )}
+
+            <p className="tabular-nums text-sm text-muted-foreground">
+              {dailyCompletedCount >= DAILY_TARGET_COUNT
+                ? t.quiz.dailyDoneToday
+                : `${dailyCompletedCount}/${DAILY_TARGET_COUNT} ${t.quiz.dailyProgressLabel}`}
             </p>
-          )}
+
+            <motion.button
+              type="button"
+              disabled={starting}
+              onClick={() => handleStart(FULL_ASSESSMENT, { daily: true })}
+              whileHover={{ y: -2 }}
+              whileTap={tapScale}
+              transition={springTransition}
+              className="shine-hover inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+            >
+              {starting ? (
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Play className="h-5 w-5" aria-hidden="true" />
+              )}
+              {t.quiz.startDailyCta}
+            </motion.button>
+          </div>
+
+          <div className="mt-4 flex flex-col items-center gap-1">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+              {t.quiz.freePracticeHeading}
+            </h2>
+            <p className="max-w-sm text-xs text-muted-foreground">{t.quiz.freePracticeSubhead}</p>
+          </div>
 
           <motion.div
             variants={staggerContainer}
@@ -216,6 +273,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             {(Object.keys(GAMES) as GameId[]).map((id) => {
               const { Icon } = GAMES[id];
               const { title, description } = gameCopy(id, t);
+              const doneToday = FULL_ASSESSMENT.includes(id) && dailyCompletedIds.includes(id);
               return (
                 <motion.div
                   key={id}
@@ -232,8 +290,14 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                   >
                     <GlassCard
                       variant="plain"
-                      className="flex h-full flex-col items-center gap-2 p-5 text-center shadow-sm transition-shadow hover:shadow-md"
+                      className="relative flex h-full flex-col items-center gap-2 p-5 text-center shadow-sm transition-shadow hover:shadow-md"
                     >
+                      {doneToday && (
+                        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                          <Check className="h-3 w-3" aria-hidden="true" />
+                          {t.quiz.dailyCompletedTag}
+                        </span>
+                      )}
                       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
                         {starting ? (
                           <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -249,23 +313,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               );
             })}
           </motion.div>
-
-          <motion.button
-            type="button"
-            disabled={starting}
-            onClick={() => handleStart(FULL_ASSESSMENT)}
-            whileHover={{ y: -2 }}
-            whileTap={tapScale}
-            transition={springTransition}
-            className="shine-hover inline-flex h-14 items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
-          >
-            {starting ? (
-              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-            ) : (
-              <Play className="h-5 w-5" aria-hidden="true" />
-            )}
-            {t.quiz.fullAssessmentCta}
-          </motion.button>
         </motion.div>
       )}
 

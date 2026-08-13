@@ -98,7 +98,14 @@ export type Dictionary = {
     wordBurstDescription: string;
     wordBurstMemorize: string;
     wordBurstRecall: string;
-    fullAssessmentCta: string;
+    dailyHeading: string;
+    dailyProgressLabel: string;
+    dailyDoneToday: string;
+    startDailyCta: string;
+    freePracticeHeading: string;
+    freePracticeSubhead: string;
+    streakDaysLabel: string;
+    dailyCompletedTag: string;
     exitToMenuCta: string;
     progressLabel: string;
     matrixInstructions: string;
@@ -283,7 +290,14 @@ export const dictionary: Record<Lang, Dictionary> = {
       wordBurstDescription: "Memorizá las palabras que aparecen y luego marcalas entre las opciones.",
       wordBurstMemorize: "Memorizá estas palabras",
       wordBurstRecall: "Tocá todas las que viste",
-      fullAssessmentCta: "Evaluación completa (los 3)",
+      dailyHeading: "Entrenamiento de hoy",
+      dailyProgressLabel: "completados hoy",
+      dailyDoneToday: "Completaste el entrenamiento de hoy",
+      startDailyCta: "Iniciar desafío diario",
+      freePracticeHeading: "Práctica libre",
+      freePracticeSubhead: "Elegí un juego suelto para practicar un área puntual.",
+      streakDaysLabel: "días de racha",
+      dailyCompletedTag: "Hoy",
       exitToMenuCta: "← Volver a elegir",
       progressLabel: "Pregunta",
       matrixInstructions: "Encontrá el número que falta en la secuencia.",
@@ -467,7 +481,14 @@ export const dictionary: Record<Lang, Dictionary> = {
       wordBurstDescription: "Memorize the words that appear, then tap them out of a larger grid.",
       wordBurstMemorize: "Memorize these words",
       wordBurstRecall: "Tap all the ones you saw",
-      fullAssessmentCta: "Full assessment (all 3)",
+      dailyHeading: "Today's training",
+      dailyProgressLabel: "completed today",
+      dailyDoneToday: "You've completed today's training",
+      startDailyCta: "Start daily challenge",
+      freePracticeHeading: "Free practice",
+      freePracticeSubhead: "Pick a single game to practice one area.",
+      streakDaysLabel: "day streak",
+      dailyCompletedTag: "Today",
       exitToMenuCta: "← Back to menu",
       progressLabel: "Question",
       matrixInstructions: "Find the missing number in the sequence.",
