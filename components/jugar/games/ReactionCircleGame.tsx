@@ -7,13 +7,13 @@ import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { cn } from "@/lib/utils";
 
-// Randomized wait before the circle turns green (1-15s, confirmed with the
+// Randomized wait before the circle turns green (1-5s, confirmed with the
 // user), same range at every level on purpose - unlike the other games'
 // content, this one isn't meant to get easier to predict as level climbs,
 // it's meant to stay unpredictable so the reading is a genuine reaction
 // time. The level multiplier still scores this game (see lib/scoring.ts),
 // it just doesn't change what's rendered here.
-const DELAY_RANGE_MS: [number, number] = [1000, 15000];
+const DELAY_RANGE_MS: [number, number] = [1000, 5000];
 
 /** Classic reaction-time test: wait for green, tap as fast as possible - tapping early is a miss. */
 export function ReactionCircleGame({
