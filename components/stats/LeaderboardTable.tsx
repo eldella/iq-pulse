@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { Flame } from "lucide-react";
 import { RankBadge } from "@/components/RankBadge";
 import { fadeSlideUp, staggerContainer } from "@/components/landing/motionVariants";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-type LeaderboardTab = "general" | "times" | "percentiles";
+type LeaderboardTab = "general" | "times" | "percentiles" | "streaks";
 
 /**
  * Illustrative mock leaderboard datasets — there is no backend/ranking API
@@ -39,21 +40,34 @@ const PERCENTILE_ENTRIES = [
   { alias: "neutrino_84", display: "P95" },
 ] as const;
 
+const STREAK_ENTRIES = [
+  { alias: "night_owl", days: 42 },
+  { alias: "mentat_ok", days: 31 },
+  { alias: "sofia.codes", days: 28 },
+  { alias: "quiet.thinker", days: 19 },
+  { alias: "quickdraw", days: 14 },
+] as const;
+
 const DATASETS: Record<LeaderboardTab, readonly { alias: string; display: string }[]> = {
   general: GENERAL_ENTRIES,
   times: TIME_ENTRIES,
   percentiles: PERCENTILE_ENTRIES,
+  streaks: [],
 };
 
 export function LeaderboardTable() {
   const [tab, setTab] = useState<LeaderboardTab>("general");
   const { t } = useLanguage();
   const shouldReduceMotion = useReducedMotion();
-  const entries = DATASETS[tab];
+  const entries =
+    tab === "streaks"
+      ? STREAK_ENTRIES.map(({ alias, days }) => ({ alias, display: `${days} ${t.stats.leaderboard.streakUnit}` }))
+      : DATASETS[tab];
   const tabs: { id: LeaderboardTab; label: string }[] = [
     { id: "general", label: t.stats.leaderboard.tabGeneral },
     { id: "times", label: t.stats.leaderboard.tabTimes },
     { id: "percentiles", label: t.stats.leaderboard.tabPercentiles },
+    { id: "streaks", label: t.stats.leaderboard.tabStreaks },
   ];
 
   return (
@@ -100,7 +114,10 @@ export function LeaderboardTable() {
           >
             <RankBadge rank={index + 1} />
             <span className="min-w-0 flex-1 truncate text-lg font-medium text-foreground">{entry.alias}</span>
-            <span className="tabular-nums text-xl font-semibold text-accent">{entry.display}</span>
+            <span className="flex items-center gap-1.5 text-xl font-semibold text-accent">
+              {tab === "streaks" && <Flame className="h-4 w-4" aria-hidden="true" />}
+              <span className="tabular-nums">{entry.display}</span>
+            </span>
           </motion.li>
         ))}
       </motion.ul>

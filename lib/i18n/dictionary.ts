@@ -71,6 +71,8 @@ export type Dictionary = {
       tabGeneral: string;
       tabTimes: string;
       tabPercentiles: string;
+      tabStreaks: string;
+      streakUnit: string;
       challenge: {
         heading: string;
         title: string;
@@ -116,6 +118,7 @@ export type Dictionary = {
     stroopInstructions: string;
     resultsHeading: string;
     resultsIqLabel: string;
+    resultsRadarLabel: string;
     resultsPercentileLabel: string;
     resultsTimeLabel: string;
     resultsBody: string;
@@ -259,6 +262,8 @@ export const dictionary: Record<Lang, Dictionary> = {
         tabGeneral: "Top general",
         tabTimes: "Mejores tiempos",
         tabPercentiles: "Mejores percentiles",
+        tabStreaks: "Rachas",
+        streakUnit: "días",
         challenge: {
           heading: "Reto del mes",
           title: "El acertijo espacial de este mes",
@@ -308,6 +313,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       stroopInstructions: "Tocá el color de la TINTA, no lo que dice la palabra.",
       resultsHeading: "Resultado",
       resultsIqLabel: "CI estimado",
+      resultsRadarLabel: "Por dominio",
       resultsPercentileLabel: "Percentil",
       resultsTimeLabel: "Tiempo total",
       resultsBody: "Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.",
@@ -450,6 +456,8 @@ export const dictionary: Record<Lang, Dictionary> = {
         tabGeneral: "Top overall",
         tabTimes: "Best times",
         tabPercentiles: "Best percentiles",
+        tabStreaks: "Streaks",
+        streakUnit: "days",
         challenge: {
           heading: "Challenge of the month",
           title: "This month's spatial puzzle",
@@ -499,6 +507,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       stroopInstructions: "Tap the INK color, not what the word says.",
       resultsHeading: "Result",
       resultsIqLabel: "Estimated IQ",
+      resultsRadarLabel: "By domain",
       resultsPercentileLabel: "Percentile",
       resultsTimeLabel: "Total time",
       resultsBody: "Illustrative result — while the quiz engine is still being built, this number doesn't replace a validated cognitive test.",

@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BrainCircuit, Check, Copy, Flame, Gauge, Loader2, MapPin, Play, Puzzle, Sparkles } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Dictionary } from "@/lib/i18n/dictionary";
-import { DistributionCurve } from "@/components/viz/DistributionCurve";
 import { fadeSlideUp, staggerContainer } from "@/components/landing/motionVariants";
 import { GlassCard } from "@/components/GlassCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
@@ -209,7 +208,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="flex flex-col items-center gap-6 text-center"
         >
-          <div className="flex w-full max-w-md flex-col items-center gap-4">
+          <div className="flex w-full max-w-lg flex-col items-center gap-4">
             <div className="flex w-full items-start justify-between gap-4">
               <div className="flex flex-col items-start text-left">
                 <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
@@ -220,10 +219,30 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               <div
                 role="status"
                 aria-label={`${dailyStreak} ${t.quiz.streakDaysLabel}`}
-                className="theme-transition flex shrink-0 items-center gap-1.5 rounded-full border border-glass-border bg-glass px-3 py-1.5 backdrop-blur-xl"
+                className={`theme-transition flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 backdrop-blur-xl ${
+                  dailyStreak > 0 ? "border-glass-border bg-accent/10 shadow-accent-sm" : "border-glass-border bg-glass"
+                }`}
               >
-                <Flame className="h-4 w-4 text-accent" aria-hidden="true" />
-                <span className="tabular-nums text-sm font-semibold text-foreground">{dailyStreak}</span>
+                <motion.span
+                  animate={!shouldReduceMotion && dailyStreak > 0 ? { scale: [1, 1.18, 1] } : undefined}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Flame
+                    className={`h-5 w-5 ${dailyStreak > 0 ? "text-accent" : "text-muted-foreground"}`}
+                    aria-hidden="true"
+                  />
+                </motion.span>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={dailyStreak}
+                    initial={shouldReduceMotion ? false : { scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={springTransition}
+                    className="tabular-nums text-base font-bold text-foreground"
+                  >
+                    {dailyStreak}
+                  </motion.span>
+                </AnimatePresence>
               </div>
             </div>
 
@@ -373,8 +392,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            {result && <DistributionCurve highlight={result.percentile} size="lg" />}
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+              {t.quiz.resultsRadarLabel}
+            </p>
             <RadarChart
               reasoning={Math.round((domainStats.reasoning.correct / Math.max(1, domainStats.reasoning.answered)) * 100)}
               memory={Math.round((domainStats.memory.correct / Math.max(1, domainStats.memory.answered)) * 100)}
