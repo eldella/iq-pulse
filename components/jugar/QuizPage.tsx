@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, Check, Copy, Flame, Gauge, Loader2, MapPin, Play, Puzzle, Sparkles } from "lucide-react";
+import { BrainCircuit, Check, Copy, Flame, Gauge, Loader2, MapPin, Play, Puzzle, Sparkles, Timer } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -29,7 +29,14 @@ import {
 } from "@/lib/dailyTraining";
 import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
 
-const QUESTIONS_PER_GAME = 3;
+/**
+ * Each exercise (daily or free) now runs on a 30-second clock instead of a
+ * fixed question count: keep generating new questions until time's up, then
+ * let whichever question is in flight resolve naturally before moving on.
+ * lib/scoring.ts's normalizeScore() already divides by answeredCount, so a
+ * variable number of answered questions per run doesn't skew the score.
+ */
+const GAME_DURATION_MS = 30_000;
 
 export type GameId = "matrix" | "digitSpan" | "stroop" | "pathfinder" | "wordBurst";
 
@@ -110,7 +117,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [secondsLeftInGame, setSecondsLeftInGame] = useState(GAME_DURATION_MS / 1000);
   const startTimeRef = useRef(0);
+  const gameStartRef = useRef(0);
 
   async function handleStart(chosenPlan: readonly GameId[], { daily = false }: { daily?: boolean } = {}) {
     if (starting) return;
@@ -119,6 +128,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     try {
       const id = await startSession();
       startTimeRef.current = now();
+      gameStartRef.current = now();
       setSessionId(id);
       setPlan(chosenPlan);
       setIsDailyRun(daily);
@@ -127,6 +137,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setQuestionIndex(0);
       setDomainStats(EMPTY_STATS);
       setResult(null);
+      setSecondsLeftInGame(GAME_DURATION_MS / 1000);
       setPhase(chosenPlan[0]);
     } catch {
       setError(t.quiz.sessionStartError);
@@ -142,6 +153,19 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     // Only meant to fire once, on mount, for deep-linked single-game plays.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ticks while a game is active. Keyed on `phase` (not questionIndex), so
+  // it keeps running unbroken across the questions within one game and only
+  // resets when gameStartRef itself is reset (new game, see handleStart /
+  // handleAnswer).
+  useEffect(() => {
+    if (phase === "idle" || phase === "finished") return;
+    const id = window.setInterval(() => {
+      const remainingMs = Math.max(0, GAME_DURATION_MS - (now() - gameStartRef.current));
+      setSecondsLeftInGame(Math.ceil(remainingMs / 1000));
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [phase]);
 
   function handleExitToMenu() {
     setPhase("idle");
@@ -165,9 +189,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       // Non-fatal: the run continues locally even if one write fails.
     });
 
-    const nextIndex = questionIndex + 1;
-    if (nextIndex < QUESTIONS_PER_GAME) {
-      setQuestionIndex(nextIndex);
+    if (now() - gameStartRef.current < GAME_DURATION_MS) {
+      setQuestionIndex((i) => i + 1);
       return;
     }
 
@@ -179,6 +202,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     setDifficulty("medium");
 
     if (currentGameIndex < plan.length - 1) {
+      gameStartRef.current = now();
+      setSecondsLeftInGame(GAME_DURATION_MS / 1000);
       setPhase(plan[currentGameIndex + 1]);
       return;
     }
@@ -380,9 +405,21 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             >
               {t.quiz.exitToMenuCta}
             </button>
-            <p className="tabular-nums text-xs text-muted-foreground">
-              {t.quiz.progressLabel} {questionIndex + 1}/{QUESTIONS_PER_GAME}
+            <p
+              role="timer"
+              aria-label={`${t.quiz.timeRemainingLabel}: ${secondsLeftInGame}s`}
+              className="flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground"
+            >
+              <Timer className="h-3.5 w-3.5" aria-hidden="true" />
+              {secondsLeftInGame}s
             </p>
+          </div>
+
+          <div className="h-1 w-full max-w-xs overflow-hidden rounded-full bg-surface-hover">
+            <div
+              className="h-full bg-accent transition-[width] duration-200 ease-linear"
+              style={{ width: `${Math.max(0, Math.min(100, (secondsLeftInGame / (GAME_DURATION_MS / 1000)) * 100))}%` }}
+            />
           </div>
 
           <div className="flex flex-col items-center gap-1">

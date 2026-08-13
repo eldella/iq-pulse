@@ -133,7 +133,7 @@ export type Dictionary = {
     streakDaysLabel: string;
     dailyCompletedTag: string;
     exitToMenuCta: string;
-    progressLabel: string;
+    timeRemainingLabel: string;
     matrixInstructions: string;
     digitSpanMemorize: string;
     digitSpanRecall: string;
@@ -353,7 +353,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       streakDaysLabel: "días de racha",
       dailyCompletedTag: "Hoy",
       exitToMenuCta: "← Volver a elegir",
-      progressLabel: "Pregunta",
+      timeRemainingLabel: "Tiempo restante",
       matrixInstructions: "Encontrá el número que falta en la secuencia.",
       digitSpanMemorize: "Memorizá esta secuencia",
       digitSpanRecall: "Escribila en el mismo orden",
@@ -572,7 +572,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       streakDaysLabel: "day streak",
       dailyCompletedTag: "Today",
       exitToMenuCta: "← Back to menu",
-      progressLabel: "Question",
+      timeRemainingLabel: "Time remaining",
       matrixInstructions: "Find the missing number in the sequence.",
       digitSpanMemorize: "Memorize this sequence",
       digitSpanRecall: "Type it in the same order",
