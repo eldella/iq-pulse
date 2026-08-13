@@ -9,6 +9,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { fadeSlideUp, staggerContainer } from "@/components/landing/motionVariants";
 import { GlassCard } from "@/components/GlassCard";
+import { WeeklyChallengeCard } from "@/components/stats/WeeklyChallengeCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
@@ -302,6 +303,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               {t.quiz.startDailyCta}
             </motion.button>
           </div>
+
+          <WeeklyChallengeCard />
 
           <div className="mt-4 flex flex-col items-center gap-1">
             <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">

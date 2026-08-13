@@ -11,6 +11,8 @@ export type WeeklyPuzzle = { cells: PuzzleCell[]; oddIndex: number; gridSize: nu
 const GRID_SIZE = 5;
 export const ROUND_COUNT = 3;
 export const ROUND_SECONDS = 10;
+/** Total wrong clicks allowed across all rounds combined before the attempt fails. */
+export const MAX_MISTAKES = 3;
 
 function hashString(input: string): number {
   let h = 2166136261;

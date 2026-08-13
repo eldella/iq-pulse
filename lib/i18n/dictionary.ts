@@ -86,6 +86,7 @@ export type Dictionary = {
         cellLabel: string;
         startCta: string;
         roundLabel: string;
+        mistakesLabel: string;
         solvedLabel: string;
         failedLabel: string;
       };
@@ -284,12 +285,13 @@ export const dictionary: Record<Lang, Dictionary> = {
         challenge: {
           heading: "Reto de la semana",
           title: "El acertijo espacial de esta semana",
-          body: "Encontrá la figura que no encaja, 3 veces seguidas. Tenés 10 segundos por ronda.",
+          body: "Encontrá la figura que no encaja, 3 veces seguidas. Tenés 10 segundos por ronda y hasta 3 errores en total.",
           cellLabel: "Casilla",
           startCta: "Iniciar desafío semanal",
           roundLabel: "Ronda",
+          mistakesLabel: "Errores",
           solvedLabel: "¡Completaste el reto de esta semana! Volvé la semana que viene por uno nuevo.",
-          failedLabel: "Se acabó el tiempo. Volvé la semana que viene para reintentar.",
+          failedLabel: "No llegaste esta vez. Volvé la semana que viene para reintentar.",
         },
       },
       patrons: {
@@ -489,12 +491,13 @@ export const dictionary: Record<Lang, Dictionary> = {
         challenge: {
           heading: "Challenge of the week",
           title: "This week's spatial puzzle",
-          body: "Find the odd shape, 3 times in a row. You've got 10 seconds per round.",
+          body: "Find the odd shape, 3 times in a row. You've got 10 seconds per round and up to 3 mistakes total.",
           cellLabel: "Cell",
           startCta: "Start weekly challenge",
           roundLabel: "Round",
+          mistakesLabel: "Mistakes",
           solvedLabel: "You completed this week's challenge! Come back next week for a new one.",
-          failedLabel: "Time's up. Come back next week to try again.",
+          failedLabel: "Not this time. Come back next week to try again.",
         },
       },
       patrons: {

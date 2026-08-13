@@ -7,7 +7,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
-import { ROUND_COUNT, ROUND_SECONDS, generateWeeklyPuzzle, getWeekKey } from "@/lib/weeklyPuzzle";
+import { MAX_MISTAKES, ROUND_COUNT, ROUND_SECONDS, generateWeeklyPuzzle, getWeekKey } from "@/lib/weeklyPuzzle";
 import { markWeeklyChallengeResult, useWeeklyChallengeStatus } from "@/lib/weeklyChallengeState";
 
 function hexagonPoints(size: number, rotationDeg: number): string {
@@ -42,6 +42,7 @@ export function WeeklyChallengeCard() {
   const storedStatus = useWeeklyChallengeStatus(weekKey);
   const [playing, setPlaying] = useState(false);
   const [round, setRound] = useState(0);
+  const [mistakes, setMistakes] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
   const [wrongIndex, setWrongIndex] = useState<number | null>(null);
   const deadlineRef = useRef(0);
@@ -61,6 +62,7 @@ export function WeeklyChallengeCard() {
 
   function startChallenge() {
     setRound(0);
+    setMistakes(0);
     deadlineRef.current = now() + ROUND_SECONDS * 1000;
     setSecondsLeft(ROUND_SECONDS);
     setPlaying(true);
@@ -71,6 +73,12 @@ export function WeeklyChallengeCard() {
     if (index !== oddIndex) {
       setWrongIndex(index);
       window.setTimeout(() => setWrongIndex((current) => (current === index ? null : current)), 300);
+      const nextMistakes = mistakes + 1;
+      setMistakes(nextMistakes);
+      if (nextMistakes >= MAX_MISTAKES) {
+        setPlaying(false);
+        markWeeklyChallengeResult(weekKey, "failed");
+      }
       return;
     }
     if (round + 1 >= ROUND_COUNT) {
@@ -127,6 +135,9 @@ export function WeeklyChallengeCard() {
               <div className="flex w-full max-w-xs items-center justify-between text-xs font-medium text-muted-foreground">
                 <span>
                   {c.roundLabel} {round + 1}/{ROUND_COUNT}
+                </span>
+                <span className="tabular-nums text-danger">
+                  {c.mistakesLabel} {mistakes}/{MAX_MISTAKES}
                 </span>
                 <span className="tabular-nums">{secondsLeft.toFixed(1)}s</span>
               </div>

@@ -3,6 +3,7 @@ import { ManifestoSection } from "@/components/landing/ManifestoSection";
 import { DomainsSection } from "@/components/landing/DomainsSection";
 import { SustainmentSection } from "@/components/landing/SustainmentSection";
 import { PatronsWall } from "@/components/stats/PatronsWall";
+import { WeeklyChallengeCard } from "@/components/stats/WeeklyChallengeCard";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
 /**
@@ -24,6 +25,10 @@ export function LandingPage() {
 
       <ScrollReveal className="w-full">
         <DomainsSection />
+      </ScrollReveal>
+
+      <ScrollReveal className="flex w-full justify-center px-4 py-16 sm:px-6">
+        <WeeklyChallengeCard />
       </ScrollReveal>
 
       <ScrollReveal className="w-full">
