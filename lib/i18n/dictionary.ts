@@ -75,6 +75,10 @@ export type Dictionary = {
       tabPercentiles: string;
       tabStreaks: string;
       streakUnit: string;
+      pointsUnit: string;
+      timeUnit: string;
+      loading: string;
+      empty: string;
       challenge: {
         heading: string;
         title: string;
@@ -269,6 +273,10 @@ export const dictionary: Record<Lang, Dictionary> = {
         tabPercentiles: "Mejores percentiles",
         tabStreaks: "Rachas",
         streakUnit: "días",
+        pointsUnit: "pts",
+        timeUnit: "seg",
+        loading: "Cargando…",
+        empty: "Todavía no hay resultados — jugá el desafío diario para aparecer acá.",
         challenge: {
           heading: "Reto del mes",
           title: "El acertijo espacial de este mes",
@@ -466,6 +474,10 @@ export const dictionary: Record<Lang, Dictionary> = {
         tabPercentiles: "Best percentiles",
         tabStreaks: "Streaks",
         streakUnit: "days",
+        pointsUnit: "pts",
+        timeUnit: "sec",
+        loading: "Loading…",
+        empty: "No results yet — play the daily challenge to show up here.",
         challenge: {
           heading: "Challenge of the month",
           title: "This month's spatial puzzle",

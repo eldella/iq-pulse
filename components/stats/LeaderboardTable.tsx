@@ -1,82 +1,81 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Flame } from "lucide-react";
+import { Flame, Loader2 } from "lucide-react";
 import { RankBadge } from "@/components/RankBadge";
 import { fadeSlideUp, staggerContainer } from "@/components/landing/motionVariants";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import {
+  getGeneralLeaderboard,
+  getPercentilesLeaderboard,
+  getStreaksLeaderboard,
+  getTimesLeaderboard,
+} from "@/lib/supabase/leaderboard";
 
 type LeaderboardTab = "general" | "times" | "percentiles" | "streaks";
-
-/**
- * Illustrative mock leaderboard datasets — there is no backend/ranking API
- * in this build, this is fully static like the rest of this page. Aliases
- * only, never real names.
- */
-const GENERAL_ENTRIES = [
-  { alias: "neutrino_84", display: "987 pts" },
-  { alias: "sofia.codes", display: "942 pts" },
-  { alias: "quickdraw", display: "918 pts" },
-  { alias: "mentat_ok", display: "875 pts" },
-  { alias: "lu_reflex", display: "861 pts" },
-] as const;
-
-const TIME_ENTRIES = [
-  { alias: "sparkfox", display: "182 ms" },
-  { alias: "quickdraw", display: "196 ms" },
-  { alias: "night_owl", display: "203 ms" },
-  { alias: "neutrino_84", display: "211 ms" },
-  { alias: "reflexo_9", display: "219 ms" },
-] as const;
-
-const PERCENTILE_ENTRIES = [
-  { alias: "mentat_ok", display: "P99" },
-  { alias: "sofia.codes", display: "P98" },
-  { alias: "quiet.thinker", display: "P97" },
-  { alias: "lu_reflex", display: "P96" },
-  { alias: "neutrino_84", display: "P95" },
-] as const;
-
-const STREAK_ENTRIES = [
-  { alias: "night_owl", days: 42 },
-  { alias: "mentat_ok", days: 31 },
-  { alias: "sofia.codes", days: 28 },
-  { alias: "quiet.thinker", days: 19 },
-  { alias: "quickdraw", days: 14 },
-] as const;
-
-const DATASETS: Record<LeaderboardTab, readonly { alias: string; display: string }[]> = {
-  general: GENERAL_ENTRIES,
-  times: TIME_ENTRIES,
-  percentiles: PERCENTILE_ENTRIES,
-  streaks: [],
-};
+type Entry = { deviceId: string; alias: string; display: string };
 
 export function LeaderboardTable() {
   const [tab, setTab] = useState<LeaderboardTab>("general");
+  const [cache, setCache] = useState<Partial<Record<LeaderboardTab, Entry[]>>>({});
   const { t } = useLanguage();
   const shouldReduceMotion = useReducedMotion();
-  const entries =
-    tab === "streaks"
-      ? STREAK_ENTRIES.map(({ alias, days }) => ({ alias, display: `${days} ${t.stats.leaderboard.streakUnit}` }))
-      : DATASETS[tab];
+  const lb = t.stats.leaderboard;
+
+  useEffect(() => {
+    if (cache[tab]) return;
+    let cancelled = false;
+
+    const load = async (): Promise<Entry[]> => {
+      if (tab === "general") {
+        const rows = await getGeneralLeaderboard();
+        return rows.map((r) => ({ deviceId: r.deviceId, alias: r.alias, display: `${r.points} ${lb.pointsUnit}` }));
+      }
+      if (tab === "times") {
+        const rows = await getTimesLeaderboard();
+        return rows.map((r) => ({ deviceId: r.deviceId, alias: r.alias, display: `${r.seconds.toFixed(1)} ${lb.timeUnit}` }));
+      }
+      if (tab === "percentiles") {
+        const rows = await getPercentilesLeaderboard();
+        return rows.map((r) => ({ deviceId: r.deviceId, alias: r.alias, display: `P${Math.round(r.percentile)}` }));
+      }
+      const rows = await getStreaksLeaderboard();
+      return rows.map((r) => ({ deviceId: r.deviceId, alias: r.alias, display: `${r.streak} ${lb.streakUnit}` }));
+    };
+
+    load()
+      .then((entries) => {
+        if (!cancelled) setCache((prev) => ({ ...prev, [tab]: entries }));
+      })
+      .catch(() => {
+        if (!cancelled) setCache((prev) => ({ ...prev, [tab]: [] }));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  const entries = cache[tab] ?? [];
+  const loading = cache[tab] === undefined;
   const tabs: { id: LeaderboardTab; label: string }[] = [
-    { id: "general", label: t.stats.leaderboard.tabGeneral },
-    { id: "times", label: t.stats.leaderboard.tabTimes },
-    { id: "percentiles", label: t.stats.leaderboard.tabPercentiles },
-    { id: "streaks", label: t.stats.leaderboard.tabStreaks },
+    { id: "general", label: lb.tabGeneral },
+    { id: "times", label: lb.tabTimes },
+    { id: "percentiles", label: lb.tabPercentiles },
+    { id: "streaks", label: lb.tabStreaks },
   ];
 
   return (
     <div className="w-full max-w-3xl">
       <h2 className="mb-4 text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-        {t.stats.leaderboard.heading}
+        {lb.heading}
       </h2>
 
-      <div role="tablist" aria-label={t.stats.leaderboard.filterAriaLabel} className="mb-4 flex flex-wrap justify-center gap-2">
+      <div role="tablist" aria-label={lb.filterAriaLabel} className="mb-4 flex flex-wrap justify-center gap-2">
         {tabs.map(({ id, label }) => (
           <motion.button
             key={id}
@@ -99,28 +98,37 @@ export function LeaderboardTable() {
         ))}
       </div>
 
-      <motion.ul
-        key={tab}
-        variants={staggerContainer}
-        initial={shouldReduceMotion ? false : "hidden"}
-        animate="show"
-        className="flex flex-col gap-3"
-      >
-        {entries.map((entry, index) => (
-          <motion.li
-            key={entry.alias}
-            variants={fadeSlideUp}
-            className="theme-transition flex items-center gap-4 rounded-card border border-glass-border bg-glass px-6 py-5 backdrop-blur-xl"
-          >
-            <RankBadge rank={index + 1} />
-            <span className="min-w-0 flex-1 truncate text-lg font-medium text-foreground">{entry.alias}</span>
-            <span className="flex items-center gap-1.5 text-xl font-semibold text-accent">
-              {tab === "streaks" && <Flame className="h-4 w-4" aria-hidden="true" />}
-              <span className="tabular-nums">{entry.display}</span>
-            </span>
-          </motion.li>
-        ))}
-      </motion.ul>
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          <span>{lb.loading}</span>
+        </div>
+      ) : entries.length === 0 ? (
+        <p className="py-10 text-center text-muted-foreground">{lb.empty}</p>
+      ) : (
+        <motion.ul
+          key={tab}
+          variants={staggerContainer}
+          initial={shouldReduceMotion ? false : "hidden"}
+          animate="show"
+          className="flex flex-col gap-3"
+        >
+          {entries.map((entry, index) => (
+            <motion.li
+              key={entry.deviceId}
+              variants={fadeSlideUp}
+              className="theme-transition flex items-center gap-4 rounded-card border border-glass-border bg-glass px-6 py-5 backdrop-blur-xl"
+            >
+              <RankBadge rank={index + 1} />
+              <span className="min-w-0 flex-1 truncate text-lg font-medium text-foreground">{entry.alias}</span>
+              <span className="flex items-center gap-1.5 text-xl font-semibold text-accent">
+                {tab === "streaks" && <Flame className="h-4 w-4" aria-hidden="true" />}
+                <span className="tabular-nums">{entry.display}</span>
+              </span>
+            </motion.li>
+          ))}
+        </motion.ul>
+      )}
     </div>
   );
 }

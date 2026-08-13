@@ -166,3 +166,85 @@ as $$
 $$;
 
 grant execute on function public.upsert_daily_result to anon, authenticated;
+
+-- Leaderboard reads. The JS client's plain `.select()` can't express the
+-- per-device grouping/aggregation these need, so - same reasoning as
+-- upsert_daily_result() above - these go through RPC functions instead.
+-- Grouped by device_id (not alias): the auto-generated alias space in
+-- lib/deviceIdentity.ts is only 10x10 combos, so aliases can collide across
+-- real devices - device_id is what's actually unique, alias is display-only.
+
+create or replace function public.leaderboard_general(limit_n integer default 10)
+returns table (device_id text, alias text, points integer)
+language sql
+security invoker
+stable
+as $$
+  select device_id, (array_agg(alias order by challenge_date desc))[1] as alias, max(points) as points
+  from public.daily_results
+  group by device_id
+  order by points desc
+  limit limit_n;
+$$;
+
+-- Fastest total completion time on a daily run, joined to quiz_sessions for
+-- started_at/completed_at (daily_results itself doesn't store elapsed time).
+create or replace function public.leaderboard_times(limit_n integer default 10)
+returns table (device_id text, alias text, seconds numeric)
+language sql
+security invoker
+stable
+as $$
+  select dr.device_id,
+         (array_agg(dr.alias order by dr.challenge_date desc))[1] as alias,
+         min(extract(epoch from (qs.completed_at - qs.started_at))) as seconds
+  from public.daily_results dr
+  join public.quiz_sessions qs on qs.id = dr.session_id
+  where qs.completed_at is not null
+  group by dr.device_id
+  order by seconds asc
+  limit limit_n;
+$$;
+
+create or replace function public.leaderboard_percentiles(limit_n integer default 10)
+returns table (device_id text, alias text, percentile numeric)
+language sql
+security invoker
+stable
+as $$
+  select dr.device_id,
+         (array_agg(dr.alias order by dr.challenge_date desc))[1] as alias,
+         max(qs.percentile) as percentile
+  from public.daily_results dr
+  join public.quiz_sessions qs on qs.id = dr.session_id
+  where qs.percentile is not null
+  group by dr.device_id
+  order by percentile desc
+  limit limit_n;
+$$;
+
+-- Each device's most recent streak value, only counted if that last play was
+-- today or yesterday - same grace-period rule as effectiveStreak() in
+-- lib/dailyTraining.ts, so a device that stopped playing weeks ago doesn't
+-- keep sitting at the top forever with a dead streak.
+create or replace function public.leaderboard_streaks(limit_n integer default 10)
+returns table (device_id text, alias text, streak integer)
+language sql
+security invoker
+stable
+as $$
+  select device_id, alias, streak
+  from (
+    select distinct on (device_id) device_id, alias, streak, challenge_date
+    from public.daily_results
+    order by device_id, challenge_date desc
+  ) latest
+  where challenge_date >= (current_date - interval '1 day')::date
+  order by streak desc
+  limit limit_n;
+$$;
+
+grant execute on function public.leaderboard_general to anon, authenticated;
+grant execute on function public.leaderboard_times to anon, authenticated;
+grant execute on function public.leaderboard_percentiles to anon, authenticated;
+grant execute on function public.leaderboard_streaks to anon, authenticated;
