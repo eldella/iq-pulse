@@ -46,19 +46,30 @@ export function scoreAnswer(
 }
 
 /**
- * Next difficulty tier given a streak of consecutive correct answers (reset
- * to 0 on any wrong answer by the caller) and whether the just-answered
- * question was correct. Called once per answer.
+ * Next difficulty tier given consecutive-correct and consecutive-wrong
+ * streaks (each reset to 0 by the caller whenever the other one advances)
+ * and whether the just-answered question was correct. Called once per
+ * answer.
+ *
+ * Deliberately asymmetric (confirmed with the user): 2 in a row bumps the
+ * tier up, but it also takes 2 wrong in a row to drop one - a single slip
+ * doesn't undo progress, so a session trends toward "hard" rather than
+ * oscillating around "medium". There's still only one overall mode (no
+ * easy/normal/hard picker), this just biases that one mode upward.
  */
 export function nextDifficulty(
   current: Difficulty,
   isCorrect: boolean,
-  consecutiveCorrect: number
+  consecutiveCorrect: number,
+  consecutiveWrong: number
 ): Difficulty {
   const currentIndex = DIFFICULTY_ORDER.indexOf(current);
 
   if (!isCorrect) {
-    return DIFFICULTY_ORDER[Math.max(0, currentIndex - 1)];
+    if (consecutiveWrong >= 2) {
+      return DIFFICULTY_ORDER[Math.max(0, currentIndex - 1)];
+    }
+    return current;
   }
 
   if (consecutiveCorrect >= 2) {

@@ -110,6 +110,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [streak, setStreak] = useState(0);
+  const [missStreak, setMissStreak] = useState(0);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [domainStats, setDomainStats] = useState<Record<Domain, DomainStats>>(EMPTY_STATS);
   const [result, setResult] = useState<{ iqEstimate: number; percentile: number; points?: number } | null>(
@@ -136,6 +137,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setIsDailyRun(daily);
       setDifficulty("medium");
       setStreak(0);
+      setMissStreak(0);
       setQuestionIndex(0);
       setDomainStats(EMPTY_STATS);
       setResult(null);
@@ -184,8 +186,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     }));
 
     const newStreak = isCorrect ? streak + 1 : 0;
+    const newMissStreak = isCorrect ? 0 : missStreak + 1;
     setStreak(newStreak);
-    setDifficulty((current) => nextDifficulty(current, isCorrect, newStreak));
+    setMissStreak(newMissStreak);
+    setDifficulty((current) => nextDifficulty(current, isCorrect, newStreak, newMissStreak));
 
     recordAnswer({ sessionId, domain, isCorrect, responseTimeMs, difficulty }).catch(() => {
       // Non-fatal: the run continues locally even if one write fails.
@@ -201,6 +205,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     const currentGameIndex = plan.indexOf(gameId);
     setQuestionIndex(0);
     setStreak(0);
+    setMissStreak(0);
     setDifficulty("medium");
 
     if (currentGameIndex < plan.length - 1) {
