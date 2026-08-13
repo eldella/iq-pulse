@@ -54,7 +54,10 @@ export type Dictionary = {
       eyebrow: string;
       heading: string;
       subhead: string;
-      chartCaption: string;
+      precisionHeading: string;
+      precisionSubhead: string;
+      timeHeading: string;
+      timeSubhead: string;
       easy: string;
       medium: string;
       hard: string;
@@ -244,11 +247,14 @@ export const dictionary: Record<Lang, Dictionary> = {
         eyebrow: "Sobre el test de IQ.Pulse",
         heading: "Rendimiento",
         subhead: "Cómo se comporta nuestra propia medición en la práctica.",
-        chartCaption: "Cada punto más alto es un mejor resultado, incluida la velocidad.",
+        precisionHeading: "Precisión promedio por dominio",
+        precisionSubhead: "% de respuestas correctas",
+        timeHeading: "Tiempo promedio por dificultad",
+        timeSubhead: "Menos tiempo es mejor",
         easy: "Fácil",
         medium: "Media",
         hard: "Difícil",
-        avgTimeUnit: "seg. promedio",
+        avgTimeUnit: "seg.",
         generalLabel: "General",
         yourLabel: "Vos",
         lockedTitle: "Iniciá sesión para ver tus stats",
@@ -437,11 +443,14 @@ export const dictionary: Record<Lang, Dictionary> = {
         eyebrow: "About the IQ.Pulse test",
         heading: "Performance",
         subhead: "How our own measurement behaves in practice.",
-        chartCaption: "A higher point is a better result, speed included.",
+        precisionHeading: "Average precision by domain",
+        precisionSubhead: "% of correct answers",
+        timeHeading: "Average time by difficulty",
+        timeSubhead: "Less time is better",
         easy: "Easy",
         medium: "Medium",
         hard: "Hard",
-        avgTimeUnit: "sec. avg",
+        avgTimeUnit: "sec",
         generalLabel: "General",
         yourLabel: "You",
         lockedTitle: "Log in to see your stats",
