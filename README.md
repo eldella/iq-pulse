@@ -16,7 +16,9 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 - Demo login/profile flow (`/perfil`) — client-only session flag, no real accounts yet
 - Light/dark theme (Apple-style black / white / system blue palette)
 - ES/EN language switch (client-side, no page reload), with a mobile hamburger nav
-- Animated, accessible UI throughout (Framer Motion, respects `prefers-reduced-motion`)
+- Animated, accessible UI throughout (Framer Motion, respects `prefers-reduced-motion`, skip-to-content link, keyboard focus states)
+- Small design-token system (`tailwind.config.ts` + `app/globals.css`): shared radius (`rounded-control`/`card`/`sheet`), accent-glow shadow scale (`shadow-accent-sm`/`md`/`lg`), and semantic `danger`/`success`/`warn`/`surface-hover` colors, so every card/button/shadow across the site draws from the same small set of values instead of one-off Tailwind classes
+- Two hand-rolled SVG badges (`components/viz/`) — `DistributionCurve` (a normal-distribution curve marking a percentile) and `PulseTrace` (a reaction-time trace line) — used as each page's visual identity instead of decorative emoji
 - Donation links (PayPal, Ko-fi) and social links (GitHub, Instagram, TikTok; Discord marked "soon")
 - Terms of service and privacy policy pages
 
@@ -72,12 +74,14 @@ app/                  Routes (App Router)
   privacidad/         Privacy policy
 components/
   landing/            Landing page sections + header/nav
-  jugar/              Quiz engine + the 3 minigames (games/) + radar chart
+  jugar/              Quiz engine + the 5 minigames (games/) + radar chart
   stats/              Shared leaderboard/patron-wall pieces
   ranking/            Ranking page
   rendimiento/        Rendimiento page
   legal/              Terms/privacy shell + content
   profile/            Demo profile
+  viz/                DistributionCurve / PulseTrace page-badge SVGs
+  GlassCard.tsx       Shared glassmorphism surface primitive
 lib/
   i18n/               ES/EN dictionary
   supabase/           Supabase client + quiz.ts (session/answer/score data access)

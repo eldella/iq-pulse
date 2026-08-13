@@ -6,7 +6,7 @@ import { Lock } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
-import { Emoji3D } from "@/components/Emoji3D";
+import { DistributionCurve } from "@/components/viz/DistributionCurve";
 import { GlassCard } from "@/components/GlassCard";
 import { fetchGeneralPerformance } from "@/lib/supabase/quiz";
 import { springTransition, tapScale } from "@/lib/motion";
@@ -61,7 +61,7 @@ function ComparisonRow({
 
       <div className="flex items-center gap-3">
         <span className="w-14 shrink-0 text-xs text-muted-foreground">{generalLabel}</span>
-        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
+        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-hover">
           <motion.span
             initial={shouldReduceMotion ? false : { width: 0 }}
             whileInView={{ width: `${generalPercent}%` }}
@@ -78,7 +78,7 @@ function ComparisonRow({
 
       <div className="flex items-center gap-3">
         <span className="w-14 shrink-0 text-xs font-medium text-accent">{yourLabel}</span>
-        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
+        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-hover">
           <motion.span
             initial={shouldReduceMotion ? false : { width: 0 }}
             whileInView={{ width: `${yourPercent}%` }}
@@ -148,7 +148,7 @@ export function RendimientoPage() {
   return (
     <main className="flex flex-1 flex-col items-center gap-10 px-4 py-16 sm:px-6">
       <div className="flex flex-col items-center gap-3 text-center">
-        <Emoji3D emoji="📈" size="lg" className="mb-1" />
+        <DistributionCurve size="lg" className="mb-1" />
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
           {t.stats.performance.eyebrow}
         </p>
@@ -214,7 +214,7 @@ export function RendimientoPage() {
 
         {!isLoggedIn && (
           <div className="absolute inset-0 flex items-center justify-center px-4">
-            <GlassCard className="flex flex-col items-center gap-3 rounded-2xl p-6 text-center shadow-2xl">
+            <GlassCard className="flex flex-col items-center gap-3 p-6 text-center shadow-2xl">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
                 <Lock className="h-5 w-5" aria-hidden="true" />
               </span>
@@ -227,7 +227,7 @@ export function RendimientoPage() {
                 whileHover={{ y: -1 }}
                 whileTap={tapScale}
                 transition={springTransition}
-                className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
+                className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none"
               >
                 {t.stats.performance.lockedCta}
               </motion.button>

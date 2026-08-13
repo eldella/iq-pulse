@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { dictionary, type Dictionary, type Lang } from "@/lib/i18n/dictionary";
 
 const STORAGE_KEY = "iqpulse-lang";
@@ -49,6 +49,15 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
  */
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const lang = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  // <html lang> is hardcoded "es" in layout.tsx (a Server Component, so it
+  // can't read the client-only localStorage language state) - keep it in
+  // sync here instead, so screen readers use the right pronunciation rules
+  // once the client has hydrated. suppressHydrationWarning on <html>
+  // (layout.tsx) is what makes this safe to mutate post-hydration.
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const value: LanguageContextValue = {
     lang,

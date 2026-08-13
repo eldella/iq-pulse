@@ -128,7 +128,7 @@ export function DonationModal({
         transition={springTransition}
         aria-label={t.donation.title}
         className={cn(
-          "shine-hover inline-flex h-11 min-w-[44px] items-center gap-2 rounded-full border border-glass-border bg-glass text-sm text-muted-foreground backdrop-blur-xl transition-shadow duration-300 hover:text-foreground hover:shadow-lg hover:shadow-accent/20 focus-visible:outline-none",
+          "shine-hover inline-flex h-11 min-w-[44px] items-center gap-2 rounded-full border border-glass-border bg-glass text-sm text-muted-foreground backdrop-blur-xl transition-shadow duration-300 hover:text-foreground hover:shadow-accent-sm focus-visible:outline-none",
           compactOnMobile ? "px-3 sm:px-4" : "px-4"
         )}
       >
@@ -179,7 +179,7 @@ function DonationModalBody({ onClose }: { onClose: () => void }) {
             whileHover={{ y: -2 }}
             whileTap={tapScale}
             transition={springTransition}
-            className="shine-hover flex h-12 min-w-[44px] items-center gap-3 rounded-card border border-glass-border bg-glass px-4 text-sm font-medium text-foreground backdrop-blur-xl transition-shadow duration-300 hover:border-accent/40 hover:shadow-lg hover:shadow-accent/20 focus-visible:outline-none"
+            className="shine-hover flex h-12 min-w-[44px] items-center gap-3 rounded-card border border-glass-border bg-glass px-4 text-sm font-medium text-foreground backdrop-blur-xl transition-shadow duration-300 hover:border-accent/40 hover:shadow-accent-sm focus-visible:outline-none"
           >
             <Icon className="h-5 w-5 text-accent" aria-hidden="true" />
             {label}

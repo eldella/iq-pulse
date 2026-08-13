@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 const emptySubscribe = () => () => {};
 
-/** Same icon language as each page's own Emoji3D badge (🏆/📈), just as SVG instead of emoji here. */
+/** Mirrors each destination's own page badge (PulseTrace/DistributionCurve). */
 const NAV_ICONS: Record<string, LucideIcon> = {
   "/": Home,
   "/ranking": Trophy,
@@ -89,10 +89,10 @@ export function MobileNavMenu({
                     onClick={() => setIsOpen(false)}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex h-14 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors duration-300 focus-visible:outline-none",
+                      "flex h-14 items-center gap-3 rounded-control px-3 text-sm font-medium transition-colors duration-300 focus-visible:outline-none",
                       isActive
                         ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                        : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                     )}
                   >
                     <span
@@ -125,7 +125,7 @@ export function MobileNavMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={isOpen ? t.header.closeMenu : t.header.openMenu}
-        className="theme-transition relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-glass-border bg-glass text-foreground hover:shadow-lg hover:shadow-accent/20 focus-visible:outline-none sm:hidden"
+        className="theme-transition relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-glass-border bg-glass text-foreground hover:shadow-accent-sm focus-visible:outline-none sm:hidden"
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.span

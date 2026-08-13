@@ -41,6 +41,13 @@
   /* White on #007aff ≈ 4.0:1 - below 4.5:1 body-text AA, fine for the
      bold/large button and badge text this accent is scoped to. */
   --color-on-accent: 255 255 255;
+  /* Apple HIG system red/green/yellow (light variants). */
+  --color-danger: 255 59 48;
+  --color-success: 52 199 89;
+  --color-warn: 255 204 0;
+  /* Replaces the ad-hoc bg-white/5 vs bg-black/5 dark:bg-white/5 split used
+     for hover/pressed surface fills - one theme-aware token instead. */
+  --color-surface-hover: rgba(0, 0, 0, 0.05);
   color-scheme: light;
 }
 
@@ -52,6 +59,12 @@
   --color-glass: rgba(28, 28, 30, 0.6);
   --color-glass-border: rgba(255, 255, 255, 0.08);
   --color-on-accent: 255 255 255;
+  /* Apple HIG system red/green/yellow (dark variants - brighter for contrast
+     against true black, same reasoning as --color-accent above). */
+  --color-danger: 255 69 58;
+  --color-success: 48 209 88;
+  --color-warn: 255 214 10;
+  --color-surface-hover: rgba(255, 255, 255, 0.05);
   color-scheme: dark;
 }
 

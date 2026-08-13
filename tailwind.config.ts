@@ -23,8 +23,13 @@ const config: Config = {
         // modifier, so they don't need the channel-value treatment.
         glass: "var(--color-glass)",
         "glass-border": "var(--color-glass-border)",
+        "surface-hover": "var(--color-surface-hover)",
+        danger: "rgb(var(--color-danger) / <alpha-value>)",
+        success: "rgb(var(--color-success) / <alpha-value>)",
+        warn: "rgb(var(--color-warn) / <alpha-value>)",
       },
       borderRadius: {
+        control: "12px",
         card: "16px",
         sheet: "24px",
       },
@@ -38,6 +43,15 @@ const config: Config = {
       },
       backdropBlur: {
         xl: "24px",
+      },
+      boxShadow: {
+        // The only three accent-glow strengths in the system: -sm for
+        // active/selected state, -md for a primary CTA, -lg reserved for
+        // the hero's single hover escalation. Replaces the four ad-hoc
+        // shadow-accent/NN opacities previously scattered per component.
+        "accent-sm": "0 4px 12px -2px rgb(var(--color-accent) / 0.25)",
+        "accent-md": "0 8px 24px -4px rgb(var(--color-accent) / 0.3)",
+        "accent-lg": "0 16px 40px -8px rgb(var(--color-accent) / 0.4)",
       },
     },
   },

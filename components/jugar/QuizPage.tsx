@@ -7,7 +7,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Dictionary } from "@/lib/i18n/dictionary";
-import { Emoji3D } from "@/components/Emoji3D";
+import { PulseTrace } from "@/components/viz/PulseTrace";
+import { DistributionCurve } from "@/components/viz/DistributionCurve";
 import { GlassCard } from "@/components/GlassCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
@@ -115,7 +116,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setResult(null);
       setPhase(chosenPlan[0]);
     } catch {
-      setError("No se pudo conectar con la base de datos.");
+      setError(t.quiz.sessionStartError);
     } finally {
       setStarting(false);
     }
@@ -173,14 +174,14 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       const finalResult = await completeSession(sessionId);
       setResult(finalResult);
     } catch {
-      setError("No se pudo calcular el resultado final.");
+      setError(t.quiz.resultError);
     }
     setPhase("finished");
   }
 
   function handleCopyResult() {
     if (!result) return;
-    const summary = `IQ.Pulse — CI estimado: ${result.iqEstimate} (percentil ${result.percentile})`;
+    const summary = `IQ.Pulse — ${t.quiz.resultsIqLabel}: ${result.iqEstimate} (${t.quiz.resultsPercentileLabel} ${result.percentile})`;
     navigator.clipboard.writeText(summary).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -197,11 +198,15 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="flex flex-col items-center gap-6 text-center"
         >
-          <Emoji3D emoji="🎮" size="lg" className="mb-1" />
+          <PulseTrace size="lg" className="mb-1" />
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
             {t.hero.play}
           </h1>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && (
+            <p role="status" aria-live="polite" className="text-sm text-danger">
+              {error}
+            </p>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {(Object.keys(GAMES) as GameId[]).map((id) => {
@@ -215,7 +220,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                     onClick={() => handleStart([id])}
                     className="block h-full w-full text-left focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
                   >
-                    <GlassCard className="flex h-full flex-col items-center gap-2 rounded-2xl border-0 p-5 text-center shadow-sm transition-shadow hover:shadow-md">
+                    <GlassCard
+                      variant="plain"
+                      className="flex h-full flex-col items-center gap-2 p-5 text-center shadow-sm transition-shadow hover:shadow-md"
+                    >
                       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
                         {starting ? (
                           <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -239,7 +247,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             whileHover={{ y: -2 }}
             whileTap={tapScale}
             transition={springTransition}
-            className="shine-hover inline-flex h-14 items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+            className="shine-hover inline-flex h-14 items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
           >
             {starting ? (
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -266,7 +274,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             >
               {t.quiz.exitToMenuCta}
             </button>
-            <p className="text-xs text-muted-foreground">
+            <p className="tabular-nums text-xs text-muted-foreground">
               {t.quiz.progressLabel} {questionIndex + 1}/{QUESTIONS_PER_GAME}
             </p>
           </div>
@@ -296,7 +304,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
           {result && (
             <div className="flex flex-col items-center gap-1">
-              <p className="text-6xl font-semibold tracking-tight text-foreground">
+              <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
                 {result.iqEstimate}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -308,12 +316,15 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             </div>
           )}
 
-          <RadarChart
-            reasoning={Math.round((domainStats.reasoning.correct / Math.max(1, domainStats.reasoning.answered)) * 100)}
-            memory={Math.round((domainStats.memory.correct / Math.max(1, domainStats.memory.answered)) * 100)}
-            speed={Math.round((domainStats.speed.correct / Math.max(1, domainStats.speed.answered)) * 100)}
-            labels={[t.quiz.reasoningTitle, t.quiz.memoryTitle, t.quiz.speedTitle]}
-          />
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            {result && <DistributionCurve highlight={result.percentile} size="lg" />}
+            <RadarChart
+              reasoning={Math.round((domainStats.reasoning.correct / Math.max(1, domainStats.reasoning.answered)) * 100)}
+              memory={Math.round((domainStats.memory.correct / Math.max(1, domainStats.memory.answered)) * 100)}
+              speed={Math.round((domainStats.speed.correct / Math.max(1, domainStats.speed.answered)) * 100)}
+              labels={[t.quiz.reasoningTitle, t.quiz.memoryTitle, t.quiz.speedTitle]}
+            />
+          </div>
 
           <p className="max-w-sm text-xs text-muted-foreground">{t.quiz.resultsBody}</p>
 
@@ -327,7 +338,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               className="inline-flex h-11 items-center gap-2 rounded-full border border-glass-border bg-glass px-5 text-sm text-muted-foreground backdrop-blur-xl hover:text-foreground focus-visible:outline-none"
             >
               {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
-              {copied ? "✓" : "Copiar"}
+              {copied ? t.quiz.copiedLabel : t.quiz.copyResultCta}
             </motion.button>
 
             <motion.button
@@ -336,7 +347,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               whileHover={{ y: -1 }}
               whileTap={tapScale}
               transition={springTransition}
-              className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
+              className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none"
             >
               {t.quiz.playAgainCta}
             </motion.button>

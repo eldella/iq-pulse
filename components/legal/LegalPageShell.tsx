@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition } from "@/lib/motion";
 
 /**
@@ -22,6 +23,7 @@ export function LegalPageShell({
   children: ReactNode;
 }) {
   const shouldReduceMotion = useReducedMotion();
+  const { t } = useLanguage();
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6 sm:py-24">
@@ -34,14 +36,14 @@ export function LegalPageShell({
           className="inline-flex items-center gap-1.5 rounded text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Volver al inicio
+          {t.notFound.cta}
         </Link>
 
         <h1 className="mt-6 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           {title}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Última actualización: {updatedOn}
+          {t.legal.updatedOnLabel}: {updatedOn}
         </p>
       </motion.div>
 
@@ -61,7 +63,7 @@ export function LegalSection({
     <ScrollReveal amount={0.5}>
       <section>
         <h2 className="text-lg font-semibold text-foreground">{heading}</h2>
-        <div className="mt-2 flex flex-col gap-3 text-base leading-relaxed text-muted-foreground">
+        <div className="mt-2 flex flex-col gap-3 text-base text-pretty leading-relaxed text-muted-foreground">
           {children}
         </div>
       </section>

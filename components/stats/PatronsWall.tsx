@@ -1,10 +1,9 @@
 "use client";
 
-import { Crown, Star } from "lucide-react";
+import { Crown, Heart, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { GlassCard } from "@/components/GlassCard";
 import { AmbientBlob } from "@/components/AmbientBlob";
-import { Emoji3D } from "@/components/Emoji3D";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -38,8 +37,10 @@ export function PatronsWall() {
     <section aria-labelledby="mecenas-heading" className="relative w-full max-w-6xl">
       <AmbientBlob className="-left-20 bottom-0 h-72 w-72" durationSeconds={25} />
       <div className="flex flex-col items-center">
-        <Emoji3D emoji="💛" size="md" durationSeconds={5} />
-        <h2 id="mecenas-heading" className="mb-2 text-center text-2xl font-semibold text-foreground sm:text-3xl">
+        <span className="mb-1 flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent">
+          <Heart className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <h2 id="mecenas-heading" className="mb-2 text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           {t.stats.patrons.heading}
         </h2>
       </div>
@@ -59,10 +60,8 @@ export function PatronsWall() {
             >
               <GlassCard
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl ring-1 ring-inset",
-                  isGold
-                    ? "p-7 ring-accent/50 shadow-[0_0_24px_-6px_rgba(10,132,255,0.55)]"
-                    : "p-6 ring-accent/20"
+                  "flex items-center gap-3 ring-1 ring-inset",
+                  isGold ? "p-7 shadow-accent-lg ring-accent/50" : "p-6 ring-accent/20"
                 )}
               >
                 {isGold ? (

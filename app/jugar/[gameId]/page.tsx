@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { QuizPage, type GameId } from "@/components/jugar/QuizPage";
+import { dictionary } from "@/lib/i18n/dictionary";
 
 const GAME_IDS: readonly GameId[] = ["matrix", "digitSpan", "stroop", "pathfinder", "wordBurst"];
 
-const GAME_TITLES: Record<GameId, string> = {
-  matrix: "Matriz de patrones",
-  digitSpan: "Retención de dígitos",
-  stroop: "Stroop",
-  pathfinder: "Camino óptimo",
-  wordBurst: "Ráfaga de palabras",
-};
+// Server-rendered metadata has no per-request language signal (the language
+// toggle is client-only, localStorage-based - see LanguageProvider), so this
+// sources the Spanish dictionary directly rather than re-typing the titles
+// by hand, matching the rest of app/layout.tsx's Spanish-only metadata.
+function gameTitle(gameId: GameId) {
+  const { quiz } = dictionary.es;
+  return {
+    matrix: quiz.reasoningTitle,
+    digitSpan: quiz.memoryTitle,
+    stroop: quiz.speedTitle,
+    pathfinder: quiz.pathfinderTitle,
+    wordBurst: quiz.wordBurstTitle,
+  }[gameId];
+}
 
 function isGameId(value: string): value is GameId {
   return (GAME_IDS as readonly string[]).includes(value);
@@ -27,9 +35,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { gameId } = await params;
   if (!isGameId(gameId)) return {};
+  const title = gameTitle(gameId);
   return {
-    title: `${GAME_TITLES[gameId]} — IQ.Pulse`,
-    description: `Jugá directo a ${GAME_TITLES[gameId]}, sin pasar por la pantalla de selección.`,
+    title: `${title} — IQ.Pulse`,
+    description: `Jugá directo a ${title}, sin pasar por la pantalla de selección.`,
   };
 }
 

@@ -20,7 +20,7 @@ export function LanguageToggle() {
       whileTap={tapScale}
       transition={springTransition}
       aria-label={t.languageToggle.switchTo}
-      className="theme-transition relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-glass-border bg-glass text-sm font-semibold text-foreground hover:shadow-lg hover:shadow-accent/20 focus-visible:outline-none"
+      className="theme-transition relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-glass-border bg-glass text-sm font-semibold text-foreground hover:shadow-accent-sm focus-visible:outline-none"
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span

@@ -7,10 +7,15 @@ import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import type { Difficulty } from "@/lib/scoring";
 
+// Red + standard green is the classic confusion pair for protanopia/
+// deuteranopia (the most common color-vision deficiencies), and this is a
+// color-perception task by nature (an answer's text label doesn't help
+// with the stimulus itself, only with picking a response) - green is
+// shifted to a teal to keep all five hues distinguishable under common CVD.
 const COLORS = [
   { key: "red", hex: "#FF3B30", es: "Rojo", en: "Red" },
   { key: "blue", hex: "#0A84FF", es: "Azul", en: "Blue" },
-  { key: "green", hex: "#34C759", es: "Verde", en: "Green" },
+  { key: "teal", hex: "#12B5A6", es: "Turquesa", en: "Teal" },
   { key: "yellow", hex: "#FFD60A", es: "Amarillo", en: "Yellow" },
   { key: "purple", hex: "#AF52DE", es: "Violeta", en: "Purple" },
 ] as const;

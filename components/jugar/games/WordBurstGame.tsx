@@ -129,7 +129,7 @@ export function WordBurstGame({
                   whileHover={{ y: -1 }}
                   whileTap={tapScale}
                   transition={springTransition}
-                  className={`flex h-11 items-center justify-center rounded-xl border px-3 text-sm font-medium backdrop-blur-xl focus-visible:outline-none ${
+                  className={`flex h-11 items-center justify-center rounded-control border px-3 text-sm font-medium backdrop-blur-xl focus-visible:outline-none ${
                     isSelected
                       ? "border-accent bg-accent/15 text-accent"
                       : "border-glass-border bg-glass text-foreground"
@@ -148,7 +148,7 @@ export function WordBurstGame({
             whileHover={selected.length > 0 ? { y: -1 } : undefined}
             whileTap={selected.length > 0 ? tapScale : undefined}
             transition={springTransition}
-            className="shine-hover inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 disabled:opacity-30 focus-visible:outline-none"
+            className="shine-hover inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-accent-foreground shadow-accent-md disabled:opacity-30 focus-visible:outline-none"
           >
             {t.quiz.digitSpanSubmit}
           </motion.button>

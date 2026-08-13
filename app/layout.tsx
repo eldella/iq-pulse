@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProviderClient } from "@/components/ThemeProviderClient";
 import { LanguageProvider } from "@/components/LanguageProvider";
@@ -8,6 +8,7 @@ import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/Footer";
 import { PersistentLanguageToggle } from "@/components/PersistentLanguageToggle";
+import { SkipLink } from "@/components/SkipLink";
 import "./globals.css";
 
 const inter = Inter({
@@ -41,6 +42,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -52,6 +60,7 @@ export default function RootLayout({
         <ThemeProviderClient>
           <LanguageProvider>
             <AuthProvider>
+              <SkipLink />
               {/*
                 No bg-background here on purpose: body already paints it (see
                 globals.css). A background on this wrapper would be an in-flow
@@ -66,7 +75,9 @@ export default function RootLayout({
                 <ScrollProgressBar />
                 <Header />
                 <PersistentLanguageToggle />
-                <div className="flex flex-1 flex-col">{children}</div>
+                <div id="main-content" className="flex flex-1 flex-col">
+                  {children}
+                </div>
                 <Footer />
               </div>
             </AuthProvider>

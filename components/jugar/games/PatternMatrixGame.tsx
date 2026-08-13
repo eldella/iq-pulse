@@ -73,7 +73,7 @@ export function PatternMatrixGame({
           return (
             <div
               key={index}
-              className="flex h-20 w-20 items-center justify-center rounded-2xl border border-glass-border bg-glass text-2xl font-semibold text-foreground backdrop-blur-xl sm:h-24 sm:w-24"
+              className="flex h-20 w-20 items-center justify-center rounded-card border border-glass-border bg-glass text-2xl font-semibold text-foreground backdrop-blur-xl sm:h-24 sm:w-24"
             >
               {isMissing ? <span className="text-accent">?</span> : value}
             </div>
@@ -90,7 +90,7 @@ export function PatternMatrixGame({
             whileHover={{ y: -2 }}
             whileTap={tapScale}
             transition={springTransition}
-            className="shine-hover flex h-14 w-16 items-center justify-center rounded-xl border border-glass-border bg-glass text-lg font-semibold text-foreground backdrop-blur-xl hover:border-accent/40 focus-visible:outline-none"
+            className="shine-hover flex h-14 w-16 items-center justify-center rounded-control border border-glass-border bg-glass text-lg font-semibold text-foreground backdrop-blur-xl hover:border-accent/40 focus-visible:outline-none"
           >
             {option}
           </motion.button>

@@ -40,7 +40,7 @@ export function SocialLinks() {
             className={
               comingSoon
                 ? "relative flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-glass-border bg-glass text-muted-foreground/40 backdrop-blur-xl"
-                : "relative flex h-11 w-11 items-center justify-center rounded-full border border-glass-border bg-glass text-muted-foreground backdrop-blur-xl transition-shadow duration-300 hover:text-foreground hover:shadow-lg hover:shadow-accent/20 focus-visible:outline-none"
+                : "relative flex h-11 w-11 items-center justify-center rounded-full border border-glass-border bg-glass text-muted-foreground backdrop-blur-xl transition-shadow duration-300 hover:text-foreground hover:shadow-accent-sm focus-visible:outline-none"
             }
           >
             <Icon className="h-5 w-5" aria-hidden="true" />

@@ -22,7 +22,10 @@ export function MonthlyChallengeCard() {
       transition={springTransition}
       className="w-full max-w-2xl"
     >
-      <GlassCard className="flex flex-col items-center gap-3 rounded-2xl border-0 p-8 text-center shadow-sm transition-shadow hover:shadow-md">
+      <GlassCard
+        variant="plain"
+        className="flex flex-col items-center gap-3 p-8 text-center shadow-sm transition-shadow hover:shadow-md"
+      >
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
           <Sparkles className="h-5 w-5" aria-hidden="true" />
         </span>
@@ -32,10 +35,10 @@ export function MonthlyChallengeCard() {
         <h3 className="text-lg font-semibold text-foreground">
           {t.stats.leaderboard.challenge.title}
         </h3>
-        <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+        <p className="max-w-md text-sm text-pretty leading-relaxed text-muted-foreground">
           {t.stats.leaderboard.challenge.body}
         </p>
-        <span className="mt-1 rounded-full bg-black/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground dark:bg-white/5">
+        <span className="mt-1 rounded-full bg-surface-hover px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t.stats.leaderboard.challenge.cta}
         </span>
       </GlassCard>

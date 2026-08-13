@@ -26,14 +26,14 @@ export function DomainsSection() {
   return (
     <section
       aria-labelledby="domains-heading"
-      className="relative mx-auto flex w-full max-w-4xl flex-col items-center gap-10 px-4 py-16 text-center sm:px-6 sm:py-20"
+      className="relative mx-auto flex w-full max-w-4xl flex-col items-center gap-10 px-4 py-16 text-center sm:px-6 sm:py-24"
     >
       <AmbientBlob className="right-0 top-0 h-72 w-72" durationSeconds={22} />
 
       <div className="flex flex-col items-center gap-2">
         <h2
           id="domains-heading"
-          className="text-sm font-semibold uppercase tracking-[0.2em] text-accent"
+          className="text-xs font-semibold uppercase tracking-[0.15em] text-accent"
         >
           {t.domains.heading}
         </h2>
@@ -49,7 +49,7 @@ export function DomainsSection() {
         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1 } } }}
         className="grid w-full grid-cols-1 gap-8 sm:grid-cols-3"
       >
-        {domains.map(({ id, Icon, title, body }, index) => (
+        {domains.map(({ id, Icon, title, body }) => (
           <motion.div
             key={id}
             variants={{
@@ -60,15 +60,15 @@ export function DomainsSection() {
             whileTap={tapScale}
             transition={springTransition}
           >
-            <GlassCard className="flex h-full flex-col items-center gap-3 rounded-2xl border-0 p-6 text-center shadow-sm transition-shadow hover:shadow-md">
+            <GlassCard
+              variant="plain"
+              className="flex h-full flex-col items-center gap-3 p-6 text-center shadow-sm transition-shadow hover:shadow-md"
+            >
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent">
                 <Icon className="h-6 w-6" aria-hidden="true" />
               </span>
-              <span className="text-xs font-semibold text-muted-foreground/60">
-                0{index + 1}
-              </span>
               <h3 className="text-base font-semibold text-foreground">{title}</h3>
-              <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
+              <p className="max-w-xs text-sm text-pretty leading-relaxed text-muted-foreground">
                 {body}
               </p>
             </GlassCard>

@@ -56,7 +56,7 @@ export function LeaderboardTable() {
 
   return (
     <div className="w-full max-w-3xl">
-      <h2 className="mb-4 text-center text-2xl font-semibold text-foreground sm:text-3xl">
+      <h2 className="mb-4 text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {t.stats.leaderboard.heading}
       </h2>
 
@@ -74,7 +74,7 @@ export function LeaderboardTable() {
             className={cn(
               "flex h-11 items-center rounded-full px-4 text-sm font-medium transition-all duration-300 focus-visible:outline-none",
               tab === id
-                ? "shine-hover bg-accent text-accent-foreground shadow-md shadow-accent/40"
+                ? "shine-hover bg-accent text-accent-foreground shadow-accent-sm"
                 : "border border-glass-border bg-glass text-muted-foreground backdrop-blur-xl hover:border-accent/30 hover:text-foreground"
             )}
           >
@@ -87,11 +87,11 @@ export function LeaderboardTable() {
         {entries.map((entry, index) => (
           <li
             key={entry.alias}
-            className="flex items-center gap-4 rounded-2xl border border-glass-border bg-glass px-6 py-5 backdrop-blur-xl"
+            className="theme-transition flex items-center gap-4 rounded-card border border-glass-border bg-glass px-6 py-5 backdrop-blur-xl"
           >
             <RankBadge rank={index + 1} />
-            <span className="flex-1 truncate text-lg font-medium text-foreground">{entry.alias}</span>
-            <span className="text-xl font-semibold text-accent">{entry.display}</span>
+            <span className="min-w-0 flex-1 truncate text-lg font-medium text-foreground">{entry.alias}</span>
+            <span className="tabular-nums text-xl font-semibold text-accent">{entry.display}</span>
           </li>
         ))}
       </ul>

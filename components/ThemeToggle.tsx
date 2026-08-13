@@ -53,7 +53,7 @@ export function ThemeToggle() {
       whileTap={tapScale}
       transition={springTransition}
       aria-label={isDark ? t.themeToggle.toLight : t.themeToggle.toDark}
-      className="theme-transition flex h-11 w-11 items-center justify-center rounded-full border border-glass-border bg-glass text-foreground hover:shadow-lg hover:shadow-accent/20 focus-visible:outline-none"
+      className="theme-transition flex h-11 w-11 items-center justify-center rounded-full border border-glass-border bg-glass text-foreground hover:shadow-accent-sm focus-visible:outline-none"
     >
       <svg
         viewBox="0 0 24 24"

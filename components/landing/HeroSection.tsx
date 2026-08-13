@@ -6,7 +6,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { springTransition, tapScale } from "@/lib/motion";
 import { heroTextStagger, heroWordFade } from "@/components/landing/motionVariants";
 import { AmbientBlob } from "@/components/AmbientBlob";
-import { Emoji3D } from "@/components/Emoji3D";
+import { DistributionCurve } from "@/components/viz/DistributionCurve";
+import { PulseTrace } from "@/components/viz/PulseTrace";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -30,7 +31,11 @@ export function HeroSection() {
   return (
     <section className="relative flex flex-col items-center gap-6 px-4 pb-12 pt-20 text-center sm:pt-28">
       <AmbientBlob className="-top-16 left-1/2 h-72 w-72 -translate-x-1/2" durationSeconds={24} />
-      <Emoji3D emoji="🧠" size="lg" durationSeconds={7} />
+      <PulseTrace
+        variant="ambient"
+        className="absolute -top-4 left-1/2 h-16 w-[36rem] max-w-[90vw] -translate-x-1/2"
+      />
+      <DistributionCurve size="lg" />
       <motion.h1
         variants={heroTextStagger}
         initial={shouldReduceMotion ? false : "hidden"}
@@ -70,7 +75,7 @@ export function HeroSection() {
           <motion.div whileHover={ctaHoverLift} whileTap={tapScale} className="inline-block">
             <Link
               href="/jugar"
-              className="shine-hover inline-flex h-14 min-w-[44px] items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-lg shadow-accent/30 transition-shadow duration-300 hover:shadow-2xl hover:shadow-accent/60 focus-visible:outline-none"
+              className="shine-hover inline-flex h-14 min-w-[44px] items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-accent-md transition-shadow duration-300 hover:shadow-accent-lg focus-visible:outline-none"
             >
               <Play className="h-5 w-5" aria-hidden="true" />
               {t.hero.play}
@@ -80,7 +85,7 @@ export function HeroSection() {
           <motion.div whileHover={ctaHoverLift} whileTap={tapScale} className="inline-block">
             <Link
               href="/ranking"
-              className="shine-hover inline-flex h-12 min-w-[44px] items-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 transition-shadow duration-300 hover:shadow-2xl hover:shadow-accent/60 focus-visible:outline-none"
+              className="shine-hover inline-flex h-14 min-w-[44px] items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-accent-foreground shadow-accent-md transition-shadow duration-300 hover:shadow-accent-lg focus-visible:outline-none"
             >
               {t.hero.viewRanking}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />

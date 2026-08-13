@@ -67,7 +67,7 @@ export function HeaderMoreMenu() {
                 <LanguageToggle />
               </div>
             </div>
-            <div className="h-px bg-black/5 dark:bg-white/5" aria-hidden="true" />
+            <div className="h-px bg-surface-hover" aria-hidden="true" />
             <div>
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t.social.heading}
@@ -93,7 +93,7 @@ export function HeaderMoreMenu() {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={t.header.preferences}
-        className="theme-transition relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-glass-border bg-glass text-foreground hover:shadow-lg hover:shadow-accent/20 focus-visible:outline-none"
+        className="theme-transition relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-glass-border bg-glass text-foreground hover:shadow-accent-sm focus-visible:outline-none"
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.span

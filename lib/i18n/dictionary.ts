@@ -7,6 +7,7 @@ export type Dictionary = {
     openMenu: string;
     closeMenu: string;
     preferences: string;
+    skipToContent: string;
   };
   hero: {
     headline: string;
@@ -113,13 +114,21 @@ export type Dictionary = {
     resultsBody: string;
     playAgainCta: string;
     viewProfileCta: string;
+    sessionStartError: string;
+    resultError: string;
+    copyResultCta: string;
+    copiedLabel: string;
   };
   notFound: {
     heading: string;
     subhead: string;
     cta: string;
   };
+  legal: {
+    updatedOnLabel: string;
+  };
   profile: {
+    heading: string;
     loggedOutTitle: string;
     loggedOutBody: string;
     login: string;
@@ -159,6 +168,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       openMenu: "Abrir menú",
       closeMenu: "Cerrar menú",
       preferences: "Preferencias",
+      skipToContent: "Saltar al contenido principal",
     },
     hero: {
       headline: "El límite de tu mente es el primero que nunca cuestionaste.",
@@ -288,13 +298,21 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsBody: "Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.",
       playAgainCta: "Jugar de nuevo",
       viewProfileCta: "Ver tu perfil",
+      sessionStartError: "No se pudo conectar con la base de datos.",
+      resultError: "No se pudo calcular el resultado final.",
+      copyResultCta: "Copiar",
+      copiedLabel: "Copiado",
     },
     notFound: {
       heading: "Esta página no existe",
       subhead: "El enlace puede estar roto o la página se movió de lugar.",
       cta: "Volver al inicio",
     },
+    legal: {
+      updatedOnLabel: "Última actualización",
+    },
     profile: {
+      heading: "Tu perfil",
       loggedOutTitle: "No iniciaste sesión",
       loggedOutBody:
         "Es una demo visual: no hace falta contraseña, solo activá el estado de sesión para ver cómo se vería tu perfil.",
@@ -333,6 +351,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       openMenu: "Open menu",
       closeMenu: "Close menu",
       preferences: "Preferences",
+      skipToContent: "Skip to main content",
     },
     hero: {
       headline: "The limit of your mind is the first one you never questioned.",
@@ -462,13 +481,21 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsBody: "Illustrative result — while the quiz engine is still being built, this number doesn't replace a validated cognitive test.",
       playAgainCta: "Play again",
       viewProfileCta: "View your profile",
+      sessionStartError: "Couldn't connect to the database.",
+      resultError: "Couldn't calculate the final result.",
+      copyResultCta: "Copy",
+      copiedLabel: "Copied",
     },
     notFound: {
       heading: "This page doesn't exist",
       subhead: "The link might be broken, or the page moved somewhere else.",
       cta: "Back to home",
     },
+    legal: {
+      updatedOnLabel: "Last updated",
+    },
     profile: {
+      heading: "Your profile",
       loggedOutTitle: "You're not logged in",
       loggedOutBody:
         "It's a visual demo: no password needed, just turn on the session state to see what your profile would look like.",

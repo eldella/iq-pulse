@@ -27,8 +27,8 @@ export function HeaderProfileLink() {
         className={cn(
           "theme-transition flex h-11 w-11 items-center justify-center rounded-full border focus-visible:outline-none",
           isLoggedIn
-            ? "border-transparent bg-accent text-accent-foreground shadow-md shadow-accent/40"
-            : "border-glass-border bg-glass text-foreground hover:shadow-lg hover:shadow-accent/20"
+            ? "border-transparent bg-accent text-accent-foreground shadow-accent-sm"
+            : "border-glass-border bg-glass text-foreground hover:shadow-accent-sm"
         )}
       >
         <User className="h-4 w-4" aria-hidden="true" />

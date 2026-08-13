@@ -7,6 +7,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { RankBadge } from "@/components/RankBadge";
+import { GlassCard } from "@/components/GlassCard";
+import { DistributionCurve } from "@/components/viz/DistributionCurve";
 import { springTransition, tapScale } from "@/lib/motion";
 
 /**
@@ -36,6 +38,11 @@ export function ProfilePage() {
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="mt-8 flex flex-col items-center gap-8 text-center"
         >
+          <DistributionCurve size="md" highlight={78} />
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            {t.profile.heading}
+          </h1>
+
           <div className="flex flex-col items-center gap-3">
             <span className="flex h-20 w-20 items-center justify-center rounded-full bg-accent/10 text-accent">
               <User className="h-9 w-9" aria-hidden="true" />
@@ -46,7 +53,7 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <div className="grid w-full grid-cols-2 divide-x divide-black/10 dark:divide-white/10">
+          <div className="grid w-full grid-cols-2 divide-x divide-glass-border">
             <div className="flex flex-col items-center gap-1 px-4 py-4">
               <p className="text-xs font-medium text-muted-foreground">
                 {t.profile.iqEstimate}
@@ -63,30 +70,30 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex w-full items-center gap-3 rounded-2xl border border-glass-border bg-glass px-5 py-4 text-left backdrop-blur-xl">
+          <GlassCard className="flex w-full items-center gap-3 px-5 py-4 text-left">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
               <Award className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
                 {t.profile.badgeHeading}
               </p>
               <p className="text-sm font-medium text-foreground">{t.profile.badgeTitle}</p>
               <p className="text-xs text-muted-foreground">{t.profile.badgeBody}</p>
             </div>
-          </div>
+          </GlassCard>
 
           <div className="flex w-full flex-col gap-2">
             <Link
               href="/ranking"
-              className="flex h-11 items-center justify-between rounded-xl px-3 text-sm text-muted-foreground transition-colors duration-300 hover:bg-white/5 hover:text-foreground focus-visible:outline-none"
+              className="flex h-11 items-center justify-between rounded-control px-3 text-sm text-muted-foreground transition-colors duration-300 hover:bg-surface-hover hover:text-foreground focus-visible:outline-none"
             >
               {t.profile.viewRankingCta}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link
               href="/rendimiento"
-              className="flex h-11 items-center justify-between rounded-xl px-3 text-sm text-muted-foreground transition-colors duration-300 hover:bg-white/5 hover:text-foreground focus-visible:outline-none"
+              className="flex h-11 items-center justify-between rounded-control px-3 text-sm text-muted-foreground transition-colors duration-300 hover:bg-surface-hover hover:text-foreground focus-visible:outline-none"
             >
               {t.profile.viewPerformanceCta}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -119,7 +126,7 @@ export function ProfilePage() {
             whileHover={{ y: -1 }}
             whileTap={tapScale}
             transition={springTransition}
-            className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/30 focus-visible:outline-none"
+            className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none"
           >
             {t.profile.login}
           </motion.button>

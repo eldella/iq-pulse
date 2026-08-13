@@ -110,14 +110,14 @@ export function Header() {
                     "relative flex h-11 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium transition-colors duration-300 focus-visible:outline-none",
                     isActive
                       ? "text-accent-foreground"
-                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                      : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                   )}
                 >
                   {isActive && (
                     <motion.span
                       layoutId="header-active-pill"
                       transition={springTransition}
-                      className="absolute inset-0 rounded-full bg-accent shadow-md shadow-accent/40"
+                      className="absolute inset-0 rounded-full bg-accent shadow-accent-sm"
                     />
                   )}
                   <span className="relative z-10">{label}</span>

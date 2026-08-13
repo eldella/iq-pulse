@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import { ArrowDown, ArrowRight, Flag } from "lucide-react";
+import { ArrowDown, ArrowRight, Flag, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
@@ -126,13 +126,13 @@ export function PathfinderGame({
             key={`${x}-${y}`}
             className={`flex h-8 w-8 items-center justify-center rounded-md text-xs sm:h-9 sm:w-9 ${
               isObstacle
-                ? "bg-red-500/20 text-red-500"
+                ? "bg-danger/20 text-danger"
                 : "border border-glass-border bg-glass text-muted-foreground"
             }`}
           >
             {isStart && <span className="h-2 w-2 rounded-full bg-accent" />}
             {isGoal && <Flag className="h-4 w-4 text-accent" aria-hidden="true" />}
-            {isObstacle && "✕"}
+            {isObstacle && <X className="h-4 w-4" aria-hidden="true" />}
           </div>
         ))}
       </div>
@@ -146,7 +146,7 @@ export function PathfinderGame({
             whileHover={{ y: -2 }}
             whileTap={tapScale}
             transition={springTransition}
-            className="shine-hover flex h-12 items-center justify-center gap-0.5 rounded-xl border border-glass-border bg-glass px-3 backdrop-blur-xl hover:border-accent/40 focus-visible:outline-none"
+            className="shine-hover flex h-12 items-center justify-center gap-0.5 rounded-control border border-glass-border bg-glass px-3 backdrop-blur-xl hover:border-accent/40 focus-visible:outline-none"
           >
             {option.map((move, i) =>
               move === "R" ? (

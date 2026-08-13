@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Delete } from "lucide-react";
+import { Check, Delete } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
@@ -83,7 +83,7 @@ export function DigitSpanGame({
       ) : (
         <>
           <p className="text-sm text-muted-foreground">{t.quiz.digitSpanRecall}</p>
-          <div className="flex h-12 min-w-[8rem] items-center justify-center gap-2 rounded-xl border border-glass-border bg-glass px-4 backdrop-blur-xl">
+          <div className="flex h-12 min-w-[8rem] items-center justify-center gap-2 rounded-control border border-glass-border bg-glass px-4 backdrop-blur-xl">
             {input.length === 0 ? (
               <span className="text-muted-foreground/50">—</span>
             ) : (
@@ -104,7 +104,7 @@ export function DigitSpanGame({
                 whileHover={{ y: -1 }}
                 whileTap={tapScale}
                 transition={springTransition}
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-glass-border bg-glass text-lg font-medium text-foreground backdrop-blur-xl focus-visible:outline-none"
+                className="flex h-12 w-12 items-center justify-center rounded-control border border-glass-border bg-glass text-lg font-medium text-foreground backdrop-blur-xl focus-visible:outline-none"
               >
                 {digit}
               </motion.button>
@@ -116,7 +116,7 @@ export function DigitSpanGame({
               whileTap={tapScale}
               transition={springTransition}
               aria-label={t.quiz.digitSpanClear}
-              className="flex h-12 w-12 items-center justify-center rounded-xl border border-glass-border bg-glass text-muted-foreground backdrop-blur-xl focus-visible:outline-none"
+              className="flex h-12 w-12 items-center justify-center rounded-control border border-glass-border bg-glass text-muted-foreground backdrop-blur-xl focus-visible:outline-none"
             >
               <Delete className="h-4 w-4" aria-hidden="true" />
             </motion.button>
@@ -126,7 +126,7 @@ export function DigitSpanGame({
               whileHover={{ y: -1 }}
               whileTap={tapScale}
               transition={springTransition}
-              className="flex h-12 w-12 items-center justify-center rounded-xl border border-glass-border bg-glass text-lg font-medium text-foreground backdrop-blur-xl focus-visible:outline-none"
+              className="flex h-12 w-12 items-center justify-center rounded-control border border-glass-border bg-glass text-lg font-medium text-foreground backdrop-blur-xl focus-visible:outline-none"
             >
               0
             </motion.button>
@@ -137,9 +137,10 @@ export function DigitSpanGame({
               whileHover={input.length === sequence.length ? { y: -1 } : undefined}
               whileTap={input.length === sequence.length ? tapScale : undefined}
               transition={springTransition}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-accent-foreground disabled:opacity-30 focus-visible:outline-none"
+              aria-label={t.quiz.digitSpanSubmit}
+              className="flex h-12 w-12 items-center justify-center rounded-control bg-accent text-accent-foreground disabled:opacity-30 focus-visible:outline-none"
             >
-              {t.quiz.digitSpanSubmit.slice(0, 2)}
+              <Check className="h-5 w-5" aria-hidden="true" />
             </motion.button>
           </div>
         </>

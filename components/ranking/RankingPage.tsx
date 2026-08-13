@@ -3,7 +3,7 @@
 import { LeaderboardTable } from "@/components/stats/LeaderboardTable";
 import { MonthlyChallengeCard } from "@/components/stats/MonthlyChallengeCard";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { Emoji3D } from "@/components/Emoji3D";
+import { PulseTrace } from "@/components/viz/PulseTrace";
 import { useLanguage } from "@/components/LanguageProvider";
 
 /**
@@ -17,7 +17,7 @@ export function RankingPage() {
   return (
     <main className="flex flex-1 flex-col items-center gap-10 px-4 py-16 sm:px-6">
       <div className="flex flex-col items-center gap-3 text-center">
-        <Emoji3D emoji="🏆" size="lg" className="mb-1" />
+        <PulseTrace size="lg" className="mb-1" />
         <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
           {t.ranking.heading}
         </h1>
