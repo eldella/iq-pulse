@@ -11,7 +11,7 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 - **`/jugar`**: a daily training screen — "Today's training" heading with the date, a 🔥-streak counter and `done/3` progress line (`lib/dailyTraining.ts`, localStorage-backed), and a single "Start daily challenge" CTA for the 3-domain assessment. Completing it writes real points (0-1000, from the same scoring math as the IQ estimate) to Supabase against an anonymous per-browser id (`lib/deviceIdentity.ts`, no login) — once every 24h; replaying the same day keeps your best score, never your worst (`upsert_daily_result` DB function, see `supabase/schema.sql`). The 5 minigames — Matriz de patrones and Camino óptimo (reasoning), Retención de dígitos and Ráfaga de palabras (memory), Stroop (speed) — sit below under "Free practice" for picking one at a time; practice play still writes a real session/IQ estimate but never counts toward the streak or points, only the daily CTA does. 3 questions per game, adaptive difficulty (`lib/scoring.ts`), an exit-to-menu link during play, results shown with a radar chart, total time taken, today's points (daily runs only), and a copy-result action
 - **`/jugar/[gameId]`**: deep link straight into a single minigame (e.g. `/jugar/wordBurst`), skipping the selection screen — 404s on an unknown id
 - Editorial landing page (hero, mission manifesto, "what IQ.Pulse measures" domain grid, sustainment model, patron wall)
-- **Ranking** (`/ranking`): leaderboard wired to real `daily_results` data (general/times/percentiles/streaks tabs, grouped by device — the streaks tab only counts a device's streak if its last play was today or yesterday, same grace period as the local streak logic) + a real monthly challenge: spot the odd hexagon in a 5x5 grid, seeded by the current year-month (`lib/monthlyPuzzle.ts`) so it's the same for everyone and rotates automatically next month. Rendered as SVG shapes, not a written description, so there's no text pattern to paste into a text-only AI — solving it means actually looking at the grid. Solved state is local per device/month (`lib/monthlyChallengeState.ts`), no leaderboard for it yet
+- **Ranking** (`/ranking`): leaderboard wired to real `daily_results` data (general/times/percentiles/streaks tabs, grouped by device — the streaks tab only counts a device's streak if its last play was today or yesterday, same grace period as the local streak logic) + a real weekly challenge: 3 rounds of spot-the-odd-hexagon in a 5x5 grid, 10 seconds per round, seeded by the current ISO week (`lib/weeklyPuzzle.ts`) so it's the same for everyone and rotates automatically next week. Rendered as SVG shapes, not a written description, so there's no text pattern to paste into a text-only AI — solving it means actually looking at the grid. One attempt per week, result stored locally (`lib/weeklyChallengeState.ts`) - local-only for now, same staged approach as the Daily Challenge before it got wired to Supabase
 - **Rendimiento** (`/rendimiento`): placeholder for now ("being tuned, check back soon") — the General-vs-you comparison went through several chart redesigns this pass and was pulled off the live page rather than shipped half-right; a working two-section version (separate % and seconds scales) is preserved in git history at commit `c2983b8` to resume from
 - Demo login/profile flow (`/perfil`) — client-only session flag, no real accounts yet; deliberately separate from the real anonymous device id above (see `lib/deviceIdentity.ts`'s docstring for why they don't share state)
 - Light/dark theme (Apple-style black / white / system blue palette)
@@ -89,8 +89,8 @@ lib/
   motion.ts           Shared Framer Motion presets
   dailyTraining.ts    Daily streak/progress state (localStorage, useSyncExternalStore)
   deviceIdentity.ts   Anonymous per-browser id + auto alias for the real daily points (no login)
-  monthlyPuzzle.ts    Deterministic monthly puzzle grid generator (pure, seeded by year-month)
-  monthlyChallengeState.ts  Solved-state store for the monthly puzzle (localStorage, useSyncExternalStore)
+  weeklyPuzzle.ts     Deterministic weekly puzzle grid generator (pure, seeded by ISO week)
+  weeklyChallengeState.ts  Result store for the weekly challenge (localStorage, useSyncExternalStore)
 supabase/
   schema.sql          DB schema + RLS policies, applied to the live project (including the
                       daily_results table, upsert_daily_result(), and the leaderboard_* RPC functions)
@@ -98,6 +98,7 @@ supabase/
 
 ## Roadmap
 
+- Wire the weekly challenge's result to Supabase (real points + leaderboard) before launch - it's local-only for now
 - Daily Challenge (full version): a seeded, identical-for-everyone daily game rotation with no-restart anti-cheat, on top of the points pipeline that now exists. Today's daily run still reuses the free-choice 3-game assessment rather than a seeded daily puzzle
 - Rendimiento's General-vs-you comparison — resume from the working version at commit `c2983b8` rather than redesigning from scratch
 - Real per-user auth (distinct from the anonymous device id used for daily points) so a person's ranking can follow them across devices

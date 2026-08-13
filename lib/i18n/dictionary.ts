@@ -84,7 +84,10 @@ export type Dictionary = {
         title: string;
         body: string;
         cellLabel: string;
+        startCta: string;
+        roundLabel: string;
         solvedLabel: string;
+        failedLabel: string;
       };
     };
     patrons: { heading: string; subhead: string; top: string };
@@ -279,11 +282,14 @@ export const dictionary: Record<Lang, Dictionary> = {
         loading: "Cargando…",
         empty: "Todavía no hay resultados — jugá el desafío diario para aparecer acá.",
         challenge: {
-          heading: "Reto del mes",
-          title: "El acertijo espacial de este mes",
-          body: "Encontrá la figura que no encaja con las demás.",
+          heading: "Reto de la semana",
+          title: "El acertijo espacial de esta semana",
+          body: "Encontrá la figura que no encaja, 3 veces seguidas. Tenés 10 segundos por ronda.",
           cellLabel: "Casilla",
-          solvedLabel: "¡Resuelto! Volvé el mes que viene por uno nuevo.",
+          startCta: "Iniciar desafío semanal",
+          roundLabel: "Ronda",
+          solvedLabel: "¡Completaste el reto de esta semana! Volvé la semana que viene por uno nuevo.",
+          failedLabel: "Se acabó el tiempo. Volvé la semana que viene para reintentar.",
         },
       },
       patrons: {
@@ -481,11 +487,14 @@ export const dictionary: Record<Lang, Dictionary> = {
         loading: "Loading…",
         empty: "No results yet — play the daily challenge to show up here.",
         challenge: {
-          heading: "Challenge of the month",
-          title: "This month's spatial puzzle",
-          body: "Find the shape that doesn't match the rest.",
+          heading: "Challenge of the week",
+          title: "This week's spatial puzzle",
+          body: "Find the odd shape, 3 times in a row. You've got 10 seconds per round.",
           cellLabel: "Cell",
-          solvedLabel: "Solved! Come back next month for a new one.",
+          startCta: "Start weekly challenge",
+          roundLabel: "Round",
+          solvedLabel: "You completed this week's challenge! Come back next week for a new one.",
+          failedLabel: "Time's up. Come back next week to try again.",
         },
       },
       patrons: {

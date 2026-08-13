@@ -1,14 +1,16 @@
 /**
- * "Reto del mes" puzzle generator - deterministic, seeded by the current
- * year-month so everyone gets the same grid this month and it changes
- * automatically next month with zero manual content authoring. Pure
+ * "Reto de la semana" puzzle generator - deterministic, seeded by the
+ * current ISO week so everyone gets the same 3 rounds this week and it
+ * changes automatically next week with zero manual content authoring. Pure
  * calculation, no UI/DB dependency (lib/ convention).
  */
 
 export type PuzzleCell = { rotationDeg: number };
-export type MonthlyPuzzle = { cells: PuzzleCell[]; oddIndex: number; gridSize: number };
+export type WeeklyPuzzle = { cells: PuzzleCell[]; oddIndex: number; gridSize: number };
 
 const GRID_SIZE = 5;
+export const ROUND_COUNT = 3;
+export const ROUND_SECONDS = 10;
 
 function hashString(input: string): number {
   let h = 2166136261;
@@ -31,10 +33,14 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** Local YYYY-MM key, matching the date-key convention in lib/dailyTraining.ts. */
-export function getMonthKey(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+/** ISO 8601 week key (e.g. "2026-W07"), local time. */
+export function getWeekKey(date: Date = new Date()): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2, "0")}`;
 }
 
 /**
@@ -42,10 +48,11 @@ export function getMonthKey(): string {
  * a large enough angle to be visually unambiguous once you look for it.
  * Rendered as SVG shapes (not text) by the caller - there's no written
  * pattern to paste into a text-only AI, seeing the odd one out means
- * actually looking at the grid.
+ * actually looking at the grid. `round` (0..ROUND_COUNT-1) gives each of the
+ * week's 3 rounds its own distinct grid from the same weekly seed.
  */
-export function generateMonthlyPuzzle(monthKey: string): MonthlyPuzzle {
-  const rand = mulberry32(hashString(monthKey));
+export function generateWeeklyPuzzle(weekKey: string, round: number): WeeklyPuzzle {
+  const rand = mulberry32(hashString(`${weekKey}:${round}`));
   const baseRotation = Math.floor(rand() * 60);
   const oddIndex = Math.floor(rand() * GRID_SIZE * GRID_SIZE);
   const oddOffset = 40 + Math.floor(rand() * 80);

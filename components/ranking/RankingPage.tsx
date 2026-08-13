@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { LeaderboardTable } from "@/components/stats/LeaderboardTable";
-import { MonthlyChallengeCard } from "@/components/stats/MonthlyChallengeCard";
+import { WeeklyChallengeCard } from "@/components/stats/WeeklyChallengeCard";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition } from "@/lib/motion";
@@ -36,7 +36,7 @@ export function RankingPage() {
       </ScrollReveal>
 
       <ScrollReveal className="flex w-full justify-center">
-        <MonthlyChallengeCard />
+        <WeeklyChallengeCard />
       </ScrollReveal>
     </main>
   );
