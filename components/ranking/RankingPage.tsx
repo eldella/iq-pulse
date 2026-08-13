@@ -4,7 +4,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import { LeaderboardTable } from "@/components/stats/LeaderboardTable";
 import { MonthlyChallengeCard } from "@/components/stats/MonthlyChallengeCard";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { PulseTrace } from "@/components/viz/PulseTrace";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition } from "@/lib/motion";
 
@@ -24,7 +23,6 @@ export function RankingPage() {
         animate={{ opacity: 1, y: 0, transition: springTransition }}
         className="flex flex-col items-center gap-3 text-center"
       >
-        <PulseTrace size="lg" className="mb-1" />
         <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
           {t.ranking.heading}
         </h1>

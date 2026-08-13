@@ -62,7 +62,7 @@ export function Header() {
         transition: springTransition,
       }}
       className={cn(
-        "theme-transition sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-1.5 border-b border-glass-border bg-glass px-2.5 py-2.5 backdrop-blur-xl sm:gap-x-3 sm:px-6 sm:py-3",
+        "theme-transition sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-1.5 border-b border-glass-border bg-background/55 px-2.5 py-2.5 backdrop-blur-xl sm:gap-x-3 sm:px-6 sm:py-3",
         scrolled && "shadow-sm shadow-black/5 dark:shadow-black/20"
       )}
     >

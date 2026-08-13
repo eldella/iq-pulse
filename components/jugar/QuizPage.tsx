@@ -7,7 +7,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Dictionary } from "@/lib/i18n/dictionary";
-import { PulseTrace } from "@/components/viz/PulseTrace";
 import { DistributionCurve } from "@/components/viz/DistributionCurve";
 import { fadeSlideUp, staggerContainer } from "@/components/landing/motionVariants";
 import { GlassCard } from "@/components/GlassCard";
@@ -199,7 +198,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="flex flex-col items-center gap-6 text-center"
         >
-          <PulseTrace size="lg" className="mb-1" />
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
             {t.hero.play}
           </h1>

@@ -8,7 +8,6 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { RankBadge } from "@/components/RankBadge";
 import { GlassCard } from "@/components/GlassCard";
-import { DistributionCurve } from "@/components/viz/DistributionCurve";
 import { springTransition, tapScale } from "@/lib/motion";
 
 /**
@@ -38,7 +37,6 @@ export function ProfilePage() {
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="mt-8 flex flex-col items-center gap-8 text-center"
         >
-          <DistributionCurve size="md" highlight={78} />
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
             {t.profile.heading}
           </h1>

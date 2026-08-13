@@ -6,7 +6,6 @@ import { Lock } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
-import { DistributionCurve } from "@/components/viz/DistributionCurve";
 import { GlassCard } from "@/components/GlassCard";
 import { fetchGeneralPerformance } from "@/lib/supabase/quiz";
 import { springTransition, tapScale } from "@/lib/motion";
@@ -153,7 +152,6 @@ export function RendimientoPage() {
         animate={{ opacity: 1, y: 0, transition: springTransition }}
         className="flex flex-col items-center gap-3 text-center"
       >
-        <DistributionCurve size="lg" className="mb-1" />
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
           {t.stats.performance.eyebrow}
         </p>

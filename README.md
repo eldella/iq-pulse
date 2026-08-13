@@ -18,7 +18,7 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 - ES/EN language switch (client-side, no page reload), with a mobile hamburger nav
 - Animated, accessible UI throughout (Framer Motion, respects `prefers-reduced-motion`, skip-to-content link, keyboard focus states)
 - Small design-token system (`tailwind.config.ts` + `app/globals.css`): shared radius (`rounded-control`/`card`/`sheet`), accent-glow shadow scale (`shadow-accent-sm`/`md`/`lg`), and semantic `danger`/`success`/`warn`/`surface-hover` colors, so every card/button/shadow across the site draws from the same small set of values instead of one-off Tailwind classes
-- Two hand-rolled SVG badges (`components/viz/`) — `DistributionCurve` (a normal-distribution curve marking a percentile) and `PulseTrace` (a reaction-time trace line) — used as each page's visual identity instead of decorative emoji
+- Quiz results pair a hand-rolled radar chart with `DistributionCurve` (`components/viz/`) — a normal-distribution curve marking your actual percentile, next to the per-domain breakdown
 - Donation links (PayPal, Ko-fi) and social links (GitHub, Instagram, TikTok; Discord marked "soon")
 - Terms of service and privacy policy pages
 
@@ -80,7 +80,7 @@ components/
   rendimiento/        Rendimiento page
   legal/              Terms/privacy shell + content
   profile/            Demo profile
-  viz/                DistributionCurve / PulseTrace page-badge SVGs
+  viz/                DistributionCurve (percentile bell curve, quiz results)
   GlassCard.tsx       Shared glassmorphism surface primitive
 lib/
   i18n/               ES/EN dictionary

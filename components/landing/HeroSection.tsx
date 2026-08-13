@@ -6,7 +6,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import { springTransition, tapScale } from "@/lib/motion";
 import { heroTextStagger, heroWordFade } from "@/components/landing/motionVariants";
 import { AmbientBlob } from "@/components/AmbientBlob";
-import { DistributionCurve } from "@/components/viz/DistributionCurve";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -30,7 +29,6 @@ export function HeroSection() {
   return (
     <section className="relative flex flex-col items-center gap-6 px-4 pb-12 pt-20 text-center sm:pt-28">
       <AmbientBlob className="-top-16 left-1/2 h-72 w-72 -translate-x-1/2" durationSeconds={24} />
-      <DistributionCurve size="lg" />
       <motion.h1
         variants={heroTextStagger}
         initial={shouldReduceMotion ? false : "hidden"}

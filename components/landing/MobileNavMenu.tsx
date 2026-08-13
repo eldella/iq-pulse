@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 const emptySubscribe = () => () => {};
 
-/** Mirrors each destination's own page badge (PulseTrace/DistributionCurve). */
+/** One lucide icon per top-level destination. */
 const NAV_ICONS: Record<string, LucideIcon> = {
   "/": Home,
   "/ranking": Trophy,
