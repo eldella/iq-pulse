@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
+import { shuffle } from "@/lib/random";
 import type { Difficulty } from "@/lib/scoring";
 
 /**
@@ -41,7 +42,7 @@ function generateMatrix(difficulty: Difficulty) {
     if (candidate !== answer) distractors.add(candidate);
   }
 
-  const options = [answer, ...distractors].sort(() => Math.random() - 0.5);
+  const options = shuffle([answer, ...distractors]);
   return { grid, answer, options };
 }
 

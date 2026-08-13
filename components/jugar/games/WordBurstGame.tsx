@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
+import { shuffle } from "@/lib/random";
 import type { Difficulty } from "@/lib/scoring";
 
 const WORD_COUNT: Record<Difficulty, number> = { easy: 3, medium: 4, hard: 5 };
@@ -33,10 +34,6 @@ const WORD_BANK: readonly { es: string; en: string }[] = [
   { es: "puerta", en: "door" },
   { es: "árbol", en: "tree" },
 ];
-
-function shuffle<T>(items: readonly T[]): T[] {
-  return [...items].sort(() => Math.random() - 0.5);
-}
 
 function generateRound(difficulty: Difficulty, lang: "es" | "en") {
   const pool = shuffle(WORD_BANK);

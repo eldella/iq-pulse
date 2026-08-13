@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
+import { shuffle } from "@/lib/random";
 import type { Difficulty } from "@/lib/scoring";
 
 type Move = "R" | "D";
@@ -67,14 +68,14 @@ function generatePuzzle(difficulty: Difficulty) {
     }
   }
 
-  const shuffledCells = [...interiorCells].sort(() => Math.random() - 0.5);
+  const shuffledCells = shuffle(interiorCells);
   for (const obstacle of shuffledCells) {
     const valid = allPaths.filter((path) => !pathHitsCell(path, obstacle));
     const invalid = allPaths.filter((path) => pathHitsCell(path, obstacle));
     if (valid.length >= 1 && invalid.length >= 3) {
       const correct = valid[Math.floor(Math.random() * valid.length)];
-      const distractors = [...invalid].sort(() => Math.random() - 0.5).slice(0, 3);
-      const options = [correct, ...distractors].sort(() => Math.random() - 0.5);
+      const distractors = shuffle(invalid).slice(0, 3);
+      const options = shuffle([correct, ...distractors]);
       return { size, goal: [goalX, goalY] as [number, number], obstacle, options, correct };
     }
   }
