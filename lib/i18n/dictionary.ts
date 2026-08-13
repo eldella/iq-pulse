@@ -131,7 +131,6 @@ export type Dictionary = {
     freePracticeHeading: string;
     freePracticeSubhead: string;
     streakDaysLabel: string;
-    dailyCompletedTag: string;
     exitToMenuCta: string;
     timeRemainingLabel: string;
     matrixInstructions: string;
@@ -363,7 +362,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       freePracticeHeading: "Práctica libre",
       freePracticeSubhead: "Elegí un juego suelto para practicar un área puntual.",
       streakDaysLabel: "días de racha",
-      dailyCompletedTag: "Hoy",
       exitToMenuCta: "← Volver a elegir",
       timeRemainingLabel: "Tiempo restante",
       matrixInstructions: "Encontrá el número que falta en la secuencia.",
@@ -594,7 +592,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       freePracticeHeading: "Free practice",
       freePracticeSubhead: "Pick a single game to practice one area.",
       streakDaysLabel: "day streak",
-      dailyCompletedTag: "Today",
       exitToMenuCta: "← Back to menu",
       timeRemainingLabel: "Time remaining",
       matrixInstructions: "Find the missing number in the sequence.",

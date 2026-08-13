@@ -102,7 +102,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const { t, lang } = useLanguage();
   const { isLoggedIn } = useAuth();
   const shouldReduceMotion = useReducedMotion();
-  const { streak: dailyStreak, completedCount: dailyCompletedCount, completedIds: dailyCompletedIds } = useDailyTraining();
+  const { streak: dailyStreak, completedCount: dailyCompletedCount } = useDailyTraining();
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [plan, setPlan] = useState<readonly GameId[]>(FULL_ASSESSMENT);
@@ -354,7 +354,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             {(Object.keys(GAMES) as GameId[]).map((id) => {
               const { Icon } = GAMES[id];
               const { title, description } = gameCopy(id, t);
-              const doneToday = FULL_ASSESSMENT.includes(id) && dailyCompletedIds.includes(id);
               return (
                 <motion.div
                   key={id}
@@ -373,12 +372,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                       variant="plain"
                       className="relative flex h-full flex-col items-center gap-2 p-5 text-center shadow-sm transition-shadow hover:shadow-md"
                     >
-                      {doneToday && (
-                        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                          <Check className="h-3 w-3" aria-hidden="true" />
-                          {t.quiz.dailyCompletedTag}
-                        </span>
-                      )}
                       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
                         {starting ? (
                           <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
