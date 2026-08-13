@@ -7,24 +7,22 @@ import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
 /**
  * Procedurally generated 2x2 additive grid: each cell = base + col*colDelta
  * + row*rowDelta. The bottom-right cell is always the one missing, with 3
- * plausible distractor options alongside the real answer. Difficulty widens
- * the delta ranges (and allows negative deltas at "hard") instead of using
- * a curated question bank - no design tool needed to add more of these.
+ * plausible distractor options alongside the real answer. The grid itself
+ * stays 2x2 (that's the puzzle's shape), but the number ranges widen with
+ * level's contentTier - negative deltas only start appearing from tier 4
+ * on, instead of a fixed "hard" check.
  */
-function generateMatrix(difficulty: Difficulty) {
-  const ranges: Record<Difficulty, { base: [number, number]; delta: [number, number] }> = {
-    easy: { base: [1, 9], delta: [1, 3] },
-    medium: { base: [2, 15], delta: [2, 6] },
-    hard: { base: [3, 20], delta: [3, 9] },
-  };
-  const { base, delta } = ranges[difficulty];
+function generateMatrix(level: number) {
+  const tier = contentTier(level);
+  const base: [number, number] = [1 + tier, 9 + tier * 4];
+  const delta: [number, number] = [1 + tier, 3 + tier * 2];
   const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-  const sign = () => (difficulty === "hard" && Math.random() < 0.4 ? -1 : 1);
+  const sign = () => (tier >= 4 && Math.random() < 0.4 ? -1 : 1);
 
   const a = rand(base[0], base[1]);
   const colDelta = rand(delta[0], delta[1]) * sign();
@@ -48,14 +46,14 @@ function generateMatrix(difficulty: Difficulty) {
 }
 
 export function PatternMatrixGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t } = useLanguage();
-  const puzzle = useMemo(() => generateMatrix(difficulty), [difficulty]);
+  const puzzle = useMemo(() => generateMatrix(level), [level]);
   // This component remounts fresh for every question (parent keys it by
   // question index), so a ref seeded once at mount is the start time -
   // no effect needed to "reset" it.

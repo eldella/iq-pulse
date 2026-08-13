@@ -7,38 +7,38 @@ import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
-// Lower ratio = the two dot counts are closer together = harder to judge at a glance.
-const CONFIG: Record<Difficulty, { baseRange: [number, number]; ratio: number }> = {
-  easy: { baseRange: [4, 8], ratio: 1.6 },
-  medium: { baseRange: [6, 12], ratio: 1.35 },
-  hard: { baseRange: [8, 16], ratio: 1.15 },
-};
-
-// 5x5 = 25 slots, comfortable headroom above the highest possible count
-// (hard: up to 16 base * 1.15 ratio ≈ 19) so two counts never collide into
-// the same rendered dot layout.
+// Slot grid is sized to the actual count needed (with 40% headroom) instead
+// of a fixed pool, so it scales with however high the base range grows and
+// two counts never collide into the same rendered dot layout.
 function dotPositions(count: number): { x: number; y: number }[] {
+  const gridDim = Math.max(5, Math.ceil(Math.sqrt(count * 1.4)));
+  const step = 90 / (gridDim - 1);
   const slots: { x: number; y: number }[] = [];
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 5; col++) {
-      slots.push({ x: 5 + col * 22.5, y: 5 + row * 22.5 });
+  for (let row = 0; row < gridDim; row++) {
+    for (let col = 0; col < gridDim; col++) {
+      slots.push({ x: 5 + col * step, y: 5 + row * step });
     }
   }
   return shuffle(slots)
     .slice(0, count)
-    .map((s) => ({ x: s.x + (Math.random() * 5 - 2.5), y: s.y + (Math.random() * 5 - 2.5) }));
+    .map((s) => ({ x: s.x + (Math.random() * 4 - 2), y: s.y + (Math.random() * 4 - 2) }));
 }
 
 /**
  * Quick approximate-number comparison: two dot clusters, click the side with
  * more - a fast subitizing/estimation task (processing speed) rather than
  * Stroop's color/word interference, so it exercises the "speed" domain
- * differently instead of duplicating it.
+ * differently instead of duplicating it. Base range grows and the ratio
+ * between the two counts shrinks (floored at 1.08) with tier, so higher
+ * levels mean more dots that are also closer in count - harder to judge at
+ * a glance both ways.
  */
-function generateTrial(difficulty: Difficulty) {
-  const { baseRange, ratio } = CONFIG[difficulty];
+function generateTrial(level: number) {
+  const tier = contentTier(level);
+  const baseRange: [number, number] = [4 + tier, 8 + tier * 3];
+  const ratio = Math.max(1.08, 1.6 - tier * 0.08);
   const base = Math.floor(Math.random() * (baseRange[1] - baseRange[0] + 1)) + baseRange[0];
   const other = Math.max(base + 1, Math.round(base * ratio));
   const baseIsLeft = Math.random() < 0.5;
@@ -52,14 +52,14 @@ function generateTrial(difficulty: Difficulty) {
 }
 
 export function QuickCompareGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t } = useLanguage();
-  const trial = useMemo(() => generateTrial(difficulty), [difficulty]);
+  const trial = useMemo(() => generateTrial(level), [level]);
   const startTimeRef = useRef(now());
   const [selected, setSelected] = useState<"left" | "right" | null>(null);
 

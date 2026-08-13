@@ -8,19 +8,21 @@ import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
 import { WORD_BANK } from "@/lib/wordBank";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
-const LETTER_INTERVAL_MS: Record<Difficulty, number> = { easy: 550, medium: 450, hard: 350 };
+const MIN_LETTER_INTERVAL_MS = 220;
 
-function pickWord(difficulty: Difficulty, lang: "es" | "en"): string {
-  const pool = WORD_BANK.filter((w) => {
-    const len = w[lang].length;
-    if (difficulty === "easy") return len <= 5;
-    if (difficulty === "medium") return len >= 5 && len <= 7;
-    return len >= 6;
-  });
+/** Prefers longer words as tier climbs (falls back to the full bank if nothing meets the length floor). */
+function pickWord(level: number, lang: "es" | "en"): string {
+  const minLen = 3 + contentTier(level);
+  const pool = WORD_BANK.filter((w) => w[lang].length >= minLen);
   const candidates = pool.length > 0 ? pool : WORD_BANK;
   return shuffle(candidates)[0][lang];
+}
+
+/** Flash speeds up with tier, floored so it never becomes literally unreadable. */
+function letterIntervalForLevel(level: number): number {
+  return Math.max(MIN_LETTER_INTERVAL_MS, 550 - contentTier(level) * 60);
 }
 
 /**
@@ -30,14 +32,14 @@ function pickWord(difficulty: Difficulty, lang: "es" | "en"): string {
  * DigitSpanGame (numeric keypad): free-text recall via the keyboard.
  */
 export function WordTypingGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t, lang } = useLanguage();
-  const word = useMemo(() => pickWord(difficulty, lang), [difficulty, lang]);
+  const word = useMemo(() => pickWord(level, lang), [level, lang]);
   const [phase, setPhase] = useState<"flash" | "recall">("flash");
   const [visibleIndex, setVisibleIndex] = useState(0);
   const [typed, setTyped] = useState("");
@@ -46,7 +48,7 @@ export function WordTypingGame({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const interval = LETTER_INTERVAL_MS[difficulty];
+    const interval = letterIntervalForLevel(level);
     const letters = word.split("");
     const timers = letters.map((_, index) =>
       window.setTimeout(() => setVisibleIndex(index + 1), (index + 1) * interval)
@@ -60,7 +62,7 @@ export function WordTypingGame({
       timers.forEach(window.clearTimeout);
       window.clearTimeout(recallTimer);
     };
-  }, [word, difficulty]);
+  }, [word, level]);
 
   useEffect(() => {
     if (phase === "recall") inputRef.current?.focus();

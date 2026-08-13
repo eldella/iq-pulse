@@ -39,7 +39,7 @@ import { QuickCompareGame } from "@/components/jugar/games/QuickCompareGame";
 import { ReactionCircleGame } from "@/components/jugar/games/ReactionCircleGame";
 import { WordTypingGame } from "@/components/jugar/games/WordTypingGame";
 import { startSession, recordAnswer, completeSession, upsertDailyResult } from "@/lib/supabase/quiz";
-import { classifyIQ, nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
+import { classifyIQ, levelToBucket, nextLevel, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import {
@@ -80,7 +80,7 @@ type GameDef = {
   domain: Domain;
   Icon: typeof Puzzle;
   Component: (props: {
-    difficulty: Difficulty;
+    level: number;
     onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
   }) => React.ReactElement;
 };
@@ -151,7 +151,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [plan, setPlan] = useState<readonly GameId[]>(FULL_ASSESSMENT);
   const [isDailyRun, setIsDailyRun] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+  const [level, setLevel] = useState(1);
   const [streak, setStreak] = useState(0);
   const [missStreak, setMissStreak] = useState(0);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -183,7 +183,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setSessionId(id);
       setPlan(chosenPlan);
       setIsDailyRun(daily);
-      setDifficulty("medium");
+      setLevel(1);
       setStreak(0);
       setMissStreak(0);
       setQuestionIndex(0);
@@ -238,9 +238,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     const newMissStreak = isCorrect ? 0 : missStreak + 1;
     setStreak(newStreak);
     setMissStreak(newMissStreak);
-    setDifficulty((current) => nextDifficulty(current, isCorrect, newStreak, newMissStreak));
+    setLevel((current) => nextLevel(current, isCorrect, newStreak, newMissStreak));
 
-    recordAnswer({ sessionId, domain, isCorrect, responseTimeMs, difficulty }).catch(() => {
+    recordAnswer({ sessionId, domain, isCorrect, responseTimeMs, difficulty: levelToBucket(level) }).catch(() => {
       // Non-fatal: the run continues locally even if one write fails.
     });
 
@@ -255,7 +255,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     setQuestionIndex(0);
     setStreak(0);
     setMissStreak(0);
-    setDifficulty("medium");
+    setLevel(1);
 
     if (currentGameIndex < plan.length - 1) {
       gameStartRef.current = now();
@@ -483,10 +483,21 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
               {gameCopy(activeGame.id, t).title}
             </p>
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.p
+                key={level}
+                initial={shouldReduceMotion ? false : { scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={springTransition}
+                className="tabular-nums text-lg font-bold text-foreground"
+              >
+                {level}x
+              </motion.p>
+            </AnimatePresence>
           </div>
 
           <activeGame.Component
-            difficulty={difficulty}
+            level={level}
             onAnswer={(isCorrect, ms) => handleAnswer(activeGame.id, isCorrect, ms)}
           />
         </motion.div>

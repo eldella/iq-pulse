@@ -6,19 +6,20 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/scoring";
 
 // Randomized wait before the circle turns green (1-15s, confirmed with the
-// user), same range at every difficulty on purpose - unlike the other
-// games' CONFIG, this one isn't meant to get easier to predict, it's meant
-// to stay unpredictable so the reading is a genuine reaction time.
+// user), same range at every level on purpose - unlike the other games'
+// content, this one isn't meant to get easier to predict as level climbs,
+// it's meant to stay unpredictable so the reading is a genuine reaction
+// time. The level multiplier still scores this game (see lib/scoring.ts),
+// it just doesn't change what's rendered here.
 const DELAY_RANGE_MS: [number, number] = [1000, 15000];
 
 /** Classic reaction-time test: wait for green, tap as fast as possible - tapping early is a miss. */
 export function ReactionCircleGame({
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t } = useLanguage();

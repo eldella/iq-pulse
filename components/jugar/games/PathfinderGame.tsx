@@ -8,38 +8,57 @@ import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
 type Move = "R" | "D";
 
 // steps=3 only yields 3 distinct paths total, which makes the obstacle
 // search below (needs >=1 valid AND >=3 invalid, i.e. more paths than
 // exist) mathematically unsatisfiable - it silently fell through to the
-// fully-fixed fallback puzzle every single time at "easy", which is why the
-// same pathfinder kept repeating. 4 steps (6 distinct paths) gives the
-// search room to actually find a real, varied obstacle placement.
-const CONFIG: Record<Difficulty, { size: number; steps: number }> = {
-  easy: { size: 4, steps: 4 },
-  medium: { size: 5, steps: 4 },
-  hard: { size: 6, steps: 5 },
-};
+// fully-fixed fallback puzzle every single time. 4 steps (6 distinct paths)
+// is the floor. Steps caps at 10 (C(10,5) = 252 distinct paths) so this
+// stays cheap to generate on every question regardless of how high level
+// climbs.
+const MAX_STEPS = 10;
+const MAX_SIZE = 10;
 
-function permutations(moves: Move[]): Move[][] {
-  if (moves.length <= 1) return [moves];
-  const seen = new Set<string>();
-  const result: Move[][] = [];
-  for (let i = 0; i < moves.length; i++) {
-    const rest = [...moves.slice(0, i), ...moves.slice(i + 1)];
-    for (const perm of permutations(rest)) {
-      const candidate = [moves[i], ...perm];
-      const key = candidate.join("");
-      if (!seen.has(key)) {
-        seen.add(key);
-        result.push(candidate);
-      }
+function configForLevel(level: number) {
+  const steps = Math.min(MAX_STEPS, 4 + contentTier(level));
+  const size = Math.min(MAX_SIZE, steps + 2);
+  return { size, steps };
+}
+
+/**
+ * All distinct R/D sequences of length `totalSteps` with exactly `rCount`
+ * R's, generated directly as combinations - O(C(n,k) * n) work, not the
+ * O(n!) a naive "generate every permutation, dedupe with a Set" approach
+ * would do. That naive version is exactly what used to live here, and it's
+ * why raising steps toward MAX_STEPS during testing made this hang: 10!
+ * (3.6M) permutation attempts to produce only 252 distinct paths.
+ */
+function distinctPaths(totalSteps: number, rCount: number): Move[][] {
+  const results: Move[][] = [];
+  const current: Move[] = [];
+
+  function backtrack(pos: number, rRemaining: number) {
+    if (pos === totalSteps) {
+      results.push([...current]);
+      return;
+    }
+    if (rRemaining > 0) {
+      current.push("R");
+      backtrack(pos + 1, rRemaining - 1);
+      current.pop();
+    }
+    if (totalSteps - pos > rRemaining) {
+      current.push("D");
+      backtrack(pos + 1, rRemaining);
+      current.pop();
     }
   }
-  return result;
+
+  backtrack(0, rCount);
+  return results;
 }
 
 function pathHitsCell(path: Move[], target: [number, number]): boolean {
@@ -61,12 +80,11 @@ function pathHitsCell(path: Move[], target: [number, number]): boolean {
  * stays consistent with the rest of the engine instead of introducing a
  * whole new drag/build-path interaction pattern.
  */
-function generatePuzzle(difficulty: Difficulty) {
-  const { size, steps } = CONFIG[difficulty];
+function generatePuzzle(level: number) {
+  const { size, steps } = configForLevel(level);
   const goalX = Math.ceil(steps / 2);
   const goalY = steps - goalX;
-  const moves: Move[] = [...Array(goalX).fill("R"), ...Array(goalY).fill("D")];
-  const allPaths = permutations(moves);
+  const allPaths = distinctPaths(steps, goalX);
 
   const interiorCells: [number, number][] = [];
   for (let x = 0; x <= goalX; x++) {
@@ -102,14 +120,14 @@ function generatePuzzle(difficulty: Difficulty) {
 }
 
 export function PathfinderGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t } = useLanguage();
-  const puzzle = useMemo(() => generatePuzzle(difficulty), [difficulty]);
+  const puzzle = useMemo(() => generatePuzzle(level), [level]);
   const startTimeRef = useRef(now());
   const [selected, setSelected] = useState<Move[] | null>(null);
 

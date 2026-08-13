@@ -5,40 +5,47 @@
  *
  * Design (confirmed with the user): precision is the primary driver of
  * score, response time only adds a small bonus - a lucky fast guess should
- * never outscore a slower correct answer. Difficulty starts at "medium"
- * (starting at "easy" wastes a capable person's first few questions) and
- * adapts: 2 correct in a row bumps it up one tier, 1 incorrect drops it one
- * tier, both clamped to the easy/medium/hard range.
+ * never outscore a slower correct answer.
+ *
+ * Difficulty is an uncapped numeric `level` (starts at 1 = "1x" each new
+ * exercise), not 3 fixed tiers: 2 correct in a row DOUBLES it (1→2→4→8→16→
+ * 32...), 2 wrong in a row halves it back down (floor of 1). `level` is also
+ * literally the score multiplier (100 base points × level), so a 32x streak
+ * scores dramatically more than a 1x one - the escalation and the score are
+ * the same number, not two systems that happen to move together.
+ *
+ * Game content can't visually scale 1:1 with an exponential number (a 32x
+ * grid would be unusable), so games derive their own visual complexity from
+ * `contentTier(level)` - a small integer that only advances once per
+ * doubling, giving a handful of meaningful content steps instead of a
+ * literal 32x mess. The DB's difficulty_at_time column still only accepts
+ * easy/medium/hard (see supabase/schema.sql), so `levelToBucket()` collapses
+ * the numeric level down to that for storage - gameplay never touches the
+ * 3-tier type again.
  */
 
 export type Difficulty = "easy" | "medium" | "hard";
 export type Domain = "reasoning" | "memory" | "speed";
 
-const DIFFICULTY_BASE_POINTS: Record<Difficulty, number> = {
-  easy: 100,
-  medium: 150,
-  hard: 200,
-};
-
-const DIFFICULTY_ORDER: readonly Difficulty[] = ["easy", "medium", "hard"];
+const BASE_POINTS = 100;
 
 /** Time bonus decays linearly from 20% (instant) to 0% at/after this many ms. */
 const TIME_BONUS_WINDOW_MS = 10_000;
 const TIME_BONUS_MAX_FACTOR = 0.2;
 
+/** A session that sustains this level the whole way through normalizes to ~1.0 (see normalizeScore). */
+const NORMALIZE_REFERENCE_LEVEL = 8;
+
 /**
  * Points for a single answered question. Wrong answers always score 0,
  * regardless of how fast they were - speed only ever amplifies a correct
- * answer, it never substitutes for one.
+ * answer, it never substitutes for one. `level` multiplies linearly, so
+ * doubling your streak literally doubles what each answer is worth.
  */
-export function scoreAnswer(
-  difficulty: Difficulty,
-  isCorrect: boolean,
-  responseTimeMs: number
-): number {
+export function scoreAnswer(level: number, isCorrect: boolean, responseTimeMs: number): number {
   if (!isCorrect) return 0;
 
-  const basePoints = DIFFICULTY_BASE_POINTS[difficulty];
+  const basePoints = BASE_POINTS * level;
   const timeBonusFactor =
     Math.max(0, 1 - responseTimeMs / TIME_BONUS_WINDOW_MS) * TIME_BONUS_MAX_FACTOR;
 
@@ -46,51 +53,74 @@ export function scoreAnswer(
 }
 
 /**
- * Next difficulty tier given consecutive-correct and consecutive-wrong
- * streaks (each reset to 0 by the caller whenever the other one advances)
- * and whether the just-answered question was correct. Called once per
- * answer.
+ * Next level given consecutive-correct and consecutive-wrong streaks (each
+ * reset to 0 by the caller whenever the other one advances) and whether the
+ * just-answered question was correct. Called once per answer.
  *
- * Deliberately asymmetric and steep (confirmed with the user): 2 in a row
- * jumps straight to "hard" - not just one tier - while it still takes 2
- * wrong in a row to drop a single tier back down. A session shoots up to
- * hard fast and is slow to fall back, rather than climbing evenly. There's
- * still only one overall mode (no easy/normal/hard picker), this just
- * biases that one mode upward, harder than before.
+ * Deliberately asymmetric (confirmed with the user): 2 in a row doubles the
+ * level, but it still takes 2 wrong in a row to halve it back down - a
+ * session shoots up fast and falls back slowly rather than oscillating.
  */
-export function nextDifficulty(
-  current: Difficulty,
+export function nextLevel(
+  current: number,
   isCorrect: boolean,
   consecutiveCorrect: number,
   consecutiveWrong: number
-): Difficulty {
-  const currentIndex = DIFFICULTY_ORDER.indexOf(current);
-
+): number {
   if (!isCorrect) {
     if (consecutiveWrong >= 2) {
-      return DIFFICULTY_ORDER[Math.max(0, currentIndex - 1)];
+      return Math.max(1, Math.floor(current / 2));
     }
     return current;
   }
 
   if (consecutiveCorrect >= 2) {
-    return DIFFICULTY_ORDER[DIFFICULTY_ORDER.length - 1];
+    return current * 2;
   }
 
   return current;
 }
 
 /**
+ * Small integer content-complexity tier for a given level - advances once
+ * per doubling (level 1 → tier 0, 2-3 → tier 1, 4-7 → tier 2, 8-15 → tier 3,
+ * 16-31 → tier 4, ...), so a game's grid/sequence/range formulas get a
+ * handful of sane growth steps instead of trying to render "32x" literally.
+ */
+export function contentTier(level: number): number {
+  return Math.floor(Math.log2(Math.max(1, level)));
+}
+
+/** Collapses the numeric level down to the DB's fixed easy/medium/hard column - display/scoring never use this. */
+export function levelToBucket(level: number): Difficulty {
+  const tier = contentTier(level);
+  if (tier <= 1) return "easy";
+  if (tier <= 3) return "medium";
+  return "hard";
+}
+
+/**
+ * Reverse of levelToBucket, for completeSession() re-scoring answers read
+ * back from the DB (which only ever stored the bucket, not the exact
+ * level). Picks the lowest level in each bucket's range - a conservative
+ * reconstruction that never overstates a session's score.
+ */
+export function bucketToLevel(bucket: Difficulty): number {
+  if (bucket === "easy") return 1;
+  if (bucket === "medium") return 4;
+  return 16;
+}
+
+/**
  * Normalizes a session's total points into the 0-1 range scoreToIQEstimate
- * expects, against a ceiling of every question answered at "hard" with a
- * full time bonus. Difficulty is adaptive, so this is intentional: staying
- * at "hard" the whole session scores higher than acing "easy" the whole
- * way through, even at 100% accuracy in both cases - the ceiling rewards
- * the difficulty level you sustained, not just correctness.
+ * expects, against a reference of every question answered at level 8 (a
+ * strong, sustained streak) with a full time bonus. Levels are uncapped, so
+ * this is a reference point rather than a true ceiling - exceeding it is
+ * possible and fine, scoreToIQEstimate already clamps the input safely.
  */
 export function normalizeScore(totalPoints: number, answeredCount: number): number {
   if (answeredCount <= 0) return 0;
-  const ceiling = answeredCount * DIFFICULTY_BASE_POINTS.hard * (1 + TIME_BONUS_MAX_FACTOR);
+  const ceiling = answeredCount * BASE_POINTS * NORMALIZE_REFERENCE_LEVEL * (1 + TIME_BONUS_MAX_FACTOR);
   return totalPoints / ceiling;
 }
 

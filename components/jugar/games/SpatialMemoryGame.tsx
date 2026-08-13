@@ -7,17 +7,16 @@ import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
-const CONFIG: Record<Difficulty, { gridSize: number; count: number }> = {
-  easy: { gridSize: 3, count: 3 },
-  medium: { gridSize: 3, count: 4 },
-  hard: { gridSize: 4, count: 5 },
-};
+const MAX_GRID_SIZE = 6;
 const FLASH_MS = 1800;
 
-function generateRound(difficulty: Difficulty) {
-  const { gridSize, count } = CONFIG[difficulty];
+/** Grid grows from 3x3 up to 6x6 with tier, lit-cell count grows alongside it. */
+function generateRound(level: number) {
+  const tier = contentTier(level);
+  const gridSize = Math.min(MAX_GRID_SIZE, 3 + tier);
+  const count = Math.min(gridSize * gridSize - 1, 3 + tier);
   const cells = shuffle(Array.from({ length: gridSize * gridSize }, (_, i) => i)).slice(0, count);
   return { gridSize, cells: new Set(cells) };
 }
@@ -29,14 +28,14 @@ function generateRound(difficulty: Difficulty) {
  * WordBurstGame (words) with a purely visual/positional recall task.
  */
 export function SpatialMemoryGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t } = useLanguage();
-  const round = useMemo(() => generateRound(difficulty), [difficulty]);
+  const round = useMemo(() => generateRound(level), [level]);
   const [phase, setPhase] = useState<"memorize" | "recall">("memorize");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [submitted, setSubmitted] = useState<{ isCorrect: boolean } | null>(null);

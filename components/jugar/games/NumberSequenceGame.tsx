@@ -7,13 +7,9 @@ import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
-const CONFIG: Record<Difficulty, { length: number; maxStep: number; allowGeometric: boolean }> = {
-  easy: { length: 4, maxStep: 5, allowGeometric: false },
-  medium: { length: 5, maxStep: 9, allowGeometric: false },
-  hard: { length: 5, maxStep: 12, allowGeometric: true },
-};
+const MAX_LENGTH = 8;
 
 function rand(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -22,10 +18,16 @@ function rand(min: number, max: number) {
 /**
  * Classic IQ-test number sequence (2, 4, 6, 8, ?) rather than the 2x2
  * additive grid PatternMatrixGame already covers - a linear progression
- * (arithmetic, or geometric at "hard") instead of a spatial layout.
+ * (arithmetic, or geometric from tier 2 on) instead of a spatial layout.
+ * Length grows with tier but caps at MAX_LENGTH - a row of numbers past
+ * that stops being readable at a glance regardless of how high the level
+ * multiplier climbs.
  */
-function generateSequence(difficulty: Difficulty) {
-  const { length, maxStep, allowGeometric } = CONFIG[difficulty];
+function generateSequence(level: number) {
+  const tier = contentTier(level);
+  const length = Math.min(MAX_LENGTH, 4 + Math.floor(tier / 2));
+  const maxStep = 5 + tier * 2;
+  const allowGeometric = tier >= 2;
   const isGeometric = allowGeometric && Math.random() < 0.4;
 
   let sequence: number[];
@@ -54,14 +56,14 @@ function generateSequence(difficulty: Difficulty) {
 }
 
 export function NumberSequenceGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t } = useLanguage();
-  const puzzle = useMemo(() => generateSequence(difficulty), [difficulty]);
+  const puzzle = useMemo(() => generateSequence(level), [level]);
   const startTimeRef = useRef(now());
   const [selected, setSelected] = useState<number | null>(null);
 

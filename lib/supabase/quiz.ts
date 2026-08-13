@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase/client";
 import {
+  bucketToLevel,
   normalizeScore,
   scoreAnswer,
   scoreToIQEstimate,
@@ -75,7 +76,7 @@ export async function completeSession(
     (sum, answer) =>
       sum +
       scoreAnswer(
-        answer.difficulty_at_time as Difficulty,
+        bucketToLevel(answer.difficulty_at_time as Difficulty),
         answer.is_correct,
         answer.response_time_ms
       ),

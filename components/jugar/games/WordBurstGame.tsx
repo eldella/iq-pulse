@@ -8,16 +8,17 @@ import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
 import { WORD_BANK } from "@/lib/wordBank";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
-const WORD_COUNT: Record<Difficulty, number> = { easy: 3, medium: 4, hard: 5 };
-const OPTION_COUNT: Record<Difficulty, number> = { easy: 6, medium: 8, hard: 10 };
 const WORD_INTERVAL_MS = 900;
+const MAX_SHOWN = 8;
 
-function generateRound(difficulty: Difficulty, lang: "es" | "en") {
+/** Both counts grow with tier; optionCount caps at WORD_BANK.length - can't offer more options than words that exist. */
+function generateRound(level: number, lang: "es" | "en") {
+  const tier = contentTier(level);
+  const shownCount = Math.min(MAX_SHOWN, 3 + tier);
+  const optionCount = Math.min(WORD_BANK.length, 6 + tier * 2);
   const pool = shuffle(WORD_BANK);
-  const shownCount = WORD_COUNT[difficulty];
-  const optionCount = OPTION_COUNT[difficulty];
   const shown = pool.slice(0, shownCount).map((w) => w[lang]);
   const options = shuffle(pool.slice(0, optionCount).map((w) => w[lang]));
   return { shown, options };
@@ -29,14 +30,14 @@ function generateRound(difficulty: Difficulty, lang: "es" | "en") {
  * pattern as the other games (parent keys this by question index).
  */
 export function WordBurstGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t, lang } = useLanguage();
-  const round = useMemo(() => generateRound(difficulty, lang), [difficulty, lang]);
+  const round = useMemo(() => generateRound(level, lang), [level, lang]);
   const [phase, setPhase] = useState<"memorize" | "recall">("memorize");
   const [visibleIndex, setVisibleIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);

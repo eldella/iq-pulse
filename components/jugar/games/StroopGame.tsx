@@ -7,28 +7,32 @@ import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
 // Red + standard green is the classic confusion pair for protanopia/
 // deuteranopia (the most common color-vision deficiencies), and this is a
 // color-perception task by nature (an answer's text label doesn't help
 // with the stimulus itself, only with picking a response) - green is
-// shifted to a teal to keep all five hues distinguishable under common CVD.
+// shifted to a teal to keep all hues distinguishable under common CVD. 8
+// colors is the practical ceiling for staying distinguishable at a glance,
+// so option-pool growth caps there regardless of how high level climbs.
 const COLORS = [
   { key: "red", hex: "#FF3B30", es: "Rojo", en: "Red" },
   { key: "blue", hex: "#0A84FF", es: "Azul", en: "Blue" },
   { key: "teal", hex: "#12B5A6", es: "Turquesa", en: "Teal" },
   { key: "yellow", hex: "#FFD60A", es: "Amarillo", en: "Yellow" },
   { key: "purple", hex: "#AF52DE", es: "Violeta", en: "Purple" },
+  { key: "orange", hex: "#FF9F0A", es: "Naranja", en: "Orange" },
+  { key: "pink", hex: "#FF375F", es: "Rosa", en: "Pink" },
+  { key: "brown", hex: "#8E6E53", es: "Marrón", en: "Brown" },
 ] as const;
 
-const OPTION_COUNT: Record<Difficulty, number> = { easy: 3, medium: 4, hard: 5 };
-
-function generateTrial(difficulty: Difficulty) {
+function generateTrial(level: number) {
+  const optionCount = Math.min(COLORS.length, 3 + contentTier(level));
   // Shuffled so the option buttons don't sit in the same fixed order every
   // single trial - the word/ink pairing was already random, but the layout
   // wasn't.
-  const pool = shuffle(COLORS.slice(0, OPTION_COUNT[difficulty]));
+  const pool = shuffle(COLORS.slice(0, optionCount));
   const wordIndex = Math.floor(Math.random() * pool.length);
   let inkIndex = Math.floor(Math.random() * pool.length);
   while (inkIndex === wordIndex) {
@@ -38,14 +42,14 @@ function generateTrial(difficulty: Difficulty) {
 }
 
 export function StroopGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t, lang } = useLanguage();
-  const trial = useMemo(() => generateTrial(difficulty), [difficulty]);
+  const trial = useMemo(() => generateTrial(level), [level]);
   const startTimeRef = useRef(now());
   const [selected, setSelected] = useState<string | null>(null);
 

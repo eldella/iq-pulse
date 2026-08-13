@@ -7,9 +7,9 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/scoring";
+import { contentTier } from "@/lib/scoring";
 
-const SEQUENCE_LENGTH: Record<Difficulty, number> = { easy: 4, medium: 5, hard: 6 };
+const MAX_SEQUENCE_LENGTH = 12;
 const DIGIT_INTERVAL_MS = 700;
 
 function generateSequence(length: number): number[] {
@@ -17,14 +17,15 @@ function generateSequence(length: number): number[] {
 }
 
 export function DigitSpanGame({
-  difficulty,
+  level,
   onAnswer,
 }: {
-  difficulty: Difficulty;
+  level: number;
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t } = useLanguage();
-  const sequence = useMemo(() => generateSequence(SEQUENCE_LENGTH[difficulty]), [difficulty]);
+  const sequenceLength = Math.min(MAX_SEQUENCE_LENGTH, 4 + contentTier(level));
+  const sequence = useMemo(() => generateSequence(sequenceLength), [sequenceLength]);
   // Initial state, not a reset-on-change effect: this component remounts
   // fresh for every question (parent keys it by question index), so plain
   // useState defaults already cover "new sequence" - the effect below only
