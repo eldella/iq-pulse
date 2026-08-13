@@ -99,6 +99,30 @@ export function iqToPercentile(iq: number): number {
   return Math.round(normalCDF(z) * 100);
 }
 
+export type IQClassification =
+  | "verySuperior"
+  | "superior"
+  | "highAverage"
+  | "average"
+  | "lowAverage"
+  | "borderline"
+  | "low";
+
+/**
+ * Standard Wechsler-style IQ classification bands - a plain-language label
+ * ("Superior", "Promedio") reads instantly, unlike a bare percentile number
+ * which needs the reader to already know what "percentile" means.
+ */
+export function classifyIQ(iq: number): IQClassification {
+  if (iq >= 130) return "verySuperior";
+  if (iq >= 120) return "superior";
+  if (iq >= 110) return "highAverage";
+  if (iq >= 90) return "average";
+  if (iq >= 80) return "lowAverage";
+  if (iq >= 70) return "borderline";
+  return "low";
+}
+
 function normalCDF(z: number): number {
   return 0.5 * (1 + erf(z / Math.SQRT2));
 }

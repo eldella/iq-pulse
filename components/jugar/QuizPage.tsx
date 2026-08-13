@@ -17,7 +17,7 @@ import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
 import { WordBurstGame } from "@/components/jugar/games/WordBurstGame";
 import { startSession, recordAnswer, completeSession, upsertDailyResult } from "@/lib/supabase/quiz";
-import { nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
+import { classifyIQ, nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import {
@@ -239,7 +239,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
   function handleCopyResult() {
     if (!result) return;
-    const summary = `IQ.Pulse — ${t.quiz.resultsIqLabel}: ${result.iqEstimate} (${t.quiz.resultsPercentileLabel} ${result.percentile})`;
+    const summary = `IQ.Pulse — ${t.quiz.resultsIqLabel}: ${result.iqEstimate}, ${t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]} (${t.quiz.resultsBetterThanLabel} ${result.percentile}% ${t.quiz.resultsBetterThanSuffix})`;
     navigator.clipboard.writeText(summary).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -450,8 +450,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
                 {result.iqEstimate}
               </p>
-              <p className="text-sm text-muted-foreground">
-                {t.quiz.resultsIqLabel} · {t.quiz.resultsPercentileLabel} {result.percentile}
+              <p className="text-sm font-semibold text-accent">
+                {t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t.quiz.resultsIqLabel} · {t.quiz.resultsBetterThanLabel} {result.percentile}% {t.quiz.resultsBetterThanSuffix}
               </p>
               <p className="text-xs text-muted-foreground">
                 {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}

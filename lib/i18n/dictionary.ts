@@ -144,9 +144,20 @@ export type Dictionary = {
     resultsIqLabel: string;
     resultsRadarLabel: string;
     resultsPercentileLabel: string;
+    resultsBetterThanLabel: string;
+    resultsBetterThanSuffix: string;
     resultsTimeLabel: string;
     resultsPointsLabel: string;
     resultsBody: string;
+    iqClassifications: {
+      verySuperior: string;
+      superior: string;
+      highAverage: string;
+      average: string;
+      lowAverage: string;
+      borderline: string;
+      low: string;
+    };
     playAgainCta: string;
     viewProfileCta: string;
     sessionStartError: string;
@@ -364,6 +375,17 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsIqLabel: "CI estimado",
       resultsRadarLabel: "Por dominio",
       resultsPercentileLabel: "Percentil",
+      resultsBetterThanLabel: "Mejor que el",
+      resultsBetterThanSuffix: "de las personas",
+      iqClassifications: {
+        verySuperior: "Muy superior",
+        superior: "Superior",
+        highAverage: "Promedio alto",
+        average: "Promedio",
+        lowAverage: "Promedio bajo",
+        borderline: "Límite",
+        low: "Muy bajo",
+      },
       resultsTimeLabel: "Tiempo total",
       resultsPointsLabel: "Puntos de hoy",
       resultsBody: "Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.",
@@ -583,6 +605,17 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsIqLabel: "Estimated IQ",
       resultsRadarLabel: "By domain",
       resultsPercentileLabel: "Percentile",
+      resultsBetterThanLabel: "Better than",
+      resultsBetterThanSuffix: "of people",
+      iqClassifications: {
+        verySuperior: "Very superior",
+        superior: "Superior",
+        highAverage: "High average",
+        average: "Average",
+        lowAverage: "Low average",
+        borderline: "Borderline",
+        low: "Very low",
+      },
       resultsTimeLabel: "Total time",
       resultsPointsLabel: "Today's points",
       resultsBody: "Illustrative result — while the quiz engine is still being built, this number doesn't replace a validated cognitive test.",
