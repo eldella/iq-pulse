@@ -51,11 +51,12 @@ export function scoreAnswer(
  * and whether the just-answered question was correct. Called once per
  * answer.
  *
- * Deliberately asymmetric (confirmed with the user): 2 in a row bumps the
- * tier up, but it also takes 2 wrong in a row to drop one - a single slip
- * doesn't undo progress, so a session trends toward "hard" rather than
- * oscillating around "medium". There's still only one overall mode (no
- * easy/normal/hard picker), this just biases that one mode upward.
+ * Deliberately asymmetric and steep (confirmed with the user): 2 in a row
+ * jumps straight to "hard" - not just one tier - while it still takes 2
+ * wrong in a row to drop a single tier back down. A session shoots up to
+ * hard fast and is slow to fall back, rather than climbing evenly. There's
+ * still only one overall mode (no easy/normal/hard picker), this just
+ * biases that one mode upward, harder than before.
  */
 export function nextDifficulty(
   current: Difficulty,
@@ -73,7 +74,7 @@ export function nextDifficulty(
   }
 
   if (consecutiveCorrect >= 2) {
-    return DIFFICULTY_ORDER[Math.min(DIFFICULTY_ORDER.length - 1, currentIndex + 1)];
+    return DIFFICULTY_ORDER[DIFFICULTY_ORDER.length - 1];
   }
 
   return current;

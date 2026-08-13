@@ -170,6 +170,10 @@ export type Dictionary = {
     resultsTimeLabel: string;
     resultsPointsLabel: string;
     resultsBody: string;
+    practiceAccuracyLabel: string;
+    practiceImprovedLabel: string;
+    practiceFirstTimeLabel: string;
+    practiceBestLabel: string;
     iqClassifications: {
       verySuperior: string;
       superior: string;
@@ -431,6 +435,10 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsTimeLabel: "Tiempo total",
       resultsPointsLabel: "Puntos de hoy",
       resultsBody: "Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.",
+      practiceAccuracyLabel: "Rendimiento",
+      practiceImprovedLabel: "¡Superaste tu marca!",
+      practiceFirstTimeLabel: "Primera vez que jugás esto",
+      practiceBestLabel: "Tu mejor marca:",
       playAgainCta: "Jugar de nuevo",
       viewProfileCta: "Ver tu perfil",
       sessionStartError: "No se pudo conectar con la base de datos.",
@@ -682,6 +690,10 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsTimeLabel: "Total time",
       resultsPointsLabel: "Today's points",
       resultsBody: "Illustrative result — while the quiz engine is still being built, this number doesn't replace a validated cognitive test.",
+      practiceAccuracyLabel: "Performance",
+      practiceImprovedLabel: "New personal best!",
+      practiceFirstTimeLabel: "First time playing this one",
+      practiceBestLabel: "Your best:",
       playAgainCta: "Play again",
       viewProfileCta: "View your profile",
       sessionStartError: "Couldn't connect to the database.",

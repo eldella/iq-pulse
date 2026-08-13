@@ -50,6 +50,7 @@ import {
   useDailyTraining,
 } from "@/lib/dailyTraining";
 import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
+import { recordPracticeResult } from "@/lib/practicePerformance";
 
 /**
  * Each exercise (daily or free) now runs on a 30-second clock instead of a
@@ -158,6 +159,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [result, setResult] = useState<{ iqEstimate: number; percentile: number; points?: number } | null>(
     null
   );
+  const [practiceResult, setPracticeResult] = useState<{
+    accuracy: number;
+    previousBest: number | null;
+    improved: boolean;
+  } | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,6 +189,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setQuestionIndex(0);
       setDomainStats(EMPTY_STATS);
       setResult(null);
+      setPracticeResult(null);
       setSecondsLeftInGame(GAME_DURATION_MS / 1000);
       setPhase(chosenPlan[0]);
     } catch {
@@ -278,7 +285,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           sessionId,
         }).catch(() => {});
       } else {
-        setResult(finalResult);
+        const finalCorrect = domainStats[domain].correct + (isCorrect ? 1 : 0);
+        const finalAnswered = domainStats[domain].answered + 1;
+        const accuracy = finalAnswered > 0 ? finalCorrect / finalAnswered : 0;
+        const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
+        setPracticeResult({ accuracy, previousBest, improved });
       }
     } catch {
       setError(t.quiz.resultError);
@@ -287,8 +298,12 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   }
 
   function handleCopyResult() {
-    if (!result) return;
-    const summary = `IQ.Pulse — ${t.quiz.resultsIqLabel}: ${result.iqEstimate}, ${t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]} (${t.quiz.resultsBetterThanLabel} ${result.percentile}% ${t.quiz.resultsBetterThanSuffix})`;
+    const summary = result
+      ? `IQ.Pulse — ${t.quiz.resultsIqLabel}: ${result.iqEstimate}, ${t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]} (${t.quiz.resultsBetterThanLabel} ${result.percentile}% ${t.quiz.resultsBetterThanSuffix})`
+      : practiceResult
+        ? `IQ.Pulse — ${t.quiz.practiceAccuracyLabel}: ${Math.round(practiceResult.accuracy * 100)}%`
+        : null;
+    if (!summary) return;
     navigator.clipboard.writeText(summary).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -487,39 +502,65 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             {t.quiz.resultsHeading}
           </h1>
 
-          {result && (
-            <div className="flex flex-col items-center gap-1">
-              <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
-                {result.iqEstimate}
-              </p>
-              <p className="text-sm font-semibold text-accent">
-                {t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t.quiz.resultsIqLabel} · {t.quiz.resultsBetterThanLabel} {result.percentile}% {t.quiz.resultsBetterThanSuffix}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
-              </p>
-              {result.points !== undefined && (
-                <p className="tabular-nums text-sm font-semibold text-accent">
-                  {t.quiz.resultsPointsLabel}: {result.points}
-                </p>
+          {isDailyRun ? (
+            <>
+              {result && (
+                <div className="flex flex-col items-center gap-1">
+                  <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
+                    {result.iqEstimate}
+                  </p>
+                  <p className="text-sm font-semibold text-accent">
+                    {t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.quiz.resultsIqLabel} · {t.quiz.resultsBetterThanLabel} {result.percentile}%{" "}
+                    {t.quiz.resultsBetterThanSuffix}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
+                  </p>
+                  {result.points !== undefined && (
+                    <p className="tabular-nums text-sm font-semibold text-accent">
+                      {t.quiz.resultsPointsLabel}: {result.points}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
-              {t.quiz.resultsRadarLabel}
-            </p>
-            <RadarChart
-              reasoning={Math.round((domainStats.reasoning.correct / Math.max(1, domainStats.reasoning.answered)) * 100)}
-              memory={Math.round((domainStats.memory.correct / Math.max(1, domainStats.memory.answered)) * 100)}
-              speed={Math.round((domainStats.speed.correct / Math.max(1, domainStats.speed.answered)) * 100)}
-              labels={[t.quiz.reasoningTitle, t.quiz.memoryTitle, t.quiz.speedTitle]}
-            />
-          </div>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+                  {t.quiz.resultsRadarLabel}
+                </p>
+                <RadarChart
+                  reasoning={Math.round((domainStats.reasoning.correct / Math.max(1, domainStats.reasoning.answered)) * 100)}
+                  memory={Math.round((domainStats.memory.correct / Math.max(1, domainStats.memory.answered)) * 100)}
+                  speed={Math.round((domainStats.speed.correct / Math.max(1, domainStats.speed.answered)) * 100)}
+                  labels={[t.quiz.reasoningTitle, t.quiz.memoryTitle, t.quiz.speedTitle]}
+                />
+              </div>
+            </>
+          ) : (
+            practiceResult && (
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+                  {t.quiz.practiceAccuracyLabel}
+                </p>
+                <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
+                  {Math.round(practiceResult.accuracy * 100)}%
+                </p>
+                <p className="text-sm font-semibold text-success">
+                  {practiceResult.previousBest === null
+                    ? t.quiz.practiceFirstTimeLabel
+                    : practiceResult.improved
+                      ? t.quiz.practiceImprovedLabel
+                      : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
+                </p>
+              </div>
+            )
+          )}
 
           <p className="max-w-sm text-xs text-muted-foreground">{t.quiz.resultsBody}</p>
 
