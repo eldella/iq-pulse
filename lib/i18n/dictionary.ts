@@ -83,7 +83,8 @@ export type Dictionary = {
         heading: string;
         title: string;
         body: string;
-        cta: string;
+        cellLabel: string;
+        solvedLabel: string;
       };
     };
     patrons: { heading: string; subhead: string; top: string };
@@ -280,8 +281,9 @@ export const dictionary: Record<Lang, Dictionary> = {
         challenge: {
           heading: "Reto del mes",
           title: "El acertijo espacial de este mes",
-          body: "Un desafío mensual distinto para toda la comunidad — próximamente vas a poder resolverlo y comparar tu tiempo con el resto.",
-          cta: "Próximamente",
+          body: "Encontrá la figura que no encaja con las demás.",
+          cellLabel: "Casilla",
+          solvedLabel: "¡Resuelto! Volvé el mes que viene por uno nuevo.",
         },
       },
       patrons: {
@@ -481,8 +483,9 @@ export const dictionary: Record<Lang, Dictionary> = {
         challenge: {
           heading: "Challenge of the month",
           title: "This month's spatial puzzle",
-          body: "A different monthly challenge for the whole community — soon you'll be able to solve it and compare your time with everyone else.",
-          cta: "Coming soon",
+          body: "Find the shape that doesn't match the rest.",
+          cellLabel: "Cell",
+          solvedLabel: "Solved! Come back next month for a new one.",
         },
       },
       patrons: {
