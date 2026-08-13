@@ -52,11 +52,15 @@ export async function recordAnswer(params: {
 /**
  * Reads back every answer for a session, scores it with lib/scoring.ts,
  * and writes the final iq_estimate/percentile/completed_at onto the
- * session row.
+ * session row. Also returns the raw 0-1 `normalized` score so callers
+ * (e.g. the Daily Challenge points pipeline in QuizPage) can derive a
+ * points value from the same scoring math instead of a second, divergent
+ * formula - never exposed on the session row itself, since "points" is a
+ * Daily Challenge concept, not a property of every quiz session.
  */
 export async function completeSession(
   sessionId: string
-): Promise<{ iqEstimate: number; percentile: number }> {
+): Promise<{ iqEstimate: number; percentile: number; normalized: number }> {
   const { data: answers, error: fetchError } = await supabase
     .from("quiz_answers")
     .select("is_correct, response_time_ms, difficulty_at_time")
@@ -93,7 +97,40 @@ export async function completeSession(
 
   if (updateError) throw updateError;
 
-  return { iqEstimate, percentile };
+  return { iqEstimate, percentile, normalized };
+}
+
+/**
+ * Records today's Daily Challenge result for this device, keeping the
+ * best score if it's replayed the same day (see supabase/schema.sql for
+ * the `unique (device_id, challenge_date)` constraint this relies on).
+ * `challengeDate` uses the caller's *local* day (matches the convention
+ * already established in lib/dailyTraining.ts) - the caller passes it in
+ * rather than this module computing UTC "today" itself.
+ */
+export async function upsertDailyResult(params: {
+  deviceId: string;
+  alias: string;
+  challengeDate: string;
+  points: number;
+  streak: number;
+  sessionId: string;
+}): Promise<void> {
+  // Goes through the upsert_daily_result() Postgres function (see
+  // supabase/schema.sql) rather than a plain .upsert() call: the JS
+  // client's upsert always overwrites every column on conflict, it can't
+  // express "keep whichever score is higher," which is required so a
+  // same-day replay never overwrites a stronger earlier attempt.
+  const { error } = await supabase.rpc("upsert_daily_result", {
+    p_device_id: params.deviceId,
+    p_alias: params.alias,
+    p_challenge_date: params.challengeDate,
+    p_points: params.points,
+    p_streak: params.streak,
+    p_session_id: params.sessionId,
+  });
+
+  if (error) throw error;
 }
 
 export async function fetchQuestions(domain: Domain, difficulty: Difficulty) {

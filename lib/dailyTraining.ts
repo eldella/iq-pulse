@@ -145,6 +145,22 @@ export function useDailyStreak(): number {
   return useSyncExternalStore(subscribe, getStreakSnapshot, getServerSnapshotZero);
 }
 
+/**
+ * Non-reactive, always-fresh reads for use right after a write in the same
+ * event handler (e.g. QuizPage recording today's Daily Challenge points
+ * immediately after `markGameCompleted` pushes the streak past the target -
+ * the `useDailyStreak()` hook's value is still the render's stale closure
+ * at that point, since the re-render it triggers hasn't happened yet).
+ */
+export function getCurrentStreak(): number {
+  return getStreakSnapshot();
+}
+
+/** Today's local YYYY-MM-DD key, for callers that need to tag a write with "today" (e.g. upsertDailyResult). */
+export function getTodayKey(): string {
+  return dateKey();
+}
+
 /** Today's completed game ids - check `.includes(gameId)` per card. */
 export function useCompletedIdsToday(): readonly string[] {
   return useSyncExternalStore(subscribe, getCompletedIdsSnapshot, getServerSnapshotIds);

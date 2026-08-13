@@ -15,11 +15,18 @@ import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
 import { WordBurstGame } from "@/components/jugar/games/WordBurstGame";
-import { startSession, recordAnswer, completeSession } from "@/lib/supabase/quiz";
+import { startSession, recordAnswer, completeSession, upsertDailyResult } from "@/lib/supabase/quiz";
 import { nextDifficulty, type Difficulty, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
-import { DAILY_TARGET_COUNT, markGameCompleted, useDailyTraining } from "@/lib/dailyTraining";
+import {
+  DAILY_TARGET_COUNT,
+  getCurrentStreak,
+  getTodayKey,
+  markGameCompleted,
+  useDailyTraining,
+} from "@/lib/dailyTraining";
+import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
 
 const QUESTIONS_PER_GAME = 4;
 
@@ -95,7 +102,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [streak, setStreak] = useState(0);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [domainStats, setDomainStats] = useState<Record<Domain, DomainStats>>(EMPTY_STATS);
-  const [result, setResult] = useState<{ iqEstimate: number; percentile: number } | null>(null);
+  const [result, setResult] = useState<{ iqEstimate: number; percentile: number; points?: number } | null>(
+    null
+  );
   const [elapsedMs, setElapsedMs] = useState(0);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,7 +186,25 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
     try {
       const finalResult = await completeSession(sessionId);
-      setResult(finalResult);
+
+      if (isDailyRun) {
+        const points = Math.round(finalResult.normalized * 1000);
+        setResult({ ...finalResult, points });
+        // Non-fatal, matching recordAnswer above: the results screen and
+        // local streak/progress are already correct even if this write
+        // fails, only the (separate, not-yet-shipped) ranking display
+        // would miss today's entry.
+        upsertDailyResult({
+          deviceId: getDeviceId(),
+          alias: getAlias(),
+          challengeDate: getTodayKey(),
+          points,
+          streak: getCurrentStreak(),
+          sessionId,
+        }).catch(() => {});
+      } else {
+        setResult(finalResult);
+      }
     } catch {
       setError(t.quiz.resultError);
     }
@@ -389,6 +416,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               <p className="text-xs text-muted-foreground">
                 {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
               </p>
+              {result.points !== undefined && (
+                <p className="tabular-nums text-sm font-semibold text-accent">
+                  {t.quiz.resultsPointsLabel}: {result.points}
+                </p>
+              )}
             </div>
           )}
 

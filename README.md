@@ -8,17 +8,16 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 
 ## Features
 
-- **`/jugar`**: reframed as a daily training screen — "Today's training" heading with the date, a 🔥-streak counter and `done/3` progress line (`lib/dailyTraining.ts`, localStorage-backed), and a single "Start daily challenge" CTA for the 3-domain assessment. The 5 minigames — Matriz de patrones and Camino óptimo (reasoning), Retención de dígitos and Ráfaga de palabras (memory), Stroop (speed) — sit below under "Free practice" for picking one at a time (practice play doesn't count toward the streak, only the daily CTA does). 4 questions each, adaptive difficulty (`lib/scoring.ts`), an exit-to-menu link during play, real IQ estimate/percentile computed from actual answers and written to Supabase, results shown with a radar chart, total time taken, and a copy-result action
+- **`/jugar`**: a daily training screen — "Today's training" heading with the date, a 🔥-streak counter and `done/3` progress line (`lib/dailyTraining.ts`, localStorage-backed), and a single "Start daily challenge" CTA for the 3-domain assessment. Completing it writes real points (0-1000, from the same scoring math as the IQ estimate) to Supabase against an anonymous per-browser id (`lib/deviceIdentity.ts`, no login) — once every 24h; replaying the same day keeps your best score, never your worst (`upsert_daily_result` DB function, see `supabase/schema.sql`). The 5 minigames — Matriz de patrones and Camino óptimo (reasoning), Retención de dígitos and Ráfaga de palabras (memory), Stroop (speed) — sit below under "Free practice" for picking one at a time; practice play still writes a real session/IQ estimate but never counts toward the streak or points, only the daily CTA does. 4 questions per game, adaptive difficulty (`lib/scoring.ts`), an exit-to-menu link during play, results shown with a radar chart, total time taken, today's points (daily runs only), and a copy-result action
 - **`/jugar/[gameId]`**: deep link straight into a single minigame (e.g. `/jugar/wordBurst`), skipping the selection screen — 404s on an unknown id
 - Editorial landing page (hero, mission manifesto, "what IQ.Pulse measures" domain grid, sustainment model, patron wall)
-- **Ranking** (`/ranking`): leaderboard + monthly challenge card
-- **Rendimiento** (`/rendimiento`): personal vs. general performance comparison (precision by domain, time by difficulty), gated behind the demo login
-- Demo login/profile flow (`/perfil`) — client-only session flag, no real accounts yet
+- **Ranking** (`/ranking`): leaderboard (general/times/percentiles/streaks tabs, still illustrative mock data — wiring it to the real `daily_results` table is the next step) + monthly challenge card
+- **Rendimiento** (`/rendimiento`): placeholder for now ("being tuned, check back soon") — the General-vs-you comparison went through several chart redesigns this pass and was pulled off the live page rather than shipped half-right; a working two-section version (separate % and seconds scales) is preserved in git history at commit `c2983b8` to resume from
+- Demo login/profile flow (`/perfil`) — client-only session flag, no real accounts yet; deliberately separate from the real anonymous device id above (see `lib/deviceIdentity.ts`'s docstring for why they don't share state)
 - Light/dark theme (Apple-style black / white / system blue palette)
 - ES/EN language switch (client-side, no page reload), with a mobile hamburger nav
 - Animated, accessible UI throughout (Framer Motion, respects `prefers-reduced-motion`, skip-to-content link, keyboard focus states)
 - Small design-token system (`tailwind.config.ts` + `app/globals.css`): shared radius (`rounded-control`/`card`/`sheet`), accent-glow shadow scale (`shadow-accent-sm`/`md`/`lg`), and semantic `danger`/`success`/`warn`/`surface-hover` colors, so every card/button/shadow across the site draws from the same small set of values instead of one-off Tailwind classes
-- Quiz results pair a hand-rolled radar chart with `DistributionCurve` (`components/viz/`) — a normal-distribution curve marking your actual percentile, next to the per-domain breakdown
 - Donation links (PayPal, Ko-fi) and social links (GitHub, Instagram, TikTok; Discord marked "soon")
 - Terms of service and privacy policy pages
 
@@ -80,23 +79,28 @@ components/
   rendimiento/        Rendimiento page
   legal/              Terms/privacy shell + content
   profile/            Demo profile
-  viz/                DistributionCurve (percentile bell curve, quiz results)
   GlassCard.tsx       Shared glassmorphism surface primitive
 lib/
   i18n/               ES/EN dictionary
-  supabase/           Supabase client + quiz.ts (session/answer/score data access)
+  supabase/           Supabase client + quiz.ts (session/answer/score data access, daily points upsert)
   scoring.ts          Scoring + adaptive-difficulty algorithm (pure, no UI/DB dependency)
   timing.ts           performance.now() wrapper (works around an ESLint purity rule)
   motion.ts           Shared Framer Motion presets
   dailyTraining.ts    Daily streak/progress state (localStorage, useSyncExternalStore)
+  deviceIdentity.ts   Anonymous per-browser id + auto alias for the real daily points (no login)
 supabase/
-  schema.sql          DB schema + RLS policies (run manually in the Supabase SQL editor)
+  schema.sql          DB schema + RLS policies (run manually in the Supabase SQL editor - includes
+                      the daily_results table + upsert_daily_result() function, not yet applied to
+                      the live project as of this commit)
 ```
 
 ## Roadmap
 
-- Daily Challenge (full version): a seeded, identical-for-everyone daily game rotation with no-restart anti-cheat, a 0-1000 normalized score, and a Hoy/Ayer/Histórico leaderboard. `/jugar`'s current streak/progress habit layer (`lib/dailyTraining.ts`) is a lighter, local-only precursor to this — it reuses the existing free-choice 3-game assessment rather than a seeded daily puzzle, and has no server-side leaderboard or anti-cheat
-- Real per-user auth so Rendimiento's "you" column and leaderboard placement can be real
+- **Pending manual step**: run the `daily_results` table + `upsert_daily_result()` function from `supabase/schema.sql` in the Supabase SQL editor — the daily points pipeline is wired client-side but writes nowhere until this is applied (the anon key has no DDL rights, so this repo can't do it automatically)
+- Wire `LeaderboardTable` on `/ranking` to the real `daily_results` rows instead of its current mock data, now that real points exist to show
+- Daily Challenge (full version): a seeded, identical-for-everyone daily game rotation with no-restart anti-cheat, on top of the points pipeline that now exists. Today's daily run still reuses the free-choice 3-game assessment rather than a seeded daily puzzle
+- Rendimiento's General-vs-you comparison — resume from the working version at commit `c2983b8` rather than redesigning from scratch
+- Real per-user auth (distinct from the anonymous device id used for daily points) so a person's ranking can follow them across devices
 - Local/national/continental leaderboard tiers once per-user location data exists
 
 ## License

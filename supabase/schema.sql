@@ -103,3 +103,66 @@ create policy "anyone can record an answer for their session" on public.quiz_ans
       where s.id = session_id and (s.user_id is null or s.user_id = auth.uid())
     )
   );
+
+-- Daily Challenge results, one row per device per day - `unique
+-- (device_id, challenge_date)` is what makes "once every 24h" real. The
+-- upsert (via the upsert_daily_result() function below, called from
+-- lib/supabase/quiz.ts through supabase.rpc()) keeps the *better* score if
+-- the daily challenge is replayed the same day - the Supabase JS client's
+-- plain `.upsert()` always overwrites on conflict, it can't express a
+-- conditional `greatest()`, which is why this goes through a function
+-- instead of a direct table upsert.
+--
+-- `device_id` is a client-generated anonymous id (lib/deviceIdentity.ts),
+-- not tied to `auth.users` - there is no real login on this site (see
+-- AuthProvider's docstring), so there's no server-side way to verify a
+-- write actually came from that device's rightful owner. Same open trust
+-- model already accepted for quiz_sessions/quiz_answers above - fine for a
+-- low-stakes hobby leaderboard, not a defense against real cheating.
+create table public.daily_results (
+  id uuid primary key default gen_random_uuid(),
+  device_id text not null,
+  alias text not null,
+  challenge_date date not null,
+  points integer not null check (points between 0 and 1000),
+  streak integer not null default 0,
+  session_id uuid references public.quiz_sessions (id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique (device_id, challenge_date)
+);
+
+alter table public.daily_results enable row level security;
+
+create policy "daily results are publicly readable" on public.daily_results
+  for select using (true);
+create policy "anyone can upsert their own daily result" on public.daily_results
+  for insert with check (true);
+create policy "anyone can update their own daily result" on public.daily_results
+  for update using (true);
+
+-- security invoker (the default, spelled out for clarity): runs as the
+-- calling anon/authenticated role, so the RLS policies above still apply -
+-- this function only changes how the upsert's conflict is resolved, not
+-- who's allowed to call it.
+create or replace function public.upsert_daily_result(
+  p_device_id text,
+  p_alias text,
+  p_challenge_date date,
+  p_points integer,
+  p_streak integer,
+  p_session_id uuid
+) returns void
+language sql
+security invoker
+as $$
+  insert into public.daily_results (device_id, alias, challenge_date, points, streak, session_id)
+  values (p_device_id, p_alias, p_challenge_date, p_points, p_streak, p_session_id)
+  on conflict (device_id, challenge_date)
+  do update set
+    points = greatest(public.daily_results.points, excluded.points),
+    streak = excluded.streak,
+    alias = excluded.alias,
+    session_id = excluded.session_id;
+$$;
+
+grant execute on function public.upsert_daily_result to anon, authenticated;

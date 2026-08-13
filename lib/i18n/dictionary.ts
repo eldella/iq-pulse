@@ -123,6 +123,7 @@ export type Dictionary = {
     resultsRadarLabel: string;
     resultsPercentileLabel: string;
     resultsTimeLabel: string;
+    resultsPointsLabel: string;
     resultsBody: string;
     playAgainCta: string;
     viewProfileCta: string;
@@ -320,6 +321,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsRadarLabel: "Por dominio",
       resultsPercentileLabel: "Percentil",
       resultsTimeLabel: "Tiempo total",
+      resultsPointsLabel: "Puntos de hoy",
       resultsBody: "Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.",
       playAgainCta: "Jugar de nuevo",
       viewProfileCta: "Ver tu perfil",
@@ -516,6 +518,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsRadarLabel: "By domain",
       resultsPercentileLabel: "Percentile",
       resultsTimeLabel: "Total time",
+      resultsPointsLabel: "Today's points",
       resultsBody: "Illustrative result — while the quiz engine is still being built, this number doesn't replace a validated cognitive test.",
       playAgainCta: "Play again",
       viewProfileCta: "View your profile",
