@@ -31,6 +31,17 @@ const YOUR_PRECISION = [76, 88, 61] as const;
 const FALLBACK_GENERAL_TIME = [9, 15, 24] as const;
 const YOUR_TIME = [8, 13, 26] as const;
 
+/** Maps a value onto a 40-tall SVG viewBox, higher value = higher up (smaller y), with margin. */
+function chartY(value: number, maxValue: number) {
+  const percent = Math.min(100, Math.max(0, (value / maxValue) * 100));
+  return 36 - (percent / 100) * 32;
+}
+
+/**
+ * Slope line: "General" and "Vos" plotted as two points on a shared scale,
+ * connected by a line whose steepness reads the gap between them at a
+ * glance - replaces the previous two-stacked-bars layout.
+ */
 function ComparisonRow({
   label,
   generalValue,
@@ -51,45 +62,49 @@ function ComparisonRow({
   delay: number;
 }) {
   const shouldReduceMotion = useReducedMotion();
-  const generalPercent = Math.round((generalValue / maxValue) * 100);
-  const yourPercent = Math.round((yourValue / maxValue) * 100);
+  const generalY = chartY(generalValue, maxValue);
+  const yourY = chartY(yourValue, maxValue);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <span className="text-sm font-medium text-foreground">{label}</span>
-
       <div className="flex items-center gap-3">
-        <span className="w-14 shrink-0 text-xs text-muted-foreground">{generalLabel}</span>
-        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-hover">
-          <motion.span
-            initial={shouldReduceMotion ? false : { width: 0 }}
-            whileInView={{ width: `${generalPercent}%` }}
+        <div className="flex w-16 shrink-0 flex-col items-start gap-0.5">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            {generalLabel}
+          </span>
+          <span className="tabular-nums text-sm text-muted-foreground">
+            {generalValue}
+            {suffix}
+          </span>
+        </div>
+
+        <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="h-10 flex-1" aria-hidden="true">
+          <motion.line
+            x1={6}
+            y1={generalY}
+            x2={94}
+            y2={yourY}
+            stroke="rgb(var(--color-accent))"
+            strokeOpacity={0.35}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            initial={shouldReduceMotion ? false : { pathLength: 0 }}
+            whileInView={{ pathLength: 1 }}
             viewport={{ once: true }}
             transition={{ ...springTransition, delay }}
-            className="block h-full rounded-full bg-muted-foreground/40"
           />
-        </span>
-        <span className="w-14 shrink-0 text-right text-xs text-muted-foreground">
-          {generalValue}
-          {suffix}
-        </span>
-      </div>
+          <circle cx={6} cy={generalY} r={3} fill="rgb(var(--color-muted-fg))" />
+          <circle cx={94} cy={yourY} r={3.5} fill="rgb(var(--color-accent))" />
+        </svg>
 
-      <div className="flex items-center gap-3">
-        <span className="w-14 shrink-0 text-xs font-medium text-accent">{yourLabel}</span>
-        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-hover">
-          <motion.span
-            initial={shouldReduceMotion ? false : { width: 0 }}
-            whileInView={{ width: `${yourPercent}%` }}
-            viewport={{ once: true }}
-            transition={{ ...springTransition, delay: delay + 0.06 }}
-            className="block h-full rounded-full bg-accent"
-          />
-        </span>
-        <span className="w-14 shrink-0 text-right text-xs font-medium text-accent">
-          {yourValue}
-          {suffix}
-        </span>
+        <div className="flex w-16 shrink-0 flex-col items-end gap-0.5">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-accent">{yourLabel}</span>
+          <span className="tabular-nums text-sm font-semibold text-accent">
+            {yourValue}
+            {suffix}
+          </span>
+        </div>
       </div>
     </div>
   );
