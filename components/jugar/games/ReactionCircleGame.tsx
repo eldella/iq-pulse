@@ -26,11 +26,15 @@ export function ReactionCircleGame({
   const [reactionMs, setReactionMs] = useState<number | null>(null);
   const goTimeRef = useRef(0);
   const goTimeoutRef = useRef<number | null>(null);
+  // Debug-only breakdown of where time goes between "JS decided to show
+  // green" and "measurement actually starts" - see console.log below.
+  const debugRef = useRef<{ timeoutFired: number; raf1: number } | null>(null);
 
   useEffect(() => {
     const [min, max] = DELAY_RANGE_MS;
     const delay = min + Math.random() * (max - min);
     goTimeoutRef.current = window.setTimeout(() => {
+      debugRef.current = { timeoutFired: now(), raf1: 0 };
       setStage("go");
     }, delay);
     return () => {
@@ -50,8 +54,15 @@ export function ReactionCircleGame({
     if (stage !== "go") return;
     let innerFrame = 0;
     const outerFrame = requestAnimationFrame(() => {
+      if (debugRef.current) debugRef.current.raf1 = now();
       innerFrame = requestAnimationFrame(() => {
         goTimeRef.current = now();
+        if (debugRef.current) {
+          const { timeoutFired, raf1 } = debugRef.current;
+          console.log(
+            `[ReactionCircle] timeout→raf1: ${(raf1 - timeoutFired).toFixed(1)}ms | raf1→raf2 (measurement starts here): ${(goTimeRef.current - raf1).toFixed(1)}ms | total render/paint overhead removed from the reading: ${(goTimeRef.current - timeoutFired).toFixed(1)}ms`
+          );
+        }
       });
     });
     return () => {
@@ -71,7 +82,13 @@ export function ReactionCircleGame({
       return;
     }
     if (stage === "go") {
-      const responseTimeMs = Math.round(now() - goTimeRef.current);
+      const clickTime = now();
+      const responseTimeMs = Math.round(clickTime - goTimeRef.current);
+      console.log(
+        `[ReactionCircle] measured reaction time: ${responseTimeMs}ms (from post-paint go→click${
+          debugRef.current ? `, naive timeout→click would have read ${Math.round(clickTime - debugRef.current.timeoutFired)}ms` : ""
+        })`
+      );
       setStage("done");
       setReactionMs(responseTimeMs);
       window.setTimeout(() => onAnswer(true, responseTimeMs), ANSWER_FEEDBACK_MS);
