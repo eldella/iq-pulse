@@ -89,14 +89,12 @@ lib/
   dailyTraining.ts    Daily streak/progress state (localStorage, useSyncExternalStore)
   deviceIdentity.ts   Anonymous per-browser id + auto alias for the real daily points (no login)
 supabase/
-  schema.sql          DB schema + RLS policies (run manually in the Supabase SQL editor - includes
-                      the daily_results table + upsert_daily_result() function, not yet applied to
-                      the live project as of this commit)
+  schema.sql          DB schema + RLS policies, applied to the live project (including the
+                      daily_results table + upsert_daily_result() function)
 ```
 
 ## Roadmap
 
-- **Pending manual step**: run the `daily_results` table + `upsert_daily_result()` function from `supabase/schema.sql` in the Supabase SQL editor — the daily points pipeline is wired client-side but writes nowhere until this is applied (the anon key has no DDL rights, so this repo can't do it automatically)
 - Wire `LeaderboardTable` on `/ranking` to the real `daily_results` rows instead of its current mock data, now that real points exist to show
 - Daily Challenge (full version): a seeded, identical-for-everyone daily game rotation with no-restart anti-cheat, on top of the points pipeline that now exists. Today's daily run still reuses the free-choice 3-game assessment rather than a seeded daily puzzle
 - Rendimiento's General-vs-you comparison — resume from the working version at commit `c2983b8` rather than redesigning from scratch
