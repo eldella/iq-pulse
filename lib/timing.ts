@@ -10,3 +10,8 @@
 export function now(): number {
   return performance.now();
 }
+
+/** Date.now() wrapped the same way as now() above - for callers that need epoch/wall-clock time instead of a monotonic clock. */
+export function epochNow(): number {
+  return Date.now();
+}

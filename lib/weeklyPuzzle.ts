@@ -45,6 +45,14 @@ export function getWeekKey(date: Date = new Date()): string {
   return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2, "0")}`;
 }
 
+/** Local Date for the upcoming Monday 00:00 - when the next weekly challenge unlocks. */
+export function getNextWeekStart(): Date {
+  const d = new Date();
+  const dayNum = d.getDay() || 7; // Mon=1..Sun=7
+  const daysUntilNextMonday = 8 - dayNum;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + daysUntilNextMonday, 0, 0, 0, 0);
+}
+
 /**
  * Every cell shares the same hexagon rotation except one, which is offset by
  * a large enough angle to be visually unambiguous once you look for it.

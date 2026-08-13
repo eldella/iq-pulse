@@ -6,9 +6,26 @@ import { Check, Sparkles, X } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
-import { now } from "@/lib/timing";
-import { MAX_MISTAKES, ROUND_COUNT, ROUND_SECONDS, generateWeeklyPuzzle, getWeekKey } from "@/lib/weeklyPuzzle";
+import { epochNow, now } from "@/lib/timing";
+import {
+  MAX_MISTAKES,
+  ROUND_COUNT,
+  ROUND_SECONDS,
+  generateWeeklyPuzzle,
+  getNextWeekStart,
+  getWeekKey,
+} from "@/lib/weeklyPuzzle";
 import { markWeeklyChallengeResult, useWeeklyChallengeStatus } from "@/lib/weeklyChallengeState";
+
+function formatCountdown(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${Math.max(minutes, 1)}m`;
+}
 
 function hexagonPoints(size: number, rotationDeg: number): string {
   const rotationRad = (rotationDeg * Math.PI) / 180;
@@ -45,7 +62,16 @@ export function WeeklyChallengeCard() {
   const [mistakes, setMistakes] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
   const [wrongIndex, setWrongIndex] = useState<number | null>(null);
+  const [msUntilNext, setMsUntilNext] = useState(() => Math.max(0, getNextWeekStart().getTime() - epochNow()));
   const deadlineRef = useRef(0);
+
+  useEffect(() => {
+    if (storedStatus === "idle") return;
+    const id = window.setInterval(() => {
+      setMsUntilNext(Math.max(0, getNextWeekStart().getTime() - epochNow()));
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [storedStatus]);
 
   useEffect(() => {
     if (!playing) return;
@@ -116,6 +142,9 @@ export function WeeklyChallengeCard() {
                 <Check className="h-5 w-5" aria-hidden="true" />
               </span>
               <p className="max-w-md text-sm font-medium text-pretty text-foreground">{c.solvedLabel}</p>
+              <p className="tabular-nums text-xs text-muted-foreground">
+                {c.nextInLabel} {formatCountdown(msUntilNext)}
+              </p>
             </motion.div>
           ) : storedStatus === "failed" ? (
             <motion.div
@@ -129,6 +158,9 @@ export function WeeklyChallengeCard() {
                 <X className="h-5 w-5" aria-hidden="true" />
               </span>
               <p className="max-w-md text-sm font-medium text-pretty text-foreground">{c.failedLabel}</p>
+              <p className="tabular-nums text-xs text-muted-foreground">
+                {c.nextInLabel} {formatCountdown(msUntilNext)}
+              </p>
             </motion.div>
           ) : playing && puzzle ? (
             <motion.div key="playing" className="flex flex-col items-center gap-3">

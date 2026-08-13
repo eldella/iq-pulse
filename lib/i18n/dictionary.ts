@@ -89,6 +89,7 @@ export type Dictionary = {
         mistakesLabel: string;
         solvedLabel: string;
         failedLabel: string;
+        nextInLabel: string;
       };
     };
     patrons: { heading: string; subhead: string; top: string };
@@ -290,8 +291,9 @@ export const dictionary: Record<Lang, Dictionary> = {
           startCta: "Iniciar desafío semanal",
           roundLabel: "Ronda",
           mistakesLabel: "Errores",
-          solvedLabel: "¡Completaste el reto de esta semana! Volvé la semana que viene por uno nuevo.",
-          failedLabel: "No llegaste esta vez. Volvé la semana que viene para reintentar.",
+          solvedLabel: "¡Completaste el reto de esta semana!",
+          failedLabel: "No llegaste esta vez.",
+          nextInLabel: "Próximo reto en",
         },
       },
       patrons: {
@@ -496,8 +498,9 @@ export const dictionary: Record<Lang, Dictionary> = {
           startCta: "Start weekly challenge",
           roundLabel: "Round",
           mistakesLabel: "Mistakes",
-          solvedLabel: "You completed this week's challenge! Come back next week for a new one.",
-          failedLabel: "Not this time. Come back next week to try again.",
+          solvedLabel: "You completed this week's challenge!",
+          failedLabel: "Not this time.",
+          nextInLabel: "Next challenge in",
         },
       },
       patrons: {
