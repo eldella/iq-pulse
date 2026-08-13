@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { RankBadge } from "@/components/RankBadge";
+import { fadeSlideUp, staggerContainer } from "@/components/landing/motionVariants";
 import { useLanguage } from "@/components/LanguageProvider";
 import { springTransition, tapScale } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,7 @@ const DATASETS: Record<LeaderboardTab, readonly { alias: string; display: string
 export function LeaderboardTable() {
   const [tab, setTab] = useState<LeaderboardTab>("general");
   const { t } = useLanguage();
+  const shouldReduceMotion = useReducedMotion();
   const entries = DATASETS[tab];
   const tabs: { id: LeaderboardTab; label: string }[] = [
     { id: "general", label: t.stats.leaderboard.tabGeneral },
@@ -83,18 +85,25 @@ export function LeaderboardTable() {
         ))}
       </div>
 
-      <ul className="flex flex-col gap-3">
+      <motion.ul
+        key={tab}
+        variants={staggerContainer}
+        initial={shouldReduceMotion ? false : "hidden"}
+        animate="show"
+        className="flex flex-col gap-3"
+      >
         {entries.map((entry, index) => (
-          <li
+          <motion.li
             key={entry.alias}
+            variants={fadeSlideUp}
             className="theme-transition flex items-center gap-4 rounded-card border border-glass-border bg-glass px-6 py-5 backdrop-blur-xl"
           >
             <RankBadge rank={index + 1} />
             <span className="min-w-0 flex-1 truncate text-lg font-medium text-foreground">{entry.alias}</span>
             <span className="tabular-nums text-xl font-semibold text-accent">{entry.display}</span>
-          </li>
+          </motion.li>
         ))}
-      </ul>
+      </motion.ul>
     </div>
   );
 }

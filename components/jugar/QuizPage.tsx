@@ -9,6 +9,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { PulseTrace } from "@/components/viz/PulseTrace";
 import { DistributionCurve } from "@/components/viz/DistributionCurve";
+import { fadeSlideUp, staggerContainer } from "@/components/landing/motionVariants";
 import { GlassCard } from "@/components/GlassCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
@@ -208,12 +209,23 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             </p>
           )}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <motion.div
+            variants={staggerContainer}
+            initial={shouldReduceMotion ? false : "hidden"}
+            animate="show"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+          >
             {(Object.keys(GAMES) as GameId[]).map((id) => {
               const { Icon } = GAMES[id];
               const { title, description } = gameCopy(id, t);
               return (
-                <motion.div key={id} whileHover={{ y: -3 }} whileTap={tapScale} transition={springTransition}>
+                <motion.div
+                  key={id}
+                  variants={fadeSlideUp}
+                  whileHover={{ y: -3 }}
+                  whileTap={tapScale}
+                  transition={springTransition}
+                >
                   <button
                     type="button"
                     disabled={starting}
@@ -238,7 +250,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                 </motion.div>
               );
             })}
-          </div>
+          </motion.div>
 
           <motion.button
             type="button"

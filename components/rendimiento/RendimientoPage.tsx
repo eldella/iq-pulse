@@ -99,6 +99,7 @@ function ComparisonRow({
 export function RendimientoPage() {
   const { t } = useLanguage();
   const { isLoggedIn, login } = useAuth();
+  const shouldReduceMotion = useReducedMotion();
   const [generalPrecision, setGeneralPrecision] = useState<
     readonly [number, number, number]
   >(FALLBACK_GENERAL_PRECISION);
@@ -147,7 +148,11 @@ export function RendimientoPage() {
 
   return (
     <main className="flex flex-1 flex-col items-center gap-10 px-4 py-16 sm:px-6">
-      <div className="flex flex-col items-center gap-3 text-center">
+      <motion.div
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0, transition: springTransition }}
+        className="flex flex-col items-center gap-3 text-center"
+      >
         <DistributionCurve size="lg" className="mb-1" />
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
           {t.stats.performance.eyebrow}
@@ -158,7 +163,7 @@ export function RendimientoPage() {
         <p className="max-w-2xl text-balance text-lg text-muted-foreground">
           {t.stats.performance.subhead}
         </p>
-      </div>
+      </motion.div>
 
       <div className="relative mx-auto flex w-full max-w-2xl flex-col gap-10">
         <div
