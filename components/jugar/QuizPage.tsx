@@ -699,10 +699,14 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                   </p>
                 </div>
 
-                <div className="grid w-full grid-cols-3 gap-2">
+                {/* No "total time" card here on purpose: Reacción's rounds
+                    take long enough (1-5s wait each) that the 30s clock
+                    almost always runs out before the 10-question cap does,
+                    so that stat was reading ~30s on effectively every run -
+                    not useful information (confirmed with the user). */}
+                <div className="grid w-full grid-cols-2 gap-2">
                   <StatCard emoji="🏆" value={`${reactionRecordMs} ms`} label={t.quiz.practiceRecordLabel} />
                   <StatCard emoji="⚡" value={`${practiceResult.bestTapMs} ms`} label={t.quiz.practiceBestTapLabel} />
-                  <StatCard emoji="⏱️" value={formatElapsed(elapsedMs)} label={t.quiz.resultsTimeLabel} />
                 </div>
               </div>
             ) : (
