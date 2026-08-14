@@ -489,7 +489,13 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           // against a stale timestamp from the earlier run, producing
           // reaction-time readings inflated by however old that timestamp was.
           key={`${sessionId}-${phase}-${questionIndex}`}
-          initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+          // Reacción is a bare stimulus-response timer, not a "screen" -
+          // every question remounts this (see the key above), and an
+          // entrance fade/slide replaying every 1-6 seconds fights the
+          // instant-on read the game is trying to measure. Skip motion for
+          // it entirely rather than just reduced-motion users (confirmed
+          // with the user).
+          initial={shouldReduceMotion || activeGame.id === "reactionCircle" ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="flex w-full max-w-md flex-col items-center gap-6"
         >
@@ -525,7 +531,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.p
                 key={level}
-                initial={shouldReduceMotion ? false : { scale: 0.6, opacity: 0 }}
+                initial={shouldReduceMotion || activeGame.id === "reactionCircle" ? false : { scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={springTransition}
                 className="tabular-nums text-lg font-bold text-foreground"

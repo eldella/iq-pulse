@@ -130,7 +130,7 @@ export function ReactionCircleGame({
         onPointerDown={handleActivate}
         onClick={handleActivate}
         className={cn(
-          "flex h-40 w-40 items-center justify-center rounded-full border-4 text-sm font-semibold focus-visible:outline-none active:scale-95 sm:h-48 sm:w-48",
+          "flex h-56 w-56 items-center justify-center rounded-full border-4 text-sm font-semibold focus-visible:outline-none active:scale-95 sm:h-72 sm:w-72",
           stage === "waiting"
             ? "border-glass-border bg-glass text-muted-foreground"
             : stage === "go"
