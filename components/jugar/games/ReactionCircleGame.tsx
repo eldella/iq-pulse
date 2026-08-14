@@ -71,8 +71,23 @@ export function ReactionCircleGame({
     };
   }, [stage]);
 
-  function handleClick() {
+  // Guards against handling the same tap twice - see handleActivate below.
+  const firedRef = useRef(false);
+
+  // `onClick` fires on mouseup/touchend, not on first contact - for a quick
+  // tap, the press-to-release gap alone can add 50-100ms on top of the real
+  // reaction, which lines up with readings coming in ~50-100ms above what
+  // the player feels. `onPointerDown` fires at first contact (mousedown /
+  // touchstart) instead, so it's the primary path here; `onClick` stays
+  // wired to the same handler purely as the keyboard-activation fallback
+  // (Enter/Space on a focused button fire click, not pointerdown). firedRef
+  // makes sure only whichever event fires first actually counts - once a
+  // pointerdown has been handled, the click that follows it is a no-op.
+  function handleActivate() {
+    if (firedRef.current) return;
+
     if (stage === "waiting") {
+      firedRef.current = true;
       // Cancel the pending "go" timer - otherwise it would still fire later
       // and silently flip stage from "early" back to "go" with a fresh
       // (misleading) goTimeRef, since only unmount was clearing it before.
@@ -82,11 +97,12 @@ export function ReactionCircleGame({
       return;
     }
     if (stage === "go") {
-      const clickTime = now();
-      const responseTimeMs = Math.round(clickTime - goTimeRef.current);
+      firedRef.current = true;
+      const activationTime = now();
+      const responseTimeMs = Math.round(activationTime - goTimeRef.current);
       console.log(
-        `[ReactionCircle] measured reaction time: ${responseTimeMs}ms (from post-paint go→click${
-          debugRef.current ? `, naive timeout→click would have read ${Math.round(clickTime - debugRef.current.timeoutFired)}ms` : ""
+        `[ReactionCircle] measured reaction time: ${responseTimeMs}ms (from post-paint go→pointerdown${
+          debugRef.current ? `, naive timeout→pointerdown would have read ${Math.round(activationTime - debugRef.current.timeoutFired)}ms` : ""
         })`
       );
       setStage("done");
@@ -111,7 +127,8 @@ export function ReactionCircleGame({
       */}
       <button
         type="button"
-        onClick={handleClick}
+        onPointerDown={handleActivate}
+        onClick={handleActivate}
         className={cn(
           "flex h-40 w-40 items-center justify-center rounded-full border-4 text-sm font-semibold focus-visible:outline-none active:scale-95 sm:h-48 sm:w-48",
           stage === "waiting"

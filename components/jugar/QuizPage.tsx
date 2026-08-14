@@ -163,6 +163,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     accuracy: number;
     previousBest: number | null;
     improved: boolean;
+    avgResponseMs: number | null;
   } | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -170,6 +171,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [starting, setStarting] = useState(false);
   const [secondsLeftInGame, setSecondsLeftInGame] = useState(GAME_DURATION_MS / 1000);
   const startTimeRef = useRef(0);
+  // Response times for correct answers in the current practice game - only
+  // meaningful for a single-game run (practice always plays one game), reset
+  // per handleStart, read once at completion to average into practiceResult.
+  const responseTimesRef = useRef<number[]>([]);
   const gameStartRef = useRef(0);
 
   async function handleStart(chosenPlan: readonly GameId[], { daily = false }: { daily?: boolean } = {}) {
@@ -183,6 +188,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setSessionId(id);
       setPlan(chosenPlan);
       setIsDailyRun(daily);
+      responseTimesRef.current = [];
       setLevel(1);
       setStreak(0);
       setMissStreak(0);
@@ -233,6 +239,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       ...prev,
       [domain]: { correct: prev[domain].correct + (isCorrect ? 1 : 0), answered: prev[domain].answered + 1 },
     }));
+
+    if (isCorrect) responseTimesRef.current.push(responseTimeMs);
 
     const newStreak = isCorrect ? streak + 1 : 0;
     const newMissStreak = isCorrect ? 0 : missStreak + 1;
@@ -289,7 +297,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
         const finalAnswered = domainStats[domain].answered + 1;
         const accuracy = finalAnswered > 0 ? finalCorrect / finalAnswered : 0;
         const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
-        setPracticeResult({ accuracy, previousBest, improved });
+        const times = responseTimesRef.current;
+        const avgResponseMs =
+          times.length > 0 ? Math.round(times.reduce((sum, t) => sum + t, 0) / times.length) : null;
+        setPracticeResult({ accuracy, previousBest, improved, avgResponseMs });
       }
     } catch {
       setError(t.quiz.resultError);
@@ -566,6 +577,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                       ? t.quiz.practiceImprovedLabel
                       : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
                 </p>
+                {practiceResult.avgResponseMs !== null && GAMES[plan[0]].domain === "speed" && (
+                  <p className="tabular-nums text-sm text-muted-foreground">
+                    {t.quiz.practiceAvgResponseLabel}: {practiceResult.avgResponseMs} ms
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
                 </p>

@@ -174,6 +174,7 @@ export type Dictionary = {
     practiceImprovedLabel: string;
     practiceFirstTimeLabel: string;
     practiceBestLabel: string;
+    practiceAvgResponseLabel: string;
     iqClassifications: {
       verySuperior: string;
       superior: string;
@@ -439,6 +440,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceImprovedLabel: "¡Superaste tu marca!",
       practiceFirstTimeLabel: "Primera vez que jugás esto",
       practiceBestLabel: "Tu mejor marca:",
+      practiceAvgResponseLabel: "Tiempo de reacción promedio",
       playAgainCta: "Jugar de nuevo",
       viewProfileCta: "Ver tu perfil",
       sessionStartError: "No se pudo conectar con la base de datos.",
@@ -694,6 +696,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceImprovedLabel: "New personal best!",
       practiceFirstTimeLabel: "First time playing this one",
       practiceBestLabel: "Your best:",
+      practiceAvgResponseLabel: "Average reaction time",
       playAgainCta: "Play again",
       viewProfileCta: "View your profile",
       sessionStartError: "Couldn't connect to the database.",
