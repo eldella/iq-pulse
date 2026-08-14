@@ -46,6 +46,8 @@
 
 ## Trabajo en Paralelo (5 Terminales)
 
+**Al arrancar una sesión en este proyecto: si existe un archivo `EMPEZA-ACA.txt` en la raíz, leerlo primero, antes de cualquier otra cosa, y seguir lo que indica.** Es un archivo local (no versionado, no vive en todos los checkouts) que le dice a esa carpeta puntual cuál es su tarea dentro del trabajo en paralelo — si no existe, ignorar esto y seguir normal.
+
 Reglas generales para cuando el trabajo se reparte en varias terminales/worktrees en simultáneo. Las instrucciones específicas de qué hace cada una viven en `terminales/terminal-N-*.txt`, no acá — esto es solo lo que aplica a las 5 por igual.
 
 - **Nunca las 5 sobre la misma carpeta.** Cada terminal trabaja en su propio `git worktree` (carpeta física separada, misma repo, rama propia) — si dos editan `D:\Paginaminijuegos` a la vez se pisan los cambios sin commitear. Setup (una sola vez, desde `D:\Paginaminijuegos`):
