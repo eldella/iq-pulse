@@ -7,24 +7,24 @@
  * score, response time only adds a small bonus - a lucky fast guess should
  * never outscore a slower correct answer.
  *
- * Difficulty is an uncapped numeric `level` (starts at 1 = "1x" each new
- * exercise), not 3 fixed tiers: 2 correct in a row DOUBLES it (1→2→4→8→16→
- * 32...), 2 wrong in a row halves it back down (floor of 1). `level` is also
- * literally the score multiplier (100 base points × level), so a 32x streak
- * scores dramatically more than a 1x one - the escalation and the score are
- * the same number, not two systems that happen to move together.
+ * Difficulty is 4 fixed named tiers (easy/medium/hard/extreme), each new
+ * exercise starting at "easy" = "1x". 2 correct in a row PROMOTES one tier
+ * (1x→2x→4x→8x), a single wrong answer DEMOTES one tier back down (floor at
+ * 1x) - deliberately asymmetric the other way from a naive symmetric ladder:
+ * climbing takes a sustained streak, but one mistake costs a full tier
+ * (confirmed with the user). `level` is also literally the score multiplier
+ * (100 base points × level), so an 8x streak at "extreme" scores dramatically
+ * more than a 1x one - the escalation and the score are the same number, not
+ * two systems that happen to move together.
  *
- * Game content can't visually scale 1:1 with an exponential number (a 32x
- * grid would be unusable), so games derive their own visual complexity from
- * `contentTier(level)` - a small integer that only advances once per
- * doubling, giving a handful of meaningful content steps instead of a
- * literal 32x mess. The DB's difficulty_at_time column still only accepts
- * easy/medium/hard (see supabase/schema.sql), so `levelToBucket()` collapses
- * the numeric level down to that for storage - gameplay never touches the
- * 3-tier type again.
+ * `level` only ever takes the 4 values {1, 2, 4, 8} (one per tier), so
+ * `contentTier(level)` - a small integer 0-3 - both drives each game's
+ * visual complexity formula (see the games in components/jugar/games/) and
+ * maps 1:1 onto the named tier via `levelToBucket()`, which is also exactly
+ * what the DB's difficulty_at_time column stores (see supabase/schema.sql).
  */
 
-export type Difficulty = "easy" | "medium" | "hard";
+export type Difficulty = "easy" | "medium" | "hard" | "extreme";
 export type Domain = "reasoning" | "memory" | "speed";
 
 const BASE_POINTS = 100;
@@ -52,80 +52,69 @@ export function scoreAnswer(level: number, isCorrect: boolean, responseTimeMs: n
   return Math.round(basePoints * (1 + timeBonusFactor));
 }
 
+const MAX_LEVEL = 8; // "extreme" tier - the top of the 4-tier ladder.
+
 /**
- * Next level given consecutive-correct and consecutive-wrong streaks (each
- * reset to 0 by the caller whenever the other one advances) and whether the
- * just-answered question was correct. Called once per answer.
+ * Next level given the consecutive-correct streak (reset to 0 by the caller
+ * whenever an answer is wrong) and whether the just-answered question was
+ * correct. Called once per answer.
  *
- * Deliberately asymmetric (confirmed with the user): 2 in a row doubles the
- * level, but it still takes 2 wrong in a row to halve it back down - a
- * session shoots up fast and falls back slowly rather than oscillating.
+ * Deliberately asymmetric (confirmed with the user): 2 correct in a row
+ * PROMOTES one tier, but a single wrong answer DEMOTES one tier immediately
+ * - climbing needs a sustained streak, one mistake costs a full tier.
  *
- * The streak counters the caller passes in never reset back to 0 on their
- * own once a streak continues (only the *other* outcome resets them), so
- * this can't gate on `>= 2` - that stayed true for every answer after the
- * 2nd correct in a row and re-doubled on each one, compounding into an
- * exponential runaway (16x -> 256x within a handful of correct taps) well
+ * The correct-streak counter the caller passes in never resets back to 0 on
+ * its own while it continues (only a wrong answer resets it), so this can't
+ * gate on `>= 2` - that would stay true for every answer after the 2nd
+ * correct in a row and re-promote on each one, compounding into a runaway
  * beyond the intended "every 2 in a row" pace. Gating on the streak being an
  * exact multiple of 2 instead makes it re-trigger only once per *additional*
- * 2-in-a-row, matching the documented 1x->2x->4x->8x->16x->32x progression.
+ * 2-in-a-row.
  */
-export function nextLevel(
-  current: number,
-  isCorrect: boolean,
-  consecutiveCorrect: number,
-  consecutiveWrong: number
-): number {
+export function nextLevel(current: number, isCorrect: boolean, consecutiveCorrect: number): number {
   if (!isCorrect) {
-    if (consecutiveWrong > 0 && consecutiveWrong % 2 === 0) {
-      return Math.max(1, Math.floor(current / 2));
-    }
-    return current;
+    return Math.max(1, current / 2);
   }
 
   if (consecutiveCorrect > 0 && consecutiveCorrect % 2 === 0) {
-    return current * 2;
+    return Math.min(MAX_LEVEL, current * 2);
   }
 
   return current;
 }
 
 /**
- * Small integer content-complexity tier for a given level - advances once
- * per doubling (level 1 → tier 0, 2-3 → tier 1, 4-7 → tier 2, 8-15 → tier 3,
- * 16-31 → tier 4, ...), so a game's grid/sequence/range formulas get a
- * handful of sane growth steps instead of trying to render "32x" literally.
+ * Small integer content-complexity tier for a given level - level only ever
+ * takes the 4 values {1, 2, 4, 8}, so this always resolves to 0-3, one per
+ * named difficulty tier. Games derive their grid/sequence/range formulas
+ * from this instead of the raw level.
  */
 export function contentTier(level: number): number {
   return Math.floor(Math.log2(Math.max(1, level)));
 }
 
-/** Collapses the numeric level down to the DB's fixed easy/medium/hard column - display/scoring never use this. */
+/** Maps the numeric level onto its named tier - what the DB's difficulty_at_time column stores. */
 export function levelToBucket(level: number): Difficulty {
   const tier = contentTier(level);
-  if (tier <= 1) return "easy";
-  if (tier <= 3) return "medium";
-  return "hard";
+  if (tier <= 0) return "easy";
+  if (tier === 1) return "medium";
+  if (tier === 2) return "hard";
+  return "extreme";
 }
 
-/**
- * Reverse of levelToBucket, for completeSession() re-scoring answers read
- * back from the DB (which only ever stored the bucket, not the exact
- * level). Picks the lowest level in each bucket's range - a conservative
- * reconstruction that never overstates a session's score.
- */
+/** Reverse of levelToBucket, for completeSession() re-scoring answers read back from the DB. */
 export function bucketToLevel(bucket: Difficulty): number {
   if (bucket === "easy") return 1;
-  if (bucket === "medium") return 4;
-  return 16;
+  if (bucket === "medium") return 2;
+  if (bucket === "hard") return 4;
+  return 8;
 }
 
 /**
  * Normalizes a session's total points into the 0-1 range scoreToIQEstimate
- * expects, against a reference of every question answered at level 8 (a
- * strong, sustained streak) with a full time bonus. Levels are uncapped, so
- * this is a reference point rather than a true ceiling - exceeding it is
- * possible and fine, scoreToIQEstimate already clamps the input safely.
+ * expects, against a reference of every question answered at level 8
+ * ("extreme", the top tier) with a full time bonus - so a session that
+ * sustains "extreme" the whole way through normalizes to ~1.0.
  */
 export function normalizeScore(totalPoints: number, answeredCount: number): number {
   if (answeredCount <= 0) return 0;

@@ -29,7 +29,7 @@ create table public.profiles (
 create table public.questions (
   id uuid primary key default gen_random_uuid(),
   domain text not null check (domain in ('reasoning', 'memory', 'speed')),
-  difficulty text not null check (difficulty in ('easy', 'medium', 'hard')),
+  difficulty text not null check (difficulty in ('easy', 'medium', 'hard', 'extreme')),
   prompt jsonb not null,
   correct_answer jsonb not null,
   created_at timestamptz not null default now()
@@ -58,7 +58,7 @@ create table public.quiz_answers (
   domain text not null check (domain in ('reasoning', 'memory', 'speed')),
   is_correct boolean not null,
   response_time_ms integer not null,
-  difficulty_at_time text not null check (difficulty_at_time in ('easy', 'medium', 'hard')),
+  difficulty_at_time text not null check (difficulty_at_time in ('easy', 'medium', 'hard', 'extreme')),
   answered_at timestamptz not null default now()
 );
 

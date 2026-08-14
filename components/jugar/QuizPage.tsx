@@ -153,7 +153,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [level, setLevel] = useState(1);
   const [streak, setStreak] = useState(0);
-  const [missStreak, setMissStreak] = useState(0);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [domainStats, setDomainStats] = useState<Record<Domain, DomainStats>>(EMPTY_STATS);
   const [result, setResult] = useState<{ iqEstimate: number; percentile: number; points?: number } | null>(
@@ -202,7 +201,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       responseTimesRef.current = [];
       setLevel(1);
       setStreak(0);
-      setMissStreak(0);
       setQuestionIndex(0);
       setDomainStats(EMPTY_STATS);
       setResult(null);
@@ -254,15 +252,13 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     if (isCorrect) responseTimesRef.current.push(responseTimeMs);
 
     const newStreak = isCorrect ? streak + 1 : 0;
-    const newMissStreak = isCorrect ? 0 : missStreak + 1;
     setStreak(newStreak);
-    setMissStreak(newMissStreak);
     // Reacción's content doesn't scale with level (see ReactionCircleGame's
     // top comment) and every round already draws its own fresh 1-5s delay,
     // so there's no real difficulty to escalate - pinned at 1x instead of
     // riding the same streak-driven multiplier the other games use.
     if (gameId !== "reactionCircle") {
-      setLevel((current) => nextLevel(current, isCorrect, newStreak, newMissStreak));
+      setLevel((current) => nextLevel(current, isCorrect, newStreak));
     }
 
     recordAnswer({ sessionId, domain, isCorrect, responseTimeMs, difficulty: levelToBucket(level) }).catch(() => {
@@ -279,7 +275,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     const currentGameIndex = plan.indexOf(gameId);
     setQuestionIndex(0);
     setStreak(0);
-    setMissStreak(0);
     setLevel(1);
 
     if (currentGameIndex < plan.length - 1) {

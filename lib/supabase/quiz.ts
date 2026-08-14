@@ -10,7 +10,7 @@ import {
 } from "@/lib/scoring";
 
 const DOMAINS: readonly Domain[] = ["reasoning", "memory", "speed"];
-const DIFFICULTIES: readonly Difficulty[] = ["easy", "medium", "hard"];
+const DIFFICULTIES: readonly Difficulty[] = ["easy", "medium", "hard", "extreme"];
 
 /**
  * Thin data-access layer over the tables in supabase/schema.sql - kept
