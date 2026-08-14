@@ -251,7 +251,13 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     const newMissStreak = isCorrect ? 0 : missStreak + 1;
     setStreak(newStreak);
     setMissStreak(newMissStreak);
-    setLevel((current) => nextLevel(current, isCorrect, newStreak, newMissStreak));
+    // Reacción's content doesn't scale with level (see ReactionCircleGame's
+    // top comment) and every round already draws its own fresh 1-5s delay,
+    // so there's no real difficulty to escalate - pinned at 1x instead of
+    // riding the same streak-driven multiplier the other games use.
+    if (gameId !== "reactionCircle") {
+      setLevel((current) => nextLevel(current, isCorrect, newStreak, newMissStreak));
+    }
 
     recordAnswer({ sessionId, domain, isCorrect, responseTimeMs, difficulty: levelToBucket(level) }).catch(() => {
       // Non-fatal: the run continues locally even if one write fails.
