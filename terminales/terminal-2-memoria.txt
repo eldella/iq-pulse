@@ -1,0 +1,45 @@
+TERMINAL 2 - JUEGOS DE MEMORIA - IQ.PULSE
+=============================================
+Reglas generales del proyecto y de las 5 terminales: ver CLAUDE.md,
+seccion "Trabajo en Paralelo (5 Terminales)". Este archivo es SOLO lo
+especifico de esta terminal.
+
+Rama: feat/memory-results
+Setup (una sola vez, desde D:\Paginaminijuegos):
+  git worktree add ../iqpulse-memory -b feat/memory-results
+
+
+TU TAREA
+------------
+Juegos: Retencion de digitos, Rafaga de palabras, Memoria espacial,
+Palabra rapida.
+
+Mismo tratamiento visual que Reaccion (card principal con glow segun
+rendimiento + grid de stats chicas), adaptado a memoria: probablemente
+precision como metrica principal + la secuencia/nivel mas largo alcanzado
+como "record" (en vez de mejor toque en ms, que es especifico de
+Reaccion).
+
+
+ARCHIVOS
+------------
+Propios (sin conflicto con otras terminales):
+  components/jugar/games/DigitSpanGame.tsx
+  components/jugar/games/WordBurstGame.tsx
+  components/jugar/games/SpatialMemoryGame.tsx
+  components/jugar/games/WordTypingGame.tsx
+
+Compartido - NO TOCAR hasta que Terminal 5 confirme que mergeo su
+refactor a master (ver "Orden" en CLAUDE.md):
+  components/jugar/QuizPage.tsx (solo la parte de resultados de estos 4
+  juegos, nada mas de ese archivo)
+
+NO tocar: juegos de otros dominios, RecordConfetti.tsx, StatCard.tsx (son
+de Terminal 5 - si te faltan, pediselos, no los reimplementes).
+
+
+NOTA
+--------
+Sos la terminal que mas juegos toca (4) - commiteá por juego a medida que
+lo termines, no los 4 juntos al final, asi lint/typecheck se corren
+seguido y no se acumula un diff gigante para revisar.

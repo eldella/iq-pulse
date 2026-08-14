@@ -1,0 +1,48 @@
+TERMINAL 5 - NUCLEO COMPARTIDO - IQ.PULSE (ARRANCA PRIMERO)
+================================================================
+Reglas generales del proyecto y de las 5 terminales: ver CLAUDE.md,
+seccion "Trabajo en Paralelo (5 Terminales)". Este archivo es SOLO lo
+especifico de esta terminal.
+
+Rama: feat/shared-core
+Setup (una sola vez, desde D:\Paginaminijuegos):
+  git worktree add ../iqpulse-core -b feat/shared-core
+
+IMPORTANTE: esta terminal arranca ANTES que las Terminales 1, 2 y 3 (la 4
+no depende de vos y puede arrancar en paralelo). Las otras 3 esperan a
+que mergees a master antes de tocar el archivo compartido.
+
+
+TU TAREA
+------------
+1. Refactor: sacar el patron de tarjetas de resultados (el que ya tiene
+   Reaccion - card principal con glow segun rendimiento + grid de stats)
+   de adentro de components/jugar/QuizPage.tsx, y convertirlo en algo que
+   cada juego pueda "declarar" sin tocar ese archivo compartido - por
+   ejemplo, que cada juego exporte su propia config de resultados (que
+   stats mostrar, en que orden, que umbrales de color usar) y
+   QuizPage.tsx solo la lea y renderice.
+
+2. Mergear ese refactor a master lo antes posible - las Terminales 1, 2 y
+   3 estan bloqueadas hasta que esto pase.
+
+3. Durante el resto del trabajo: quedas disponible para atender pedidos
+   de las otras terminales - una clave de i18n nueva, un token de color o
+   sombra nuevo que no exista todavia. Cualquier cosa que agregues por
+   pedido de otra terminal, documentala (nombre + para que sirve) para
+   que las demas sepan que ya existe antes de pedir una duplicada.
+
+
+ARCHIVOS
+------------
+Dueña de:
+  components/jugar/QuizPage.tsx (estructura general - el contenido
+    especifico de cada resultado lo declara cada juego, no vos)
+  components/jugar/StatCard.tsx
+  components/jugar/RecordConfetti.tsx
+  lib/i18n/dictionary.ts (nuevas claves que pidan las otras terminales)
+  tailwind.config.ts (tokens de color/sombra nuevos si hacen falta)
+
+NO tocar: los archivos de juegos individuales (components/jugar/games/*)
+- esos son de las Terminales 1, 2 y 3, salvo que necesites tocar la forma
+  en que EXPONEN su config de resultados (coordinarlo con ellas).

@@ -1,0 +1,42 @@
+TERMINAL 3 - JUEGOS DE VELOCIDAD RESTANTES - IQ.PULSE
+=========================================================
+Reglas generales del proyecto y de las 5 terminales: ver CLAUDE.md,
+seccion "Trabajo en Paralelo (5 Terminales)". Este archivo es SOLO lo
+especifico de esta terminal.
+
+Rama: feat/speed-results
+Setup (una sola vez, desde D:\Paginaminijuegos):
+  git worktree add ../iqpulse-speed -b feat/speed-results
+
+
+TU TAREA
+------------
+Juegos: Stroop, Comparacion rapida. (Reaccion YA esta hecho - no tocar.)
+
+Mismo tratamiento que Reaccion (ya sirve de referencia exacta: card
+principal con glow, grid de stats, record personal). Diferencia: Stroop y
+Comparacion rapida usan precision como metrica principal (no es opcional
+como en Reaccion), asi que el layout final se va a parecer mas al branch
+"accuracy" que ya existe en QuizPage.tsx que al de Reaccion.
+
+Nota sobre animaciones: Reaccion corre SIN animacion de entrada por
+pedido explicito (ver el comentario en QuizPage.tsx junto a
+`activeGame.id === "reactionCircle"`). Stroop y Comparacion rapida NO
+tienen ese pedido - mantienen la animacion normal salvo que se confirme
+lo contrario.
+
+
+ARCHIVOS
+------------
+Propios (sin conflicto con otras terminales):
+  components/jugar/games/StroopGame.tsx
+  components/jugar/games/QuickCompareGame.tsx
+
+Compartido - NO TOCAR hasta que Terminal 5 confirme que mergeo su
+refactor a master (ver "Orden" en CLAUDE.md):
+  components/jugar/QuizPage.tsx (solo la parte de resultados de estos 2
+  juegos, nada mas de ese archivo)
+
+NO tocar: ReactionCircleGame.tsx ni la logica ya armada para Reaccion,
+RecordConfetti.tsx, StatCard.tsx (son de Terminal 5 - si te faltan,
+pediselos, no los reimplementes).

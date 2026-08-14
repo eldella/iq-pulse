@@ -1,0 +1,40 @@
+TERMINAL 4 - PAGINA RENDIMIENTO - IQ.PULSE
+==============================================
+Reglas generales del proyecto y de las 5 terminales: ver CLAUDE.md,
+seccion "Trabajo en Paralelo (5 Terminales)". Este archivo es SOLO lo
+especifico de esta terminal.
+
+Rama: feat/rendimiento-page
+Setup (una sola vez, desde D:\Paginaminijuegos):
+  git worktree add ../iqpulse-rendimiento -b feat/rendimiento-page
+
+
+TU TAREA
+------------
+Hoy /rendimiento es un placeholder ("being tuned, check back soon" - ver
+app/rendimiento/page.tsx). Hay una version funcional con general-vs-vos ya
+armada en el historial de git, commit c2983b8 (separada en dos secciones:
+porcentajes y segundos, por escalas distintas) - arrancar revisando ese
+commit antes de rehacer todo de cero:
+
+  git show c2983b8 --stat
+
+Terminarla: reemplazar el placeholder por una comparacion real
+general-vs-vos, usando ese commit como punto de partida (no
+necesariamente copiarlo tal cual - revisar si conviene adaptarlo al
+sistema de tarjetas que se esta armando en el resto del proyecto).
+
+
+ARCHIVOS
+------------
+Propios: todo lo que cuelga de app/rendimiento/ y los componentes de
+stats que sean exclusivos de esa pagina.
+
+NO tocar: components/jugar/QuizPage.tsx (esta pagina no depende de el).
+
+
+VENTAJA: PODES ARRANCAR YA
+-------------------------------
+A diferencia de las Terminales 1, 2 y 3, esta no depende del refactor de
+Terminal 5 en QuizPage.tsx. Arranca en paralelo desde el dia 1, sin
+esperar a nadie.

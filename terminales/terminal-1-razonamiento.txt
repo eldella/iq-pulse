@@ -1,0 +1,43 @@
+TERMINAL 1 - JUEGOS DE RAZONAMIENTO - IQ.PULSE
+==================================================
+Reglas generales del proyecto y de las 5 terminales: ver CLAUDE.md,
+seccion "Trabajo en Paralelo (5 Terminales)". Este archivo es SOLO lo
+especifico de esta terminal.
+
+Rama: feat/reasoning-results
+Setup (una sola vez, desde D:\Paginaminijuegos):
+  git worktree add ../iqpulse-reasoning -b feat/reasoning-results
+
+
+TU TAREA
+------------
+Juegos: Matriz de patrones, Camino optimo, Secuencia numerica.
+
+Aplicar a estos 3 juegos el mismo tratamiento de tarjetas que ya tiene
+Reaccion en su pantalla de resultados (card principal con glow segun
+rendimiento + grid de stats chicas), adaptado a lo que tiene sentido medir
+en razonamiento: probablemente precision (% correcto) como metrica
+principal + tiempo promedio por respuesta como stat secundaria, no
+milisegundos de reaccion (eso es especifico de Reaccion).
+
+
+ARCHIVOS
+------------
+Propios (sin conflicto con otras terminales):
+  components/jugar/games/PatternMatrixGame.tsx
+  components/jugar/games/PathfinderGame.tsx
+  components/jugar/games/NumberSequenceGame.tsx
+
+Compartido - NO TOCAR hasta que Terminal 5 confirme que mergeo su
+refactor a master (ver "Orden" en CLAUDE.md):
+  components/jugar/QuizPage.tsx (solo la parte de resultados de estos 3
+  juegos, nada mas de ese archivo)
+
+NO tocar: juegos de otros dominios, RecordConfetti.tsx, StatCard.tsx (son
+de Terminal 5 - si te faltan, pediselos, no los reimplementes).
+
+
+MIENTRAS ESPERAS A TERMINAL 5
+----------------------------------
+Podes ir adelantando los 3 archivos propios (PatternMatrixGame.tsx, etc.)
+sin tocar QuizPage.tsx todavia.
