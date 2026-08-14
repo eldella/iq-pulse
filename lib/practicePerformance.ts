@@ -7,9 +7,14 @@
  */
 
 type PracticeRecord = { bestAccuracy: number };
+type PracticeTimeRecord = { bestAvgResponseMs: number };
 
 function storageKey(gameId: string): string {
   return `iqpulse-practice-${gameId}`;
+}
+
+function timeStorageKey(gameId: string): string {
+  return `iqpulse-practice-time-${gameId}`;
 }
 
 function readBestAccuracy(gameId: string): number | null {
@@ -18,6 +23,17 @@ function readBestAccuracy(gameId: string): number | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PracticeRecord;
     return typeof parsed.bestAccuracy === "number" ? parsed.bestAccuracy : null;
+  } catch {
+    return null;
+  }
+}
+
+function readBestAvgResponseMs(gameId: string): number | null {
+  try {
+    const raw = window.localStorage.getItem(timeStorageKey(gameId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PracticeTimeRecord;
+    return typeof parsed.bestAvgResponseMs === "number" ? parsed.bestAvgResponseMs : null;
   } catch {
     return null;
   }
@@ -32,6 +48,19 @@ export function recordPracticeResult(
   const improved = previousBest === null || accuracy > previousBest;
   if (improved) {
     window.localStorage.setItem(storageKey(gameId), JSON.stringify({ bestAccuracy: accuracy }));
+  }
+  return { previousBest, improved };
+}
+
+/** Compares this run's average response time (ms, lower is better) against the stored best for this game, updates it if beaten. */
+export function recordPracticeReactionTime(
+  gameId: string,
+  avgResponseMs: number
+): { previousBest: number | null; improved: boolean } {
+  const previousBest = readBestAvgResponseMs(gameId);
+  const improved = previousBest === null || avgResponseMs < previousBest;
+  if (improved) {
+    window.localStorage.setItem(timeStorageKey(gameId), JSON.stringify({ bestAvgResponseMs: avgResponseMs }));
   }
   return { previousBest, improved };
 }

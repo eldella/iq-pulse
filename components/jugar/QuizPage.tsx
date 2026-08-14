@@ -50,7 +50,7 @@ import {
   useDailyTraining,
 } from "@/lib/dailyTraining";
 import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
-import { recordPracticeResult } from "@/lib/practicePerformance";
+import { recordPracticeResult, recordPracticeReactionTime } from "@/lib/practicePerformance";
 
 /**
  * Each exercise (daily or free) now runs on a 30-second clock instead of a
@@ -160,10 +160,15 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     null
   );
   const [practiceResult, setPracticeResult] = useState<{
+    // Reacción's "correct" answer is nearly always 100% (only an early tap
+    // misses), so accuracy is a meaningless headline there - it leads with
+    // its average reaction time instead. Every other practice game still
+    // leads with accuracy, the metric that's actually being tested.
+    headline: "accuracy" | "reactionTime";
     accuracy: number;
+    avgResponseMs: number | null;
     previousBest: number | null;
     improved: boolean;
-    avgResponseMs: number | null;
   } | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -296,11 +301,17 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
         const finalCorrect = domainStats[domain].correct + (isCorrect ? 1 : 0);
         const finalAnswered = domainStats[domain].answered + 1;
         const accuracy = finalAnswered > 0 ? finalCorrect / finalAnswered : 0;
-        const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
         const times = responseTimesRef.current;
         const avgResponseMs =
           times.length > 0 ? Math.round(times.reduce((sum, t) => sum + t, 0) / times.length) : null;
-        setPracticeResult({ accuracy, previousBest, improved, avgResponseMs });
+
+        if (gameId === "reactionCircle" && avgResponseMs !== null) {
+          const { previousBest, improved } = recordPracticeReactionTime(gameId, avgResponseMs);
+          setPracticeResult({ headline: "reactionTime", accuracy, avgResponseMs, previousBest, improved });
+        } else {
+          const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
+          setPracticeResult({ headline: "accuracy", accuracy, avgResponseMs, previousBest, improved });
+        }
       }
     } catch {
       setError(t.quiz.resultError);
@@ -312,7 +323,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     const summary = result
       ? `IQ.Pulse — ${t.quiz.resultsIqLabel}: ${result.iqEstimate}, ${t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]} (${t.quiz.resultsBetterThanLabel} ${result.percentile}% ${t.quiz.resultsBetterThanSuffix})`
       : practiceResult
-        ? `IQ.Pulse — ${t.quiz.practiceAccuracyLabel}: ${Math.round(practiceResult.accuracy * 100)}%`
+        ? practiceResult.headline === "reactionTime"
+          ? `IQ.Pulse — ${t.quiz.practiceAvgResponseLabel}: ${practiceResult.avgResponseMs} ms`
+          : `IQ.Pulse — ${t.quiz.practiceAccuracyLabel}: ${Math.round(practiceResult.accuracy * 100)}%`
         : null;
     if (!summary) return;
     navigator.clipboard.writeText(summary).then(() => {
@@ -460,7 +473,16 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
       {activeGame && (
         <motion.div
-          key={`${phase}-${questionIndex}`}
+          // sessionId (fresh per handleStart) is load-bearing here, not just
+          // decorative - replaying the exact same game (phase="reactionCircle",
+          // questionIndex=0 again) would otherwise produce the same key as
+          // the previous run, and React reuses the existing component
+          // instance instead of remounting it. For most games that's
+          // harmless, but ReactionCircleGame keeps its "go" timestamp in a
+          // ref that only resets via mount - reused instances kept measuring
+          // against a stale timestamp from the earlier run, producing
+          // reaction-time readings inflated by however old that timestamp was.
+          key={`${sessionId}-${phase}-${questionIndex}`}
           initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0, transition: springTransition }}
           className="flex w-full max-w-md flex-col items-center gap-6"
@@ -565,19 +587,25 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             practiceResult && (
               <div className="flex flex-col items-center gap-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
-                  {t.quiz.practiceAccuracyLabel}
+                  {practiceResult.headline === "reactionTime"
+                    ? t.quiz.practiceAvgResponseLabel
+                    : t.quiz.practiceAccuracyLabel}
                 </p>
                 <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
-                  {Math.round(practiceResult.accuracy * 100)}%
+                  {practiceResult.headline === "reactionTime"
+                    ? `${practiceResult.avgResponseMs} ms`
+                    : `${Math.round(practiceResult.accuracy * 100)}%`}
                 </p>
                 <p className="text-sm font-semibold text-success">
                   {practiceResult.previousBest === null
                     ? t.quiz.practiceFirstTimeLabel
                     : practiceResult.improved
                       ? t.quiz.practiceImprovedLabel
-                      : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
+                      : practiceResult.headline === "reactionTime"
+                        ? `${t.quiz.practiceBestLabel} ${practiceResult.previousBest} ms`
+                        : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
                 </p>
-                {practiceResult.avgResponseMs !== null && GAMES[plan[0]].domain === "speed" && (
+                {practiceResult.headline === "accuracy" && practiceResult.avgResponseMs !== null && (
                   <p className="tabular-nums text-sm text-muted-foreground">
                     {t.quiz.practiceAvgResponseLabel}: {practiceResult.avgResponseMs} ms
                   </p>
