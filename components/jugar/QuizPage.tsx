@@ -600,12 +600,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                 initial={shouldReduceMotion || activeGame.id === "reactionCircle" ? false : { scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={springTransition}
-                className="flex items-center gap-1.5 tabular-nums text-lg font-bold text-foreground"
+                className="text-lg font-bold text-foreground"
               >
-                {level}x
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {difficultyLabel(level, t)}
-                </span>
+                {difficultyLabel(level, t)}
               </motion.p>
             </AnimatePresence>
           </div>
