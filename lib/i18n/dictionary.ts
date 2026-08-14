@@ -154,6 +154,10 @@ export type Dictionary = {
     streakDaysLabel: string;
     exitToMenuCta: string;
     timeRemainingLabel: string;
+    difficultyEasy: string;
+    difficultyMedium: string;
+    difficultyHard: string;
+    difficultyExtreme: string;
     matrixInstructions: string;
     digitSpanMemorize: string;
     digitSpanRecall: string;
@@ -176,6 +180,12 @@ export type Dictionary = {
     practiceBestLabel: string;
     practiceAvgResponseLabel: string;
     practiceBestTapLabel: string;
+    practiceRecordLabel: string;
+    practiceNewRecordBadge: string;
+    practiceCloseToRecordLabel: string;
+    playAgainShortcutHint: string;
+    practiceReactionShareLead: string;
+    practiceReactionShareTail: string;
     iqClassifications: {
       verySuperior: string;
       superior: string;
@@ -412,6 +422,10 @@ export const dictionary: Record<Lang, Dictionary> = {
       streakDaysLabel: "días de racha",
       exitToMenuCta: "← Volver a elegir",
       timeRemainingLabel: "Tiempo restante",
+      difficultyEasy: "Fácil",
+      difficultyMedium: "Medio",
+      difficultyHard: "Difícil",
+      difficultyExtreme: "Extremo",
       matrixInstructions: "Encontrá el número que falta en la secuencia.",
       digitSpanMemorize: "Memorizá esta secuencia",
       digitSpanRecall: "Escribila en el mismo orden",
@@ -443,11 +457,17 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceBestLabel: "Tu mejor marca:",
       practiceAvgResponseLabel: "Tiempo de reacción promedio",
       practiceBestTapLabel: "Mejor toque",
+      practiceRecordLabel: "Récord personal",
+      practiceNewRecordBadge: "¡Nuevo récord!",
+      practiceCloseToRecordLabel: "Cerca de tu récord",
+      playAgainShortcutHint: "Espacio",
+      practiceReactionShareLead: "¡Hice",
+      practiceReactionShareTail: "en el test de reacción de IQ.Pulse! ⚡",
       playAgainCta: "Jugar de nuevo",
       viewProfileCta: "Ver tu perfil",
       sessionStartError: "No se pudo conectar con la base de datos.",
       resultError: "No se pudo calcular el resultado final.",
-      copyResultCta: "Copiar",
+      copyResultCta: "Copiar resultado",
       copiedLabel: "Copiado",
     },
     notFound: {
@@ -669,6 +689,10 @@ export const dictionary: Record<Lang, Dictionary> = {
       streakDaysLabel: "day streak",
       exitToMenuCta: "← Back to menu",
       timeRemainingLabel: "Time remaining",
+      difficultyEasy: "Easy",
+      difficultyMedium: "Medium",
+      difficultyHard: "Hard",
+      difficultyExtreme: "Extreme",
       matrixInstructions: "Find the missing number in the sequence.",
       digitSpanMemorize: "Memorize this sequence",
       digitSpanRecall: "Type it in the same order",
@@ -700,11 +724,17 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceBestLabel: "Your best:",
       practiceAvgResponseLabel: "Average reaction time",
       practiceBestTapLabel: "Best tap",
+      practiceRecordLabel: "Personal record",
+      practiceNewRecordBadge: "New record!",
+      practiceCloseToRecordLabel: "Close to your record",
+      playAgainShortcutHint: "Space",
+      practiceReactionShareLead: "I got",
+      practiceReactionShareTail: "on IQ.Pulse's reaction test! ⚡",
       playAgainCta: "Play again",
       viewProfileCta: "View your profile",
       sessionStartError: "Couldn't connect to the database.",
       resultError: "Couldn't calculate the final result.",
-      copyResultCta: "Copy",
+      copyResultCta: "Copy result",
       copiedLabel: "Copied",
     },
     notFound: {

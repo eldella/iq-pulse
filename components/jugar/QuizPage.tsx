@@ -28,6 +28,8 @@ import { fadeSlideUp, staggerContainer } from "@/components/landing/motionVarian
 import { GlassCard } from "@/components/GlassCard";
 import { WeeklyChallengeCard } from "@/components/stats/WeeklyChallengeCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
+import { StatCard } from "@/components/jugar/StatCard";
+import { RecordConfetti } from "@/components/jugar/RecordConfetti";
 import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
@@ -51,6 +53,7 @@ import {
 } from "@/lib/dailyTraining";
 import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
 import { recordPracticeResult, recordPracticeReactionTime } from "@/lib/practicePerformance";
+import { cn } from "@/lib/utils";
 
 /**
  * Each exercise (daily or free) now runs on a 30-second clock instead of a
@@ -62,6 +65,17 @@ import { recordPracticeResult, recordPracticeReactionTime } from "@/lib/practice
 const GAME_DURATION_MS = 30_000;
 /** Hard cap regardless of remaining time, so rapid-fire guessing can't inflate answeredCount. */
 const MAX_QUESTIONS_PER_GAME = 10;
+
+/**
+ * Rough bands for coloring Reacción's results card - grounded in published
+ * simple-visual-reaction-time norms (typical adult range is ~200-300ms), not
+ * arbitrary. Below FAST is a genuinely quick result; above NORMAL isn't
+ * flagged as "bad", it just doesn't get the extra glow.
+ */
+const REACTION_FAST_MS = 250;
+const REACTION_NORMAL_MS = 400;
+/** How close (ms) a non-improving best tap has to be to the record to still get an encouraging "close!" nudge. */
+const REACTION_CLOSE_TO_RECORD_MS = 20;
 
 export type GameId =
   | "matrix"
@@ -133,6 +147,15 @@ function gameCopy(id: GameId, t: Dictionary) {
     quickCompare: { title: t.quiz.quickCompareTitle, description: t.quiz.quickCompareDescription },
     reactionCircle: { title: t.quiz.reactionCircleTitle, description: t.quiz.reactionCircleDescription },
   }[id];
+}
+
+function difficultyLabel(level: number, t: Dictionary) {
+  return {
+    easy: t.quiz.difficultyEasy,
+    medium: t.quiz.difficultyMedium,
+    hard: t.quiz.difficultyHard,
+    extreme: t.quiz.difficultyExtreme,
+  }[levelToBucket(level)];
 }
 
 /**
@@ -235,6 +258,26 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     return () => window.clearInterval(id);
   }, [phase]);
 
+  // Space/Enter replays the same plan from the results screen - lets a
+  // keyboard-driven session (someone timing rounds back to back) go again
+  // without reaching for the mouse. Guarded to the "finished" phase only, so
+  // it never hijacks Space/Enter while a game itself is in progress (some
+  // games use those keys for their own answers).
+  useEffect(() => {
+    if (phase !== "finished") return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== " " && e.key !== "Enter") return;
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "BUTTON", "A"].includes(target.tagName)) return;
+      e.preventDefault();
+      handleStart(plan);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, plan]);
+
+
   function handleExitToMenu() {
     setPhase("idle");
     setSessionId(null);
@@ -332,7 +375,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       ? `IQ.Pulse — ${t.quiz.resultsIqLabel}: ${result.iqEstimate}, ${t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]} (${t.quiz.resultsBetterThanLabel} ${result.percentile}% ${t.quiz.resultsBetterThanSuffix})`
       : practiceResult
         ? practiceResult.headline === "reactionTime"
-          ? `IQ.Pulse — ${t.quiz.practiceAvgResponseLabel}: ${practiceResult.avgResponseMs} ms (${t.quiz.practiceBestTapLabel}: ${practiceResult.bestTapMs} ms)`
+          ? `${t.quiz.practiceReactionShareLead} ${practiceResult.avgResponseMs}ms ${t.quiz.practiceReactionShareTail}`
           : `IQ.Pulse — ${t.quiz.practiceAccuracyLabel}: ${Math.round(practiceResult.accuracy * 100)}%`
         : null;
     if (!summary) return;
@@ -343,6 +386,27 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   }
 
   const activeGame = phase !== "idle" && phase !== "finished" ? GAMES[phase] : null;
+
+  const isReactionResult = practiceResult?.headline === "reactionTime";
+  const reactionPerfTier =
+    isReactionResult && practiceResult?.avgResponseMs !== null && practiceResult?.avgResponseMs !== undefined
+      ? practiceResult.avgResponseMs < REACTION_FAST_MS
+        ? "fast"
+        : practiceResult.avgResponseMs < REACTION_NORMAL_MS
+          ? "normal"
+          : "slow"
+      : null;
+  const isNewRecord = isReactionResult && !!practiceResult?.improved && practiceResult?.previousBest !== null;
+  const isCloseToRecord =
+    isReactionResult &&
+    !isNewRecord &&
+    practiceResult?.previousBest !== null &&
+    practiceResult?.previousBest !== undefined &&
+    practiceResult?.bestTapMs !== null &&
+    practiceResult?.bestTapMs !== undefined &&
+    practiceResult.bestTapMs - practiceResult.previousBest <= REACTION_CLOSE_TO_RECORD_MS;
+  const reactionRecordMs =
+    practiceResult?.previousBest === null || isNewRecord ? practiceResult?.bestTapMs : practiceResult?.previousBest;
   const todayLabel = new Intl.DateTimeFormat(lang === "es" ? "es-AR" : "en-US", {
     weekday: "long",
     day: "numeric",
@@ -536,9 +600,12 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                 initial={shouldReduceMotion || activeGame.id === "reactionCircle" ? false : { scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={springTransition}
-                className="tabular-nums text-lg font-bold text-foreground"
+                className="flex items-center gap-1.5 tabular-nums text-lg font-bold text-foreground"
               >
                 {level}x
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {difficultyLabel(level, t)}
+                </span>
               </motion.p>
             </AnimatePresence>
           </div>
@@ -598,62 +665,75 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               </div>
             </>
           ) : (
-            practiceResult && (
+            practiceResult &&
+            (isReactionResult ? (
+              <div className="flex w-full max-w-xs flex-col items-center gap-3">
+                {/* Headline card - border/glow reflects how the run went:
+                    gold-ish success glow for a new record, a lighter success
+                    tint for a fast result, a warn border for a merely average
+                    one, nothing special otherwise. */}
+                <div
+                  className={cn(
+                    "relative flex w-full flex-col items-center gap-1 overflow-visible rounded-card border p-6 theme-transition",
+                    isNewRecord
+                      ? "border-success shadow-success-lg"
+                      : reactionPerfTier === "fast"
+                        ? "border-success/50 shadow-success-md"
+                        : reactionPerfTier === "normal"
+                          ? "border-warn/50"
+                          : "border-glass-border"
+                  )}
+                >
+                  {isNewRecord && !shouldReduceMotion && <RecordConfetti />}
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+                    {t.quiz.practiceAvgResponseLabel}
+                  </p>
+                  <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
+                    {practiceResult.avgResponseMs} ms
+                  </p>
+                  <p className="text-sm font-semibold text-success">
+                    {practiceResult.previousBest === null
+                      ? t.quiz.practiceFirstTimeLabel
+                      : isNewRecord
+                        ? `🎉 ${t.quiz.practiceNewRecordBadge}`
+                        : isCloseToRecord
+                          ? t.quiz.practiceCloseToRecordLabel
+                          : `${t.quiz.practiceBestLabel} ${practiceResult.previousBest} ms`}
+                  </p>
+                </div>
+
+                <div className="grid w-full grid-cols-3 gap-2">
+                  <StatCard emoji="🏆" value={`${reactionRecordMs} ms`} label={t.quiz.practiceRecordLabel} />
+                  <StatCard emoji="⚡" value={`${practiceResult.bestTapMs} ms`} label={t.quiz.practiceBestTapLabel} />
+                  <StatCard emoji="⏱️" value={formatElapsed(elapsedMs)} label={t.quiz.resultsTimeLabel} />
+                </div>
+              </div>
+            ) : (
               <div className="flex flex-col items-center gap-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
-                  {practiceResult.headline === "reactionTime"
-                    ? t.quiz.practiceAvgResponseLabel
-                    : t.quiz.practiceAccuracyLabel}
+                  {t.quiz.practiceAccuracyLabel}
                 </p>
                 <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
-                  {practiceResult.headline === "reactionTime"
-                    ? `${practiceResult.avgResponseMs} ms`
-                    : `${Math.round(practiceResult.accuracy * 100)}%`}
+                  {Math.round(practiceResult.accuracy * 100)}%
                 </p>
-                {practiceResult.headline === "reactionTime" ? (
-                  <>
-                    {/* The average blurs a fast tap together with slower ones
-                        in the same run, so the record it tracks/shows here is
-                        the run's single fastest tap, not the average above
-                        (confirmed with the user after that mismatch confused
-                        them). */}
-                    {practiceResult.bestTapMs !== null && (
-                      <p className="tabular-nums text-sm text-muted-foreground">
-                        {t.quiz.practiceBestTapLabel}: {practiceResult.bestTapMs} ms
-                      </p>
-                    )}
-                    <p className="text-sm font-semibold text-success">
-                      {practiceResult.previousBest === null
-                        ? t.quiz.practiceFirstTimeLabel
-                        : practiceResult.improved
-                          ? t.quiz.practiceImprovedLabel
-                          : `${t.quiz.practiceBestLabel} ${practiceResult.previousBest} ms`}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm font-semibold text-success">
-                      {practiceResult.previousBest === null
-                        ? t.quiz.practiceFirstTimeLabel
-                        : practiceResult.improved
-                          ? t.quiz.practiceImprovedLabel
-                          : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
-                    </p>
-                    {practiceResult.avgResponseMs !== null && (
-                      <p className="tabular-nums text-sm text-muted-foreground">
-                        {t.quiz.practiceAvgResponseLabel}: {practiceResult.avgResponseMs} ms
-                      </p>
-                    )}
-                  </>
+                <p className="text-sm font-semibold text-success">
+                  {practiceResult.previousBest === null
+                    ? t.quiz.practiceFirstTimeLabel
+                    : practiceResult.improved
+                      ? t.quiz.practiceImprovedLabel
+                      : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
+                </p>
+                {practiceResult.avgResponseMs !== null && (
+                  <p className="tabular-nums text-sm text-muted-foreground">
+                    {t.quiz.practiceAvgResponseLabel}: {practiceResult.avgResponseMs} ms
+                  </p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
                 </p>
               </div>
-            )
+            ))
           )}
-
-          <p className="max-w-sm text-xs text-muted-foreground">{t.quiz.resultsBody}</p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             <motion.button
@@ -677,6 +757,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               className="shine-hover inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none"
             >
               {t.quiz.playAgainCta}
+              <kbd className="rounded border border-accent-foreground/30 bg-accent-foreground/10 px-1.5 py-0.5 font-sans text-[10px] font-medium">
+                {t.quiz.playAgainShortcutHint}
+              </kbd>
             </motion.button>
           </div>
 
@@ -686,6 +769,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           >
             {t.quiz.viewProfileCta}
           </Link>
+
+          <p className="max-w-sm text-[11px] text-muted-foreground/70">{t.quiz.resultsBody}</p>
         </motion.div>
       )}
     </main>

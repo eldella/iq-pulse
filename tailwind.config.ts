@@ -52,6 +52,12 @@ const config: Config = {
         "accent-sm": "0 4px 12px -2px rgb(var(--color-accent) / 0.25)",
         "accent-md": "0 8px 24px -4px rgb(var(--color-accent) / 0.3)",
         "accent-lg": "0 16px 40px -8px rgb(var(--color-accent) / 0.4)",
+        // Same three-strength formula as accent-*, success-tinted - for
+        // performance-based glows (fast result, new personal record) where
+        // the accent's blue would misleadingly read as "primary action"
+        // rather than "good outcome".
+        "success-md": "0 8px 24px -4px rgb(var(--color-success) / 0.3)",
+        "success-lg": "0 16px 40px -8px rgb(var(--color-success) / 0.45)",
       },
     },
   },
