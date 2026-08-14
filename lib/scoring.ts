@@ -60,6 +60,15 @@ export function scoreAnswer(level: number, isCorrect: boolean, responseTimeMs: n
  * Deliberately asymmetric (confirmed with the user): 2 in a row doubles the
  * level, but it still takes 2 wrong in a row to halve it back down - a
  * session shoots up fast and falls back slowly rather than oscillating.
+ *
+ * The streak counters the caller passes in never reset back to 0 on their
+ * own once a streak continues (only the *other* outcome resets them), so
+ * this can't gate on `>= 2` - that stayed true for every answer after the
+ * 2nd correct in a row and re-doubled on each one, compounding into an
+ * exponential runaway (16x -> 256x within a handful of correct taps) well
+ * beyond the intended "every 2 in a row" pace. Gating on the streak being an
+ * exact multiple of 2 instead makes it re-trigger only once per *additional*
+ * 2-in-a-row, matching the documented 1x->2x->4x->8x->16x->32x progression.
  */
 export function nextLevel(
   current: number,
@@ -68,13 +77,13 @@ export function nextLevel(
   consecutiveWrong: number
 ): number {
   if (!isCorrect) {
-    if (consecutiveWrong >= 2) {
+    if (consecutiveWrong > 0 && consecutiveWrong % 2 === 0) {
       return Math.max(1, Math.floor(current / 2));
     }
     return current;
   }
 
-  if (consecutiveCorrect >= 2) {
+  if (consecutiveCorrect > 0 && consecutiveCorrect % 2 === 0) {
     return current * 2;
   }
 
