@@ -167,6 +167,12 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     headline: "accuracy" | "reactionTime";
     accuracy: number;
     avgResponseMs: number | null;
+    // Fastest single correct tap this run - the average blurs together
+    // with slower taps in the same session, so it's a confusing thing to
+    // call a "personal best" (confirmed with the user after they hit a
+    // fast single tap that the average then buried). previousBest/improved
+    // below compare against this, not the average.
+    bestTapMs: number | null;
     previousBest: number | null;
     improved: boolean;
   } | null>(null);
@@ -310,13 +316,14 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
         const times = responseTimesRef.current;
         const avgResponseMs =
           times.length > 0 ? Math.round(times.reduce((sum, t) => sum + t, 0) / times.length) : null;
+        const bestTapMs = times.length > 0 ? Math.min(...times) : null;
 
-        if (gameId === "reactionCircle" && avgResponseMs !== null) {
-          const { previousBest, improved } = recordPracticeReactionTime(gameId, avgResponseMs);
-          setPracticeResult({ headline: "reactionTime", accuracy, avgResponseMs, previousBest, improved });
+        if (gameId === "reactionCircle" && bestTapMs !== null) {
+          const { previousBest, improved } = recordPracticeReactionTime(gameId, bestTapMs);
+          setPracticeResult({ headline: "reactionTime", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
         } else {
           const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
-          setPracticeResult({ headline: "accuracy", accuracy, avgResponseMs, previousBest, improved });
+          setPracticeResult({ headline: "accuracy", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
         }
       }
     } catch {
@@ -330,7 +337,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       ? `IQ.Pulse — ${t.quiz.resultsIqLabel}: ${result.iqEstimate}, ${t.quiz.iqClassifications[classifyIQ(result.iqEstimate)]} (${t.quiz.resultsBetterThanLabel} ${result.percentile}% ${t.quiz.resultsBetterThanSuffix})`
       : practiceResult
         ? practiceResult.headline === "reactionTime"
-          ? `IQ.Pulse — ${t.quiz.practiceAvgResponseLabel}: ${practiceResult.avgResponseMs} ms`
+          ? `IQ.Pulse — ${t.quiz.practiceAvgResponseLabel}: ${practiceResult.avgResponseMs} ms (${t.quiz.practiceBestTapLabel}: ${practiceResult.bestTapMs} ms)`
           : `IQ.Pulse — ${t.quiz.practiceAccuracyLabel}: ${Math.round(practiceResult.accuracy * 100)}%`
         : null;
     if (!summary) return;
@@ -608,19 +615,41 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                     ? `${practiceResult.avgResponseMs} ms`
                     : `${Math.round(practiceResult.accuracy * 100)}%`}
                 </p>
-                <p className="text-sm font-semibold text-success">
-                  {practiceResult.previousBest === null
-                    ? t.quiz.practiceFirstTimeLabel
-                    : practiceResult.improved
-                      ? t.quiz.practiceImprovedLabel
-                      : practiceResult.headline === "reactionTime"
-                        ? `${t.quiz.practiceBestLabel} ${practiceResult.previousBest} ms`
-                        : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
-                </p>
-                {practiceResult.headline === "accuracy" && practiceResult.avgResponseMs !== null && (
-                  <p className="tabular-nums text-sm text-muted-foreground">
-                    {t.quiz.practiceAvgResponseLabel}: {practiceResult.avgResponseMs} ms
-                  </p>
+                {practiceResult.headline === "reactionTime" ? (
+                  <>
+                    {/* The average blurs a fast tap together with slower ones
+                        in the same run, so the record it tracks/shows here is
+                        the run's single fastest tap, not the average above
+                        (confirmed with the user after that mismatch confused
+                        them). */}
+                    {practiceResult.bestTapMs !== null && (
+                      <p className="tabular-nums text-sm text-muted-foreground">
+                        {t.quiz.practiceBestTapLabel}: {practiceResult.bestTapMs} ms
+                      </p>
+                    )}
+                    <p className="text-sm font-semibold text-success">
+                      {practiceResult.previousBest === null
+                        ? t.quiz.practiceFirstTimeLabel
+                        : practiceResult.improved
+                          ? t.quiz.practiceImprovedLabel
+                          : `${t.quiz.practiceBestLabel} ${practiceResult.previousBest} ms`}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-success">
+                      {practiceResult.previousBest === null
+                        ? t.quiz.practiceFirstTimeLabel
+                        : practiceResult.improved
+                          ? t.quiz.practiceImprovedLabel
+                          : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
+                    </p>
+                    {practiceResult.avgResponseMs !== null && (
+                      <p className="tabular-nums text-sm text-muted-foreground">
+                        {t.quiz.practiceAvgResponseLabel}: {practiceResult.avgResponseMs} ms
+                      </p>
+                    )}
+                  </>
                 )}
                 <p className="text-xs text-muted-foreground">
                   {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
