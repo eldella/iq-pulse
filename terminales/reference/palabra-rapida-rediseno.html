@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Palabra Rápida — rediseño de juego y resultado</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS — copiar tal cual al proyecto
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:            #000000;
+  --bg-elev:       #0D0D0F;
+  --bg-elev-2:     #161618;
+  --grid:          rgba(255,255,255,.055);
+
+  --fg:            #FFFFFF;
+  --fg-dim:        #8E8E93;
+  --fg-faint:      #48484A;
+
+  --accent:        #0A84FF;
+  --accent-glow:   rgba(10,132,255,.28);
+  --good:          #30D158;
+  --good-glow:     rgba(48,209,88,.22);
+  --bad:           #FF453A;
+  --warn:          #FF9F0A;
+
+  --stroke:        rgba(255,255,255,.10);
+  --stroke-strong: rgba(255,255,255,.18);
+
+  --r-sm: 12px;  --r-md: 16px;  --r-lg: 22px;  --r-pill: 999px;
+
+  --step: 8px;                       /* toda la escala vertical es múltiplo de 8 */
+  --measure: 420px;                  /* ancho de la columna de contenido */
+
+  --ease-out: cubic-bezier(.16,1,.3,1);
+  --ease-in-out: cubic-bezier(.65,0,.35,1);
+}
+
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+
+html,body{ height:100%; }
+body{
+  background: var(--bg);
+  background-image: radial-gradient(circle, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
+               system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+  overflow-x: hidden;
+}
+button{ font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+/* ── switcher de revisión — NO va a producción ────────────────── */
+.review{
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  z-index: 99; display: flex; gap: 4px; padding: 4px;
+  background: rgba(22,22,24,.82); backdrop-filter: blur(20px);
+  border: 1px solid var(--stroke); border-radius: var(--r-pill);
+}
+.review button{
+  padding: 6px 14px; font-size: 12px; font-weight: 590; letter-spacing: .01em;
+  color: var(--fg-dim); border-radius: var(--r-pill); transition: .18s var(--ease-out);
+}
+.review button[aria-selected="true"]{ background: var(--accent); color:#fff; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ESTRUCTURA COMÚN
+   ═══════════════════════════════════════════════════════════════ */
+.screen{ display:none; }
+.screen.is-active{ display:grid; place-items:center; min-height:100dvh; }
+
+.stage{
+  width:100%;
+  /* clave: en pantallas altas el bloque se centra en vez de estirarse.
+     Es lo que mata el espacio muerto del diseño original. */
+  height: min(100dvh, 720px);
+  display:grid;
+  grid-template-rows: auto minmax(0,1fr) auto;   /* header · centro · pie */
+  max-width: var(--measure);
+  margin-inline:auto;
+  padding: 56px calc(var(--step)*3) calc(var(--step)*5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PANTALLA 1 · JUEGO
+   ═══════════════════════════════════════════════════════════════ */
+
+/* — cabecera: volver + timer + progreso, todo en un bloque — */
+.g-head{ display:grid; gap: calc(var(--step)*1.5); }
+.g-head-row{ display:flex; align-items:center; justify-content:space-between; }
+
+.back{
+  display:flex; align-items:center; gap:8px;
+  font-size:14px; color:var(--fg-dim);
+  transition:.18s var(--ease-out);
+}
+.back:hover{ color:var(--fg); }
+
+.timer{
+  display:flex; align-items:baseline; gap:5px;
+  font-size:15px; font-weight:640; letter-spacing:-.01em;
+  color:var(--fg); transition:color .3s;
+}
+.timer small{ font-size:11px; font-weight:510; color:var(--fg-faint); }
+.timer.is-low{ color: var(--warn); }
+.timer.is-low small{ color: var(--warn); opacity:.6; }
+
+.bar{ height:3px; border-radius:2px; background: rgba(255,255,255,.08); overflow:hidden; }
+.bar i{
+  display:block; height:100%; border-radius:2px;
+  background: var(--accent); transform-origin:left;
+  transition: transform .95s linear, background .3s;
+}
+.bar.is-low i{ background: var(--warn); }
+
+/* — meta de ronda — */
+.g-meta{
+  margin-top: calc(var(--step)*3);
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  font-size:11px; font-weight:640; letter-spacing:.09em; text-transform:uppercase;
+}
+.g-meta .tag{ color: var(--accent); }
+.g-meta .sep{ color: var(--fg-faint); }
+.g-meta .lvl{ color: var(--fg-dim); }
+
+.g-round{
+  margin-top: 6px; text-align:center;
+  font-size:13px; color: var(--fg-faint);
+}
+
+/* — centro: instrucción + letra — */
+.g-center{
+  display:grid; align-content:center; justify-items:center;
+  gap: calc(var(--step)*3.5);
+  min-height: 280px;                    /* reserva fija: el layout nunca salta */
+}
+
+.g-cue{
+  font-size:15px; color: var(--fg-dim);
+  transition: opacity .25s var(--ease-out);
+}
+
+/* letra + anillo de cadencia */
+.letterwrap{
+  position:relative; width:168px; height:168px; display:grid; place-items:center;
+  transition: opacity .35s var(--ease-out), transform .35s var(--ease-out);
+}
+/* al escribir, el círculo se retira: el foco pasa a los casilleros */
+.letterwrap.recede{ opacity:.16; transform: scale(.86); }
+.letterwrap.recede .letter{ color: var(--fg-dim); text-shadow:none; }
+.letterwrap.recede .fill{ opacity:0; }
+.ring{ position:absolute; inset:0; transform: rotate(-90deg); }
+.ring circle{ fill:none; stroke-width:2.5; stroke-linecap:round; }
+.ring .track{ stroke: rgba(255,255,255,.07); }
+.ring .fill{
+  stroke: var(--accent);
+  stroke-dasharray: 508;                /* 2πr, r=81 */
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 8px var(--accent-glow));
+}
+.ring .fill.run{ animation: drain var(--dur,700ms) linear forwards; }
+@keyframes drain{ to{ stroke-dashoffset: 508; } }
+
+.letter{
+  font-size: 92px; font-weight: 700; line-height:1; letter-spacing:-.03em;
+  color: var(--accent);
+  text-shadow: 0 0 40px var(--accent-glow);
+}
+.letter.pop{ animation: pop .34s var(--ease-out); }
+@keyframes pop{
+  0%{ transform: scale(.72); opacity:0; filter: blur(6px); }
+  60%{ transform: scale(1.04); }
+  100%{ transform: scale(1); opacity:1; filter:blur(0); }
+}
+
+/* — casilleros: cuántas letras vienen + dónde se escribe — */
+.slotsbox{ position:relative; }
+/* input real, invisible: captura teclado y levanta el teclado en mobile */
+.slots-input{
+  position:absolute; inset:-10px; width:calc(100% + 20px);
+  opacity:0; border:0; background:none; font-size:16px; cursor:text;
+}
+.slots-input:disabled{ cursor:default; }
+.slots{ display:flex; gap:10px; justify-content:center; pointer-events:none; }
+.slot{
+  width:38px; height:48px; display:grid; place-items:center;
+  border-radius: var(--r-sm);
+  background: rgba(255,255,255,.035);
+  border:1px solid transparent;
+  font-size:22px; font-weight:660; color: var(--fg);
+  transition: .22s var(--ease-out);
+}
+.slot.seen{ background: rgba(10,132,255,.10); }
+.slot.now{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  transform: translateY(-2px);
+}
+.slot.filled{ background: rgba(255,255,255,.08); border-color: var(--stroke-strong); }
+.slot.caret{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.slot.caret::after{
+  content:''; width:2px; height:22px; border-radius:1px; background: var(--accent);
+  animation: blink 1.05s steps(1) infinite;
+}
+@keyframes blink{ 50%{ opacity:0; } }
+.slot.ok{ background: rgba(48,209,88,.14); border-color: var(--good); color: var(--good); }
+.slot.err{ background: rgba(255,69,58,.13); border-color: var(--bad); color: var(--bad); }
+
+/* — pie: acción reservada desde el arranque (nunca salta el layout) — */
+.g-foot{ display:grid; gap: calc(var(--step)*1.5); justify-items:center; width:100%; }
+.g-foot .btn{ width:100%; }
+.hint{ font-size:12px; color: var(--fg-faint); height:16px; text-align:center; }
+.hint kbd{
+  padding:2px 6px; border-radius:5px; background: var(--bg-elev-2);
+  border:1px solid var(--stroke); font-size:11px; font-family:inherit;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PANTALLA 2 · RESULTADO  (mismo lenguaje que el test de reacción)
+   ═══════════════════════════════════════════════════════════════ */
+.r-stage{
+  min-height:100dvh; display:grid; align-content:center; justify-items:center;
+  max-width: var(--measure); margin-inline:auto;
+  padding: 88px calc(var(--step)*3) calc(var(--step)*6);
+  gap: calc(var(--step)*3);
+}
+.r-title{ font-size:44px; font-weight:700; letter-spacing:-.025em; }
+
+/* recuadro destacado — el del test de reacción, con el dato nuevo */
+.hero{
+  width:100%; padding: calc(var(--step)*4) calc(var(--step)*3);
+  text-align:center; border-radius: var(--r-lg);
+  background: linear-gradient(180deg, rgba(48,209,88,.05), rgba(48,209,88,0));
+  border:1px solid rgba(48,209,88,.42);
+  box-shadow: 0 0 44px -8px var(--good-glow), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.hero.is-neutral{
+  background: linear-gradient(180deg, rgba(10,132,255,.05), rgba(10,132,255,0));
+  border-color: rgba(10,132,255,.38);
+  box-shadow: 0 0 44px -8px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.hero-label{
+  font-size:11px; font-weight:660; letter-spacing:.1em; text-transform:uppercase;
+  color: var(--accent);
+}
+.hero.is-neutral .hero-label{ color: var(--accent); }
+.hero-value{
+  margin-top: 10px;
+  font-size:76px; font-weight:700; line-height:1; letter-spacing:-.035em;
+  display:flex; align-items:baseline; justify-content:center; gap:2px;
+}
+.hero-value .den{ font-size:38px; font-weight:620; color: var(--fg-dim); letter-spacing:-.02em; }
+.hero-best{ margin-top: 12px; font-size:14px; font-weight:560; color: var(--good); }
+.hero-best.is-pb{ display:inline-flex; align-items:center; gap:6px; }
+
+/* desglose ronda por ronda */
+.pips{ display:flex; gap:7px; justify-content:center; flex-wrap:wrap; }
+.pip{
+  width:11px; height:11px; border-radius:50%;
+  background: rgba(255,255,255,.12); transition:.2s var(--ease-out);
+}
+.pip.ok{ background: var(--good); box-shadow: 0 0 10px rgba(48,209,88,.45); }
+.pip.err{ background: rgba(255,69,58,.55); }
+.pips-cap{ font-size:11px; color: var(--fg-faint); text-align:center; margin-top:-4px; }
+
+/* dos tarjetas */
+.cards{ width:100%; display:grid; grid-template-columns:1fr 1fr; gap: calc(var(--step)*1.5); }
+.card{
+  padding: calc(var(--step)*2.5) var(--step); text-align:center;
+  background: var(--bg-elev); border:1px solid var(--stroke);
+  border-radius: var(--r-md);
+}
+.card-ico{ font-size:19px; line-height:1; }
+.card-val{ margin-top:8px; font-size:23px; font-weight:680; letter-spacing:-.02em; }
+.card-val small{ font-size:13px; font-weight:560; color: var(--fg-dim); margin-left:1px; }
+.card-key{
+  margin-top:6px; font-size:10px; font-weight:640; letter-spacing:.08em;
+  text-transform:uppercase; color: var(--fg-dim);
+}
+
+/* repaso plegable de palabras */
+.review-words{ width:100%; }
+.rw-toggle{
+  width:100%; padding: 13px; font-size:13px; font-weight:560; color: var(--fg-dim);
+  border:1px solid var(--stroke); border-radius: var(--r-md);
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  transition:.18s var(--ease-out);
+}
+.rw-toggle:hover{ color: var(--fg); border-color: var(--stroke-strong); }
+.rw-toggle .chev{ transition: transform .25s var(--ease-out); }
+.rw-toggle[aria-expanded="true"] .chev{ transform: rotate(180deg); }
+.rw-body{ display:none; margin-top: var(--step); }
+.rw-body.open{ display:block; animation: fade .3s var(--ease-out); }
+@keyframes fade{ from{ opacity:0; transform: translateY(-6px);} to{opacity:1;transform:none;} }
+.rw-row{
+  display:flex; align-items:center; gap:10px;
+  padding: 10px 13px; border-radius: var(--r-sm);
+  font-size:14px; border:1px solid transparent;
+}
+.rw-row + .rw-row{ margin-top:5px; }
+.rw-row.ok{ background: rgba(48,209,88,.07); }
+.rw-row.err{ background: rgba(255,69,58,.07); }
+.rw-n{ font-size:11px; color: var(--fg-faint); width:18px; }
+.rw-word{ font-weight:620; letter-spacing:.05em; }
+.rw-row.ok .rw-word{ color: var(--good); }
+.rw-row.err .rw-word{ color: var(--fg); }
+.rw-yours{ margin-left:auto; font-size:12px; color: var(--fg-faint); letter-spacing:.05em; }
+.rw-row.err .rw-yours{ color: var(--bad); text-decoration: line-through; }
+
+/* acciones */
+.actions{ display:flex; gap: var(--step); width:100%; }
+.btn{
+  flex:1; height:52px; padding-inline:14px; border-radius: var(--r-pill);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:14.5px; font-weight:600; white-space:nowrap;
+  transition:.2s var(--ease-out);
+}
+.btn-ghost{ background: var(--bg-elev-2); border:1px solid var(--stroke); color: var(--fg); }
+.btn-ghost:hover{ background:#1E1E21; border-color: var(--stroke-strong); }
+.btn-primary{
+  background: var(--accent); color:#fff;
+  box-shadow: 0 6px 24px -6px var(--accent-glow);
+}
+.btn-primary:hover{ background:#3D9DFF; transform: translateY(-1px); }
+.btn:disabled{
+  opacity:.32; cursor:default; transform:none; box-shadow:none;
+  background: var(--bg-elev-2); color: var(--fg-dim);
+}
+.btn-primary .kbd{
+  padding:3px 7px; border-radius:6px; background: rgba(255,255,255,.2);
+  font-size:10.5px; font-weight:590;
+}
+.link{ font-size:14px; color: var(--fg-dim); text-decoration:none; transition:.18s; }
+.link:hover{ color: var(--fg); }
+.disclaimer{
+  max-width: 340px; text-align:center; font-size:11px; line-height:1.55;
+  color: var(--fg-faint);
+}
+
+@media (max-width: 420px){
+  .r-title{ font-size:36px; }
+  .hero-value{ font-size:62px; }
+  .letterwrap{ width:140px; height:140px; }
+  .letter{ font-size:76px; }
+  .slot{ width:32px; height:42px; font-size:19px; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- switcher solo para revisar el diseño — no va a producción -->
+<div class="review" role="tablist">
+  <button role="tab" aria-selected="true"  data-go="game">Juego</button>
+  <button role="tab" aria-selected="false" data-go="result">Resultado</button>
+</div>
+
+<!-- ══════════════ PANTALLA 1 · JUEGO ══════════════ -->
+<section class="screen is-active" id="screen-game">
+  <div class="stage">
+
+    <header class="g-head">
+      <div class="g-head-row">
+        <button class="back">← Volver a elegir</button>
+        <div class="timer" id="timer">28<small>s</small></div>
+      </div>
+      <div class="bar" id="bar"><i style="transform:scaleX(1)"></i></div>
+
+      <div class="g-meta">
+        <span class="tag">Palabra rápida</span>
+        <span class="sep">·</span>
+        <span class="lvl">Fácil</span>
+      </div>
+      <div class="g-round" id="round">Palabra 1 de 10</div>
+    </header>
+
+    <main class="g-center">
+      <p class="g-cue" id="cue">Memorizá las letras</p>
+
+      <div class="letterwrap" id="lw">
+        <svg class="ring" viewBox="0 0 168 168" aria-hidden="true">
+          <circle class="track" cx="84" cy="84" r="81"></circle>
+          <circle class="fill" id="ring" cx="84" cy="84" r="81"></circle>
+        </svg>
+        <div class="letter" id="letter">N</div>
+      </div>
+
+      <!-- los casilleros SON el input: no se duplica la palabra en pantalla -->
+      <div class="slotsbox">
+        <div class="slots" id="slots"></div>
+        <input class="slots-input" id="typed" disabled aria-label="Escribí la palabra"
+               autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </div>
+    </main>
+
+    <footer class="g-foot">
+      <button class="btn btn-primary" id="check" disabled>
+        Comprobar <span class="kbd">Enter</span>
+      </button>
+      <div class="hint" id="hint">Mirá las letras…</div>
+    </footer>
+
+  </div>
+</section>
+
+<!-- ══════════════ PANTALLA 2 · RESULTADO ══════════════ -->
+<section class="screen" id="screen-result">
+  <div class="r-stage">
+    <h1 class="r-title">Resultado</h1>
+
+    <div class="hero" id="hero">
+      <div class="hero-label">Palabras correctas</div>
+      <div class="hero-value"><span id="rv">6</span><span class="den" id="rd">/10</span></div>
+      <div class="hero-best" id="rbest">Tu mejor marca: 8/10</div>
+    </div>
+
+    <div class="pips" id="pips"></div>
+    <div class="pips-cap">Cada punto es una palabra de la ronda</div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-ico">🏆</div>
+        <div class="card-val" id="cRecord">8<small>/10</small></div>
+        <div class="card-key">Récord personal</div>
+      </div>
+      <div class="card">
+        <div class="card-ico">⚡</div>
+        <div class="card-val" id="cSpeed">1,9<small>s</small></div>
+        <div class="card-key">Velocidad promedio</div>
+      </div>
+    </div>
+
+    <div class="review-words">
+      <button class="rw-toggle" id="rwToggle" aria-expanded="false">
+        Ver las 10 palabras <span class="chev">⌄</span>
+      </button>
+      <div class="rw-body" id="rwBody"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="copy">⧉ Copiar resultado</button>
+      <button class="btn btn-primary" data-go="game">Jugar de nuevo <span class="kbd">Espacio</span></button>
+    </div>
+
+    <a class="link" href="#">Ver tu perfil</a>
+
+    <p class="disclaimer">
+      Resultado ilustrativo — mientras el motor de quiz sigue en construcción,
+      este número no reemplaza un test cognitivo validado.
+    </p>
+  </div>
+</section>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   DEMO JUGABLE — la lógica real vive en tu app; esto es para
+   que veas el ritmo, la cadencia y las transiciones en vivo.
+   ═══════════════════════════════════════════════════════════════ */
+
+const CONFIG = {
+  rounds: 10,
+  letterMs: 700,      // cuánto queda cada letra en pantalla
+  gapMs: 140,         // respiro entre letras (clave para letras repetidas)
+  totalSec: 30
+};
+
+const WORDS = ['NUBE','SOL','RAIZ','LUNA','ECO','FUEGO','MAR','ALBA','RIO','ORO'];
+
+const $ = s => document.querySelector(s);
+const els = {
+  letter:$('#letter'), ring:$('#ring'), lw:$('#lw'), slots:$('#slots'), cue:$('#cue'),
+  typed:$('#typed'), check:$('#check'), hint:$('#hint'), round:$('#round'),
+  timer:$('#timer'), bar:$('#bar')
+};
+
+let R = { i:0, word:'', phase:'memo', answers:[], t0:0, times:[], timeLeft:CONFIG.totalSec, tick:null };
+
+/* ---------- navegación entre pantallas ---------- */
+function go(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('is-active'));
+  $('#screen-' + name).classList.add('is-active');
+  document.querySelectorAll('.review [data-go]').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.go === name)));
+  window.scrollTo(0,0);
+  if(name === 'game') startGame();
+  if(name === 'result') paintResult();
+}
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+
+/* ---------- pantalla de juego ---------- */
+function startGame(){
+  clearInterval(R.tick);
+  R = { i:0, word:'', phase:'memo', answers:[], t0:0, times:[], timeLeft:CONFIG.totalSec, tick:null };
+  runClock();
+  nextRound();
+}
+
+function runClock(){
+  paintClock();
+  R.tick = setInterval(() => {
+    R.timeLeft--;
+    paintClock();
+    if(R.timeLeft <= 0){ clearInterval(R.tick); finish(); }
+  }, 1000);
+}
+function paintClock(){
+  const p = R.timeLeft / CONFIG.totalSec;
+  els.timer.innerHTML = R.timeLeft + '<small>s</small>';
+  els.bar.firstElementChild.style.transform = 'scaleX(' + p + ')';
+  const low = R.timeLeft <= 8;
+  els.timer.classList.toggle('is-low', low);
+  els.bar.classList.toggle('is-low', low);
+}
+
+function nextRound(){
+  if(R.i >= CONFIG.rounds){ return finish(); }
+  R.word = WORDS[R.i % WORDS.length];
+  R.phase = 'memo';
+  els.round.textContent = `Palabra ${R.i+1} de ${CONFIG.rounds}`;
+  els.cue.textContent = 'Memorizá las letras';
+  els.lw.classList.remove('recede');
+  els.typed.disabled = true;
+  els.typed.value = '';
+  els.check.disabled = true;
+  els.hint.textContent = 'Mirá las letras…';
+  buildSlots(R.word.length);
+  revealLetters(0);
+}
+
+function buildSlots(n){
+  els.slots.innerHTML = '';
+  for(let k=0;k<n;k++){
+    const d = document.createElement('div');
+    d.className = 'slot';
+    els.slots.appendChild(d);
+  }
+}
+
+function revealLetters(k){
+  if(R.phase !== 'memo') return;
+  if(k >= R.word.length){ return toTypePhase(); }
+
+  const slots = [...els.slots.children];
+  slots.forEach((s,idx) => {
+    s.classList.toggle('now', idx === k);
+    s.classList.toggle('seen', idx < k);
+  });
+
+  els.letter.textContent = R.word[k];
+  els.letter.classList.remove('pop'); void els.letter.offsetWidth;
+  els.letter.classList.add('pop');
+
+  els.ring.style.setProperty('--dur', CONFIG.letterMs + 'ms');
+  els.ring.classList.remove('run'); void els.ring.getBoundingClientRect();
+  els.ring.classList.add('run');
+
+  setTimeout(() => {
+    els.letter.style.opacity = 0;
+    setTimeout(() => { els.letter.style.opacity = 1; revealLetters(k+1); }, CONFIG.gapMs);
+  }, CONFIG.letterMs);
+}
+
+function toTypePhase(){
+  R.phase = 'type';
+  R.t0 = performance.now();
+  els.letter.textContent = '?';
+  els.letter.style.opacity = 1;
+  els.ring.classList.remove('run');
+  els.lw.classList.add('recede');                 // el círculo se retira
+  [...els.slots.children].forEach(s => s.classList.remove('now','seen'));
+  els.cue.textContent = 'Escribí la palabra completa';
+  els.typed.disabled = false;
+  els.typed.focus();
+  els.hint.textContent = 'Escribí con el teclado';
+  paintTyped('');
+}
+
+function paintTyped(v){
+  [...els.slots.children].forEach((s,idx) => {
+    s.textContent = v[idx] || '';
+    s.classList.toggle('filled', !!v[idx]);
+    s.classList.toggle('caret', idx === v.length && R.phase === 'type');
+  });
+  els.check.disabled = v.length !== R.word.length;
+}
+
+els.typed.addEventListener('input', e => {
+  const v = e.target.value.toUpperCase()
+             .replace(/[^A-ZÁÉÍÓÚÑ]/g,'').slice(0, R.word.length);
+  e.target.value = v;
+  paintTyped(v);
+});
+els.typed.addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+els.check.addEventListener('click', submit);
+document.querySelector('.slotsbox').addEventListener('click', () => els.typed.focus());
+
+function submit(){
+  if(R.phase !== 'type') return;
+  const guess = els.typed.value.trim().toUpperCase();
+  if(guess.length !== R.word.length) return;
+  const ok = guess === R.word;
+  R.answers.push({ word:R.word, guess, ok });
+  R.times.push((performance.now() - R.t0) / 1000);
+  R.phase = 'done';
+
+  [...els.slots.children].forEach((s,idx) => {
+    s.classList.remove('filled','caret');
+    s.classList.add(ok ? 'ok' : 'err');
+    if(!ok) s.textContent = R.word[idx];
+  });
+  els.cue.textContent = ok ? '¡Correcta!' : 'Era ' + R.word;
+  els.typed.disabled = true;
+  els.check.disabled = true;
+  els.hint.textContent = '';
+
+  R.i++;
+  setTimeout(nextRound, 900);
+}
+
+function finish(){
+  clearInterval(R.tick);
+  while(R.answers.length < CONFIG.rounds){
+    R.answers.push({ word: WORDS[R.answers.length % WORDS.length], guess:'—', ok:false });
+  }
+  go('result');
+}
+
+/* ---------- pantalla de resultado ---------- */
+const SAMPLE = {
+  answers: [
+    {word:'NUBE', guess:'NUBE',  ok:true},
+    {word:'SOL',  guess:'SOL',   ok:true},
+    {word:'RAIZ', guess:'RAIS',  ok:false},
+    {word:'LUNA', guess:'LUNA',  ok:true},
+    {word:'ECO',  guess:'ECO',   ok:true},
+    {word:'FUEGO',guess:'FEUGO', ok:false},
+    {word:'MAR',  guess:'MAR',   ok:true},
+    {word:'ALBA', guess:'ABLA',  ok:false},
+    {word:'RIO',  guess:'RIO',   ok:true},
+    {word:'ORO',  guess:'ORU',   ok:false}
+  ],
+  times: [1.6,1.2,2.4,1.7,1.3,2.8,1.4,2.1,1.5,2.9]
+};
+const RECORD = 8;
+
+function paintResult(){
+  const a = R.answers.length ? R.answers : SAMPLE.answers;
+  const t = R.times.length   ? R.times   : SAMPLE.times;
+  const hits = a.filter(x => x.ok).length;
+  const avg = t.length ? t.reduce((s,x)=>s+x,0)/t.length : 0;
+  const isPB = hits >= RECORD;
+
+  $('#rv').textContent = hits;
+  $('#rd').textContent = '/' + a.length;
+  $('#hero').classList.toggle('is-neutral', !isPB);
+  $('#rbest').innerHTML = isPB
+    ? '✦ ¡Nuevo récord personal!'
+    : 'Tu mejor marca: ' + RECORD + '/' + a.length;
+  $('#cRecord').innerHTML = Math.max(RECORD,hits) + '<small>/' + a.length + '</small>';
+  $('#cSpeed').innerHTML = avg.toFixed(1).replace('.',',') + '<small>s</small>';
+
+  $('#pips').innerHTML = a.map(x => `<span class="pip ${x.ok?'ok':'err'}"></span>`).join('');
+  $('#rwToggle').firstChild.textContent = `Ver las ${a.length} palabras `;
+  $('#rwBody').innerHTML = a.map((x,i) => `
+    <div class="rw-row ${x.ok?'ok':'err'}">
+      <span class="rw-n">${i+1}</span>
+      <span class="rw-word">${x.word}</span>
+      ${x.ok ? '' : `<span class="rw-yours">${x.guess}</span>`}
+    </div>`).join('');
+
+  $('#copy').onclick = () => {
+    const txt = `Palabra Rápida · Fácil\n${hits}/${a.length} palabras · ${avg.toFixed(1).replace('.',',')} s por palabra\nRécord: ${Math.max(RECORD,hits)}/${a.length}`;
+    navigator.clipboard?.writeText(txt);
+    $('#copy').textContent = '✓ Copiado';
+    setTimeout(() => $('#copy').innerHTML = '⧉ Copiar resultado', 1600);
+  };
+}
+
+$('#rwToggle').onclick = e => {
+  const open = $('#rwBody').classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+};
+
+document.addEventListener('keydown', e => {
+  if(e.code === 'Space' && $('#screen-result').classList.contains('is-active')){
+    e.preventDefault(); go('game');
+  }
+});
+
+startGame();
+</script>
+</body>
+</html>

@@ -16,12 +16,10 @@ function rand(min: number, max: number) {
 }
 
 /**
- * Classic IQ-test number sequence (2, 4, 6, 8, ?) rather than the 2x2
- * additive grid PatternMatrixGame already covers - a linear progression
- * (arithmetic, or geometric from tier 2 on) instead of a spatial layout.
- * Length grows with tier but caps at MAX_LENGTH - a row of numbers past
- * that stops being readable at a glance regardless of how high the level
- * multiplier climbs.
+ * Classic IQ-test number sequence (2, 4, 6, 8, ?): a linear progression
+ * (arithmetic, or geometric from tier 2 on). Length grows with tier but
+ * caps at MAX_LENGTH - a row of numbers past that stops being readable at
+ * a glance regardless of how high the level multiplier climbs.
  */
 function generateSequence(level: number) {
   const tier = contentTier(level);

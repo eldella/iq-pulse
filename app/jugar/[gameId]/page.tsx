@@ -4,7 +4,6 @@ import { QuizPage, type GameId } from "@/components/jugar/QuizPage";
 import { dictionary } from "@/lib/i18n/dictionary";
 
 const GAME_IDS: readonly GameId[] = [
-  "matrix",
   "digitSpan",
   "stroop",
   "pathfinder",
@@ -23,12 +22,11 @@ const GAME_IDS: readonly GameId[] = [
 function gameTitle(gameId: GameId) {
   const { quiz } = dictionary.es;
   return {
-    matrix: quiz.reasoningTitle,
     digitSpan: quiz.memoryTitle,
     stroop: quiz.speedTitle,
     pathfinder: quiz.pathfinderTitle,
     wordBurst: quiz.wordBurstTitle,
-    numberSequence: quiz.numberSequenceTitle,
+    numberSequence: quiz.reasoningTitle,
     spatialMemory: quiz.spatialMemoryTitle,
     quickCompare: quiz.quickCompareTitle,
     reactionCircle: quiz.reactionCircleTitle,

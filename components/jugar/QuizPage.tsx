@@ -15,7 +15,6 @@ import {
   Loader2,
   MapPin,
   Play,
-  Puzzle,
   Scale,
   Sparkles,
   Timer,
@@ -31,7 +30,6 @@ import { RadarChart } from "@/components/jugar/RadarChart";
 import { StatCard } from "@/components/jugar/StatCard";
 import { RecordConfetti } from "@/components/jugar/RecordConfetti";
 import { buildPracticeResultsView, type PracticeResult, type PracticeResultTier } from "@/components/jugar/practiceResults";
-import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
@@ -68,7 +66,6 @@ const GAME_DURATION_MS = 30_000;
 const MAX_QUESTIONS_PER_GAME = 10;
 
 export type GameId =
-  | "matrix"
   | "digitSpan"
   | "stroop"
   | "pathfinder"
@@ -82,7 +79,7 @@ export type GameId =
 type GameDef = {
   id: GameId;
   domain: Domain;
-  Icon: typeof Puzzle;
+  Icon: typeof MapPin;
   Component: (props: {
     level: number;
     onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
@@ -90,7 +87,6 @@ type GameDef = {
 };
 
 const GAMES: Record<GameId, GameDef> = {
-  matrix: { id: "matrix", domain: "reasoning", Icon: Puzzle, Component: PatternMatrixGame },
   pathfinder: { id: "pathfinder", domain: "reasoning", Icon: MapPin, Component: PathfinderGame },
   numberSequence: { id: "numberSequence", domain: "reasoning", Icon: ListOrdered, Component: NumberSequenceGame },
   digitSpan: { id: "digitSpan", domain: "memory", Icon: BrainCircuit, Component: DigitSpanGame },
@@ -105,7 +101,7 @@ const GAMES: Record<GameId, GameDef> = {
 // The default "full assessment" - one game per domain. Pathfinder is a
 // second reasoning-domain game, selectable on its own but not part of the
 // default 3-game sequence, so that sequence's meaning stays stable.
-const FULL_ASSESSMENT: readonly GameId[] = ["matrix", "digitSpan", "stroop"];
+const FULL_ASSESSMENT: readonly GameId[] = ["numberSequence", "digitSpan", "stroop"];
 
 /**
  * Border/glow classes per PracticeResultTier - the only styling QuizPage
@@ -133,9 +129,8 @@ const EMPTY_STATS: Record<Domain, DomainStats> = {
 
 function gameCopy(id: GameId, t: Dictionary) {
   return {
-    matrix: { title: t.quiz.reasoningTitle, description: t.quiz.reasoningDescription },
     pathfinder: { title: t.quiz.pathfinderTitle, description: t.quiz.pathfinderDescription },
-    numberSequence: { title: t.quiz.numberSequenceTitle, description: t.quiz.numberSequenceDescription },
+    numberSequence: { title: t.quiz.reasoningTitle, description: t.quiz.reasoningDescription },
     digitSpan: { title: t.quiz.memoryTitle, description: t.quiz.memoryDescription },
     wordBurst: { title: t.quiz.wordBurstTitle, description: t.quiz.wordBurstDescription },
     spatialMemory: { title: t.quiz.spatialMemoryTitle, description: t.quiz.spatialMemoryDescription },

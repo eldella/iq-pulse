@@ -124,8 +124,6 @@ export type Dictionary = {
     wordBurstDescription: string;
     wordBurstMemorize: string;
     wordBurstRecall: string;
-    numberSequenceTitle: string;
-    numberSequenceDescription: string;
     numberSequenceInstructions: string;
     spatialMemoryTitle: string;
     spatialMemoryDescription: string;
@@ -158,7 +156,6 @@ export type Dictionary = {
     difficultyMedium: string;
     difficultyHard: string;
     difficultyExtreme: string;
-    matrixInstructions: string;
     digitSpanMemorize: string;
     digitSpanRecall: string;
     digitSpanClear: string;
@@ -379,8 +376,8 @@ export const dictionary: Record<Lang, Dictionary> = {
       subhead: "La tabla clasificatoria y el reto del mes, en un solo lugar.",
     },
     quiz: {
-      reasoningTitle: "Matriz de patrones",
-      reasoningDescription: "Encontrá el patrón numérico y completá la grilla.",
+      reasoningTitle: "Secuencia numérica",
+      reasoningDescription: "Encontrá el número que sigue en la secuencia.",
       memoryTitle: "Retención de dígitos",
       memoryDescription: "Memorizá una secuencia y repetila en orden.",
       speedTitle: "Stroop",
@@ -392,8 +389,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       wordBurstDescription: "Memorizá las palabras que aparecen y luego marcalas entre las opciones.",
       wordBurstMemorize: "Memorizá estas palabras",
       wordBurstRecall: "Tocá todas las que viste",
-      numberSequenceTitle: "Secuencia numérica",
-      numberSequenceDescription: "Encontrá el número que sigue en la secuencia.",
       numberSequenceInstructions: "¿Qué número sigue?",
       spatialMemoryTitle: "Memoria espacial",
       spatialMemoryDescription: "Memorizá qué casillas se iluminan y marcalas de nuevo.",
@@ -426,7 +421,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       difficultyMedium: "Medio",
       difficultyHard: "Difícil",
       difficultyExtreme: "Extremo",
-      matrixInstructions: "Encontrá el número que falta en la secuencia.",
       digitSpanMemorize: "Memorizá esta secuencia",
       digitSpanRecall: "Escribila en el mismo orden",
       digitSpanClear: "Borrar",
@@ -646,8 +640,8 @@ export const dictionary: Record<Lang, Dictionary> = {
       subhead: "The leaderboard and the challenge of the month, in one place.",
     },
     quiz: {
-      reasoningTitle: "Pattern matrix",
-      reasoningDescription: "Find the numeric pattern and fill the grid.",
+      reasoningTitle: "Number sequence",
+      reasoningDescription: "Find the number that comes next in the sequence.",
       memoryTitle: "Digit span",
       memoryDescription: "Memorize a sequence and repeat it in order.",
       speedTitle: "Stroop",
@@ -659,8 +653,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       wordBurstDescription: "Memorize the words that appear, then tap them out of a larger grid.",
       wordBurstMemorize: "Memorize these words",
       wordBurstRecall: "Tap all the ones you saw",
-      numberSequenceTitle: "Number sequence",
-      numberSequenceDescription: "Find the number that comes next in the sequence.",
       numberSequenceInstructions: "What comes next?",
       spatialMemoryTitle: "Spatial memory",
       spatialMemoryDescription: "Memorize which cells light up, then mark them again.",
@@ -693,7 +685,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       difficultyMedium: "Medium",
       difficultyHard: "Hard",
       difficultyExtreme: "Extreme",
-      matrixInstructions: "Find the missing number in the sequence.",
       digitSpanMemorize: "Memorize this sequence",
       digitSpanRecall: "Type it in the same order",
       digitSpanClear: "Clear",

@@ -8,36 +8,40 @@ Rama: feat/reasoning-results
 Setup (una sola vez, desde D:\Paginaminijuegos):
   git worktree add ../iqpulse-reasoning -b feat/reasoning-results
 
+Terminal 5 ya mergeo su refactor a master (el patron de tarjetas de
+resultados vive en components/jugar/practiceResults.ts) - no hay que
+esperar nada, arrancar directo.
+
 
 TU TAREA
 ------------
-Juegos: Matriz de patrones, Camino optimo, Secuencia numerica.
+Juegos: Camino optimo, Secuencia numerica.
 
-Aplicar a estos 3 juegos el mismo tratamiento de tarjetas que ya tiene
+(Matriz de patrones fue eliminada del proyecto - testeaba practicamente
+lo mismo que Secuencia numerica, mismo layout de 4 opciones para adivinar
+el numero que falta. Secuencia numerica paso a ocupar su lugar en el
+assessment completo de 3 dominios.)
+
+Aplicar a estos 2 juegos el mismo tratamiento de tarjetas que ya tiene
 Reaccion en su pantalla de resultados (card principal con glow segun
-rendimiento + grid de stats chicas), adaptado a lo que tiene sentido medir
-en razonamiento: probablemente precision (% correcto) como metrica
-principal + tiempo promedio por respuesta como stat secundaria, no
-milisegundos de reaccion (eso es especifico de Reaccion).
+rendimiento + grid de stats chicas). Terminal 3 ya armo un tipo de tarjeta
+"accuracy" en practiceResults.ts (record % + tiempo promedio) para
+Stroop/Comparacion rapida - lo mas probable es que razonamiento reuse ese
+mismo tipo en vez de inventar uno nuevo; confirmar con la madre antes de
+declarar un CardConfig distinto.
 
 
 ARCHIVOS
 ------------
 Propios (sin conflicto con otras terminales):
-  components/jugar/games/PatternMatrixGame.tsx
   components/jugar/games/PathfinderGame.tsx
   components/jugar/games/NumberSequenceGame.tsx
 
-Compartido - NO TOCAR hasta que Terminal 5 confirme que mergeo su
-refactor a master (ver "Orden" en CLAUDE.md):
-  components/jugar/QuizPage.tsx (solo la parte de resultados de estos 3
-  juegos, nada mas de ese archivo)
+Compartido - coordinar con la madre antes de tocar:
+  components/jugar/practiceResults.ts (declarar la config de resultados
+  de estos 2 juegos - es de Terminal 5, pedir si falta algo en vez de
+  reimplementar)
+  components/jugar/QuizPage.tsx (solo si hace falta, y avisando antes)
 
 NO tocar: juegos de otros dominios, RecordConfetti.tsx, StatCard.tsx (son
 de Terminal 5 - si te faltan, pediselos, no los reimplementes).
-
-
-MIENTRAS ESPERAS A TERMINAL 5
-----------------------------------
-Podes ir adelantando los 3 archivos propios (PatternMatrixGame.tsx, etc.)
-sin tocar QuizPage.tsx todavia.
