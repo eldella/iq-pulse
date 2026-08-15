@@ -1,0 +1,46 @@
+INTENTOS VS. TIEMPO POR JUEGO - IQ.PULSE
+=========================================================
+Tarea pendiente, explícitamente diferida ("mañana") - NO empezar sin
+retomarla primero con el usuario para confirmar la lista final de
+juegos antes de tocar código.
+
+Origen: el usuario propuso pasar algunos juegos de "tiempo fijo" (el
+motor compartido de QuizPage.tsx, GAME_DURATION_MS=30s +
+MAX_QUESTIONS_PER_GAME=10) a "por intentos" (una cantidad fija de
+preguntas/rondas, sin reloj). Se le pidió opinión a la madre antes de
+decidir - esto es esa opinión, ya discutida y aceptada como punto de
+partida para el diseño de mañana:
+
+- Juegos de reflejo/velocidad (Reacción, Stroop, Comparación Rápida):
+  se quedan por TIEMPO. Ahí el tiempo ES la variable que se mide -
+  pasarlos a "por intentos" les saca el sentido, porque la pregunta
+  que responden es "cuánto rendís en una ventana fija", no "cuántas
+  veces acertás".
+
+- Juegos de razonamiento/precisión (Camino Óptimo, Secuencia
+  Numérica): candidatos a pasar a POR INTENTOS. Cada pregunta es un
+  rompecabezas discreto, no algo que se mida por reflejo - tiene más
+  sentido "resolvé N problemas" que "resolvé lo que puedas en 30s".
+
+- Retención de Dígitos y Memoria Espacial YA son un híbrido que
+  funciona bien (2 intentos por nivel, dentro de un presupuesto de
+  tiempo propio, motor independiente del compartido) - precedente útil
+  para cómo mezclar intentos+tiempo sin tirar abajo el motor
+  compartido. Sirve de referencia de arquitectura para el diseño nuevo,
+  no necesitan cambios ellos mismos.
+
+Por qué se dejó para después: es un cambio real de arquitectura -
+GAME_DURATION_MS/MAX_QUESTIONS_PER_GAME son constantes GLOBALES del
+motor compartido en QuizPage.tsx, usadas por todos los juegos que no
+tienen su propio motor independiente. Pasar algunos juegos a
+"intentos" sin tocar los demás implica que el motor compartido soporte
+ambos modos (por-tiempo y por-intentos) de forma explícita, no
+improvisada.
+
+Pendiente de decidir mañana, antes de tocar código:
+- Lista final y definitiva de qué juegos pasan a intentos (arriba es
+  la propuesta, no la decisión cerrada).
+- Cuántos intentos/preguntas por juego en el modo nuevo.
+- Cómo interactúa con la evaluación diaria completa (FULL_ASSESSMENT)
+  si un juego del trío diario pasara a intentos - hoy esa evaluación
+  asume que los 3 juegos corren con el mismo reloj compartido.
