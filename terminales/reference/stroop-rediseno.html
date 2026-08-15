@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Q.Pulse · Stroop — propuesta de rediseño</title>
+<style>
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root{
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
+
+  /* Superficie del ESCENARIO: constante en ambos temas.
+     Las tintas del Stroop se calibraron contra este fondo; si cambiara
+     con el tema, el test dejaría de ser comparable entre modos. */
+  --stage:        #0b0c10;
+  --stage-2:      #14161c;
+  --stage-border: #262a33;
+  --stage-text:   #f5f7fa;
+  --stage-muted:  #959aa4;
+
+  /* Tintas Stroop — OKLCH ajustado a gamut sRGB, validadas contra --stage */
+  --ink-rojo:     #ff655a;
+  --ink-naranja:  #f88a3d;
+  --ink-amarillo: #f4ce23;
+  --ink-verde:    #46c865;
+  --ink-azul:     #59a0f9;
+  --ink-violeta:  #af6af2;
+
+  --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px;
+  --dur-fast: 120ms; --dur: 200ms; --ease: cubic-bezier(.2,.7,.3,1);
+}
+[data-theme="dark"]{
+  --bg:#0b0c10; --surface:#17191f; --surface-2:#1f232a; --border:#2e323a;
+  --text:#f5f7fa; --muted:#959aa4;
+  --accent:#3092f7; --accent-ink:#ffffff;
+  --ok:#3ccf6c; --bad:#fc4a4b; --warn:#f2a618;
+  --glow: 0 0 0 1px rgba(48,146,247,.28), 0 0 48px -12px rgba(48,146,247,.55);
+  --dot: rgba(255,255,255,.045);
+}
+[data-theme="light"]{
+  --bg:#f9fafc; --surface:#ffffff; --surface-2:#f2f3f7; --border:#dde0e5;
+  --text:#151922; --muted:#60656e;
+  --accent:#0080ea; --accent-ink:#ffffff;
+  --ok:#009342; --bad:#d01c29; --warn:#c96900;
+  --glow: 0 0 0 1px rgba(0,128,234,.22), 0 12px 40px -16px rgba(0,128,234,.45);
+  --dot: rgba(0,0,0,.035);
+}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0; font-family:var(--font); background:var(--bg); color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size:22px 22px;
+  transition:background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+button{font:inherit; color:inherit; border:0; background:none; cursor:pointer}
+h1,h2,h3{margin:0; font-weight:700; letter-spacing:-.02em}
+
+/* ============================================================
+   CHROME
+   ============================================================ */
+.topbar{
+  position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:var(--sp-3);
+  justify-content:center; padding:14px var(--sp-4);
+  background:color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav{display:flex; gap:4px; background:var(--surface); border:1px solid var(--border); padding:4px; border-radius:var(--r-pill)}
+.nav button{padding:8px 18px; border-radius:var(--r-pill); font-size:14px; font-weight:600; color:var(--muted)}
+.nav button[aria-current="true"]{background:var(--accent); color:var(--accent-ink)}
+.topbar .side{position:absolute; right:var(--sp-4); display:flex; gap:var(--sp-2)}
+.icon-btn{
+  width:36px; height:36px; display:grid; place-items:center; border-radius:var(--r-pill);
+  border:1px solid var(--border); background:var(--surface); color:var(--muted);
+}
+.icon-btn:hover{color:var(--text)}
+
+.wrap{max-width:560px; margin:0 auto; padding:var(--sp-5) var(--sp-4) 64px}
+.screen{display:none}
+.screen.on{display:block; animation:fade var(--dur) var(--ease)}
+@keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+
+.eyebrow{font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+.muted{color:var(--muted)}
+.center{text-align:center}
+
+/* ============================================================
+   MENÚ
+   ============================================================ */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-5)}
+.opt-row{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-2); margin-top:var(--sp-3)}
+.opt{
+  padding:14px 10px; border-radius:var(--r-md); border:1px solid var(--border);
+  background:var(--surface-2); text-align:center; font-weight:600; font-size:14px;
+  transition:all var(--dur-fast) var(--ease);
+}
+.opt small{display:block; font-weight:500; font-size:11px; color:var(--muted); margin-top:3px}
+.opt[aria-pressed="true"]{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, var(--surface-2)); color:var(--text)}
+.opt[aria-pressed="true"] small{color:var(--text); opacity:.8}
+
+.switch-row{display:flex; align-items:center; justify-content:space-between; gap:var(--sp-4); padding:14px 0; border-top:1px solid var(--border)}
+.switch-row:first-of-type{border-top:0}
+.switch-row .t{font-size:14px; font-weight:600}
+.switch-row .d{font-size:12px; color:var(--muted); margin-top:2px; line-height:1.45}
+.toggle{width:48px; height:28px; border-radius:var(--r-pill); background:var(--surface-2); border:1px solid var(--border); position:relative; flex:none; transition:all var(--dur-fast)}
+.toggle::after{content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:var(--muted); transition:all var(--dur) var(--ease)}
+.toggle[aria-pressed="true"]{background:var(--accent); border-color:var(--accent)}
+.toggle[aria-pressed="true"]::after{left:23px; background:#fff}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  padding:15px 26px; border-radius:var(--r-pill); font-weight:650; font-size:15px;
+  border:1px solid var(--border); background:var(--surface-2); transition:all var(--dur-fast) var(--ease);
+}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent; box-shadow:0 8px 28px -10px color-mix(in srgb,var(--accent) 90%, transparent)}
+.btn.block{width:100%}
+kbd{font:inherit; font-size:11px; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,.18); color:inherit}
+[data-theme="light"] .btn:not(.primary) kbd{background:rgba(0,0,0,.07)}
+
+/* ============================================================
+   ESCENARIO DE JUEGO — superficie oscura constante
+   ============================================================ */
+.stage{
+  background:var(--stage); color:var(--stage-text);
+  border:1px solid var(--stage-border); border-radius:var(--r-xl);
+  overflow:hidden; position:relative;
+  display:flex; flex-direction:column; min-height:min(calc(100dvh - 150px), 620px);
+}
+@media (max-width:640px){
+  .stage{min-height:calc(100dvh - 138px)}   /* en móvil el escenario ocupa la pantalla */
+  .wrap{padding-bottom:24px}
+}
+.stage.shake{animation:shake 300ms var(--ease)}
+@keyframes shake{
+  0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 35%{transform:translateX(7px)}
+  55%{transform:translateX(-5px)} 75%{transform:translateX(3px)}
+}
+
+/* barra de tiempo: 4px al borde exacto, periférica */
+.timebar{height:4px; background:rgba(255,255,255,.07); flex:none}
+.timebar i{display:block; height:100%; width:100%; background:var(--accent); transform-origin:left; transition:background-color 400ms linear}
+.timebar i.warn{background:var(--warn)} .timebar i.crit{background:var(--bad)}
+
+.hud{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; flex:none; font-size:12px; font-weight:600}
+.hud .exit{color:var(--stage-muted); display:flex; align-items:center; gap:6px}
+.hud .exit:hover{color:var(--stage-text)}
+.hud .mid{letter-spacing:.1em; text-transform:uppercase; color:var(--stage-muted); font-size:11px; font-variant-numeric:tabular-nums}
+.streak{display:flex; align-items:center; gap:5px; padding:5px 11px; border-radius:var(--r-pill);
+  background:rgba(255,255,255,.06); color:var(--stage-muted); font-variant-numeric:tabular-nums; transition:all var(--dur-fast)}
+.streak.hot{background:color-mix(in srgb, var(--warn) 22%, transparent); color:var(--warn)}
+.streak.pop{animation:pop 260ms var(--ease)}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+
+/* zona de estímulo: altura fija, el estímulo nunca se mueve */
+.stimzone{flex:1; display:grid; place-items:center; min-height:200px; padding:var(--sp-4)}
+.stim{
+  font-size:clamp(3.2rem, 13vw, 5.4rem); font-weight:800; letter-spacing:-.035em; line-height:1;
+  text-align:center; user-select:none;
+}
+.stim.enter{animation:stimIn 110ms var(--ease)}
+@keyframes stimIn{from{opacity:0; transform:scale(.97)}to{opacity:1; transform:none}}
+.fixation{font-size:2.4rem; font-weight:300; color:var(--stage-muted); opacity:.55}
+
+/* respuestas: zona de pulgar, posiciones fijas dentro de la ronda */
+.answers{display:grid; gap:10px; padding:0 18px 22px; flex:none}
+.answers.c3{grid-template-columns:repeat(3,1fr)}
+.answers.c4{grid-template-columns:repeat(2,1fr)}
+.answers.c5,.answers.c6{grid-template-columns:repeat(3,1fr)}
+.ans{
+  position:relative; border-radius:var(--r-lg); min-height:76px;
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  font-weight:650; font-size:15px; transition:transform var(--dur-fast) var(--ease);
+  border:1px solid transparent;
+}
+.ans:active{transform:scale(.965)}
+/* variante A — swatch puro */
+.ans.swatch{background:var(--c)}
+.ans.swatch .kb{position:absolute; bottom:7px; right:9px; font-size:10px; font-weight:700; color:rgba(0,0,0,.45)}
+/* variante B — nombre + punto */
+.ans.named{background:var(--stage-2); border-color:var(--stage-border); color:var(--stage-text)}
+.ans.named .dot{width:18px; height:18px; border-radius:50%; background:var(--c); flex:none}
+.ans.named .kb{position:absolute; bottom:7px; right:9px; font-size:10px; font-weight:700; color:var(--stage-muted)}
+/* feedback */
+.ans.hit::after,.ans.miss::after,.ans.reveal::after{
+  content:""; position:absolute; inset:-3px; border-radius:calc(var(--r-lg) + 3px); border:2px solid; pointer-events:none;
+}
+.ans.hit::after{border-color:var(--ok); animation:ring 320ms var(--ease)}
+.ans.miss::after{border-color:var(--bad)}
+.ans.reveal::after{border-color:var(--stage-text); animation:ring 420ms var(--ease)}
+@keyframes ring{from{opacity:1; transform:scale(.97)}to{opacity:0; transform:scale(1.06)}}
+
+.hint{text-align:center; font-size:11px; color:var(--stage-muted); padding:0 18px 16px; flex:none}
+
+/* cuenta regresiva */
+.count{position:absolute; inset:0; background:var(--stage); display:grid; place-items:center; text-align:center; z-index:5; padding:var(--sp-5)}
+.count[hidden]{display:none}   /* [hidden] pierde contra un display de autor — hay que declararlo */
+.count .n{font-size:6rem; font-weight:800; line-height:1; animation:pop 500ms var(--ease)}
+.count .task{margin-top:var(--sp-4); font-size:17px; font-weight:600; max-width:24ch; margin-inline:auto; line-height:1.4}
+.count .sub{margin-top:10px; font-size:13px; color:var(--stage-muted)}
+
+/* ============================================================
+   RESULTADO
+   ============================================================ */
+.chip{
+  display:inline-flex; align-items:center; gap:7px; padding:6px 13px; border-radius:var(--r-pill);
+  background:var(--surface-2); border:1px solid var(--border); font-size:12px; font-weight:600; color:var(--muted);
+}
+.hero{
+  margin-top:var(--sp-5); border:1px solid var(--border); border-radius:var(--r-xl);
+  background:var(--surface); padding:26px var(--sp-5) 24px; text-align:center; box-shadow:var(--glow);
+}
+.hero .val{font-size:clamp(3.6rem,15vw,5rem); font-weight:800; letter-spacing:-.045em; line-height:1; margin-top:10px}
+.hero .val .u{font-size:.36em; font-weight:650; letter-spacing:-.01em; margin-left:.12em; color:var(--muted)}
+.hero .best{margin-top:12px; font-size:13px; font-weight:600; color:var(--muted)}
+.hero .best b{color:var(--ok)}
+
+.tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px}
+.tile{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:16px 12px; text-align:center}
+.tile .v{font-size:22px; font-weight:750; letter-spacing:-.02em}
+.tile .l{margin-top:5px; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); line-height:1.3}
+.tile .ic{font-size:15px; opacity:.9}
+
+.panel{margin-top:10px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:18px}
+.panel h3{font-size:14px}
+.panel .sub{font-size:12px; color:var(--muted); margin-top:3px; line-height:1.45}
+.legend{display:flex; gap:14px; margin-top:12px; font-size:11px; color:var(--muted); font-weight:600}
+.legend span{display:flex; align-items:center; gap:6px}
+.legend i{width:9px; height:9px; border-radius:3px; display:inline-block}
+
+.chart{position:relative; margin-top:14px}
+.chart svg{display:block; width:100%; overflow:visible}
+.tip{
+  position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-100%);
+  background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:7px 11px;
+  font-size:11.5px; font-weight:600; white-space:nowrap; transition:opacity var(--dur-fast); z-index:3;
+  box-shadow:0 8px 24px -12px rgba(0,0,0,.6);
+}
+.tip .r{color:var(--muted); font-weight:500}
+
+.actions{display:flex; gap:10px; margin-top:var(--sp-5); flex-wrap:wrap; justify-content:center}
+.foot{margin-top:var(--sp-5); text-align:center}
+.toast{
+  position:fixed; left:50%; bottom:28px; transform:translate(-50%,20px); opacity:0; pointer-events:none;
+  background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-pill); padding:11px 20px;
+  font-size:13px; font-weight:600; transition:all var(--dur) var(--ease); z-index:80;
+}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+
+.compare{margin-top:var(--sp-5); text-align:center}
+.old{margin-top:var(--sp-4); border:1px dashed var(--border); border-radius:var(--r-lg); padding:var(--sp-5); text-align:center; background:var(--surface)}
+.old .n{font-size:3.4rem; font-weight:800; letter-spacing:-.04em; margin-top:6px}
+.old p{margin:6px 0 0; font-size:13px; color:var(--muted)}
+
+@media (max-width:420px){
+  .tiles{grid-template-columns:repeat(3,1fr)} .tile .v{font-size:19px}
+  .answers.c5,.answers.c6{grid-template-columns:repeat(2,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important; transition-duration:.01ms !important}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <nav class="nav">
+    <button>Inicio</button>
+    <button aria-current="true">Jugar</button>
+    <button>Ranking</button>
+  </nav>
+  <div class="side">
+    <button class="icon-btn" id="themeBtn" title="Cambiar tema" aria-label="Cambiar tema">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ MENÚ ============ -->
+  <section class="screen on" id="s-menu">
+    <div class="center">
+      <p class="eyebrow">Q.Pulse · propuesta</p>
+      <h1 style="font-size:30px;margin-top:8px">Stroop</h1>
+      <p class="muted" style="margin:10px auto 0;max-width:34ch;font-size:14px;line-height:1.5">
+        Prototipo del rediseño. Jugá una ronda y compará las dos variantes de respuesta.
+      </p>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <p class="eyebrow" style="color:var(--muted)">Dificultad</p>
+      <div class="opt-row" id="diffRow">
+        <button class="opt" data-diff="facil" aria-pressed="true">Fácil<small>3 colores</small></button>
+        <button class="opt" data-diff="medio" aria-pressed="false">Medio<small>4 colores</small></button>
+        <button class="opt" data-diff="dificil" aria-pressed="false">Difícil<small>6 colores</small></button>
+      </div>
+      <p class="muted" style="font-size:11.5px;margin:10px 0 0;line-height:1.5">
+        La dificultad sube por <b>proximidad de tono</b>, no solo por cantidad. Fácil usa el único trío
+        que pasa separación para daltonismo (ΔE 16,8 deutan).
+      </p>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <div class="switch-row">
+        <div>
+          <div class="t">Botones solo color</div>
+          <div class="d">Sin texto en la respuesta. Stroop puro: elimina la segunda lectura y mide interferencia limpia.</div>
+        </div>
+        <button class="toggle" id="tgVariant" aria-pressed="true" aria-label="Botones solo color"></button>
+      </div>
+      <div class="switch-row">
+        <div>
+          <div class="t">Cruz de fijación</div>
+          <div class="d">300–500 ms de pausa con jitter antes de cada estímulo. Ancla la mirada y evita respuestas anticipadas.</div>
+        </div>
+        <button class="toggle" id="tgFix" aria-pressed="true" aria-label="Cruz de fijación"></button>
+      </div>
+      <div class="switch-row">
+        <div>
+          <div class="t">Posiciones fijas</div>
+          <div class="d">Las opciones no se barajan dentro de la ronda. Sin búsqueda visual, el tiempo mide interferencia.</div>
+        </div>
+        <button class="toggle" id="tgFixed" aria-pressed="true" aria-label="Posiciones fijas"></button>
+      </div>
+    </div>
+
+    <button class="btn primary block" id="startBtn" style="margin-top:16px">Empezar ronda <kbd>Espacio</kbd></button>
+    <p class="center muted" style="font-size:11.5px;margin-top:14px">Teclado: <kbd style="background:var(--surface-2)">1</kbd> <kbd style="background:var(--surface-2)">2</kbd> <kbd style="background:var(--surface-2)">3</kbd>… para responder</p>
+  </section>
+
+  <!-- ============ JUEGO ============ -->
+  <section class="screen" id="s-play">
+    <div class="stage" id="stage">
+      <div class="timebar"><i id="timefill"></i></div>
+      <div class="hud">
+        <button class="exit" id="exitBtn">← Salir</button>
+        <div class="mid" id="trialCount">1 / 24</div>
+        <div class="streak" id="streakBox"><span>⚡</span><span id="streakN">0</span></div>
+      </div>
+      <div class="stimzone"><div id="stim" class="fixation">+</div></div>
+      <div class="answers c3" id="answers"></div>
+      <div class="hint" id="hint"></div>
+
+      <div class="count" id="countdown" hidden>
+        <div>
+          <div class="n" id="countN">3</div>
+          <p class="task">Tocá el color de la <b>tinta</b>, no lo que dice la palabra.</p>
+          <p class="sub" id="countSub">Fácil · 3 colores · 30 segundos</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTADO ============ -->
+  <section class="screen" id="s-result">
+    <div class="center">
+      <h1 style="font-size:30px">Resultado</h1>
+      <div class="chip" id="resChip" style="margin-top:10px">Stroop · Fácil</div>
+    </div>
+
+    <div class="hero">
+      <p class="eyebrow">Precisión</p>
+      <div class="val" id="heroVal">—<span class="u">%</span></div>
+      <p class="best" id="heroBest"></p>
+    </div>
+
+    <div class="tiles">
+      <div class="tile"><div class="ic">◷</div><div class="v" id="tRT">—</div><div class="l">Reacción media</div></div>
+      <div class="tile" title="Cuánto más tardás cuando la palabra contradice a la tinta (incongruente − congruente)."><div class="ic">⇄</div><div class="v" id="tCost">—</div><div class="l">Costo Stroop</div></div>
+      <div class="tile"><div class="ic">⚡</div><div class="v" id="tStreak">—</div><div class="l">Racha máxima</div></div>
+    </div>
+
+    <div class="panel">
+      <h3>Tiempo por intento</h3>
+      <p class="sub">Cada columna es una respuesta, en orden. La línea marca tu mediana.</p>
+      <div class="chart" id="chart1"><div class="tip" id="tip1"></div></div>
+      <div class="legend">
+        <span><i style="background:var(--accent)"></i> Acierto</span>
+        <span><i style="background:var(--bad)"></i> ✕ Error</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Dónde se te va el tiempo</h3>
+      <p class="sub" id="costSub">La diferencia entre leer una palabra que coincide con su tinta y una que no: eso es el efecto Stroop.</p>
+      <div class="chart" id="chart2"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="copyBtn">⧉ Copiar resultado</button>
+      <button class="btn" id="shareBtn">↗ Compartir imagen</button>
+      <button class="btn primary" id="againBtn">Jugar de nuevo <kbd>Espacio</kbd></button>
+    </div>
+
+    <div class="foot">
+      <button class="btn" style="border:0;background:none;padding:8px" id="profileBtn">Ver tu perfil →</button>
+      <div style="margin-top:10px"><span class="chip">⚠ Resultado ilustrativo · no reemplaza un test cognitivo validado</span></div>
+    </div>
+
+    <div class="compare">
+      <button class="btn" style="font-size:13px;padding:11px 18px" id="oldBtn">Ver la versión actual ↓</button>
+      <div class="old" id="oldBox" hidden>
+        <p class="eyebrow" style="color:var(--muted)">Antes · rendimiento</p>
+        <div class="n" id="oldN">—%</div>
+        <p>Tu mejor marca: <span id="oldBest">—%</span></p>
+        <p>Tiempo de reacción promedio: <span id="oldRT">—</span></p>
+        <p>Tiempo total: <span id="oldTot">—</span></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   PALETA DE TINTAS
+   Nombres cortos e inequívocos en español rioplatense.
+   "Turquesa"/"Celeste" quedan fuera: nombrarlos agrega ruido
+   que no es interferencia Stroop.
+   ============================================================ */
+const INKS = {
+  rojo:     {name:"Rojo",     c:"var(--ink-rojo)"},
+  naranja:  {name:"Naranja",  c:"var(--ink-naranja)"},
+  amarillo: {name:"Amarillo", c:"var(--ink-amarillo)"},
+  verde:    {name:"Verde",    c:"var(--ink-verde)"},
+  azul:     {name:"Azul",     c:"var(--ink-azul)"},
+  violeta:  {name:"Violeta",  c:"var(--ink-violeta)"},
+};
+const DIFF = {
+  facil:   {label:"Fácil",   keys:["rojo","azul","amarillo"]},
+  medio:   {label:"Medio",   keys:["rojo","azul","amarillo","verde"]},
+  dificil: {label:"Difícil", keys:["rojo","naranja","amarillo","verde","azul","violeta"]},
+};
+const ROUND_MS = 30000, MAX_TRIALS = 24, P_CONGRUENT = 0.3;
+
+const cfg = {diff:"facil", swatch:true, fixation:true, fixedPos:true};
+const session = {best:null, bestRT:null};   // en la app real: Supabase
+let run = null, tHandle = null, rafHandle = null;
+
+const $ = s => document.querySelector(s);
+const el = {
+  stage:$("#stage"), stim:$("#stim"), answers:$("#answers"), hint:$("#hint"),
+  timefill:$("#timefill"), trialCount:$("#trialCount"), streakBox:$("#streakBox"),
+  streakN:$("#streakN"), countdown:$("#countdown"), countN:$("#countN"), countSub:$("#countSub"),
+};
+
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on", s.id===id)); }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("on"),1900); }
+const rint = n => Math.floor(Math.random()*n);
+
+/* ---------- menú ---------- */
+$("#diffRow").addEventListener("click", e=>{
+  const b=e.target.closest("[data-diff]"); if(!b) return;
+  cfg.diff=b.dataset.diff;
+  document.querySelectorAll("#diffRow .opt").forEach(o=>o.setAttribute("aria-pressed", String(o===b)));
+});
+function bindToggle(id, key){
+  const b=$(id);
+  b.addEventListener("click", ()=>{ cfg[key]=!cfg[key]; b.setAttribute("aria-pressed", String(cfg[key])); });
+}
+bindToggle("#tgVariant","swatch"); bindToggle("#tgFix","fixation"); bindToggle("#tgFixed","fixedPos");
+$("#themeBtn").addEventListener("click", ()=>{
+  const r=document.documentElement;
+  r.dataset.theme = r.dataset.theme==="dark" ? "light" : "dark";
+  if(run && run.done) renderResult();
+});
+
+/* ============================================================
+   MOTOR
+   ============================================================ */
+function startRound(){
+  const keys = DIFF[cfg.diff].keys.slice();
+  // el orden de las opciones se baraja UNA vez por ronda y queda fijo
+  const order = cfg.fixedPos ? shuffle(keys.slice()) : keys.slice();
+  run = {keys, order, trials:[], i:0, streak:0, maxStreak:0, locked:true, done:false,
+         t0:0, stimAt:0, startedAt:0};
+  el.answers.className = "answers c"+keys.length;
+  el.streakN.textContent = "0"; el.streakBox.classList.remove("hot");
+  el.trialCount.textContent = "1 / "+MAX_TRIALS;
+  el.timefill.style.transform="scaleX(1)"; el.timefill.className="";
+  el.hint.textContent = cfg.swatch ? "Tocá el color de la TINTA" : "Tocá el nombre del color de la TINTA";
+  renderAnswers();
+  show("s-play");
+
+  // cuenta regresiva
+  el.countdown.hidden = false;
+  el.countSub.textContent = `${DIFF[cfg.diff].label} · ${keys.length} colores · 30 segundos`;
+  let n = 3; el.countN.textContent = n;
+  const tick = setInterval(()=>{
+    n--;
+    if(n===0){ el.countN.textContent="¡Ya!"; }
+    else if(n<0){ clearInterval(tick); el.countdown.hidden=true; beginTimer(); nextTrial(); }
+    else { el.countN.textContent=n; el.countN.style.animation="none"; void el.countN.offsetWidth; el.countN.style.animation=""; }
+  }, 700);
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=rint(i+1);[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function beginTimer(){
+  run.startedAt = performance.now();
+  cancelAnimationFrame(rafHandle);
+  const loop = ()=>{
+    const left = Math.max(0, ROUND_MS - (performance.now()-run.startedAt));
+    const p = left/ROUND_MS;
+    el.timefill.style.transform = `scaleX(${p})`;
+    el.timefill.className = left<5000 ? "crit" : left<10000 ? "warn" : "";
+    if(left<=0){ finish(); return; }
+    rafHandle = requestAnimationFrame(loop);
+  };
+  rafHandle = requestAnimationFrame(loop);
+}
+
+function renderAnswers(){
+  el.answers.innerHTML = "";
+  run.order.forEach((k,idx)=>{
+    const b=document.createElement("button");
+    b.className = "ans " + (cfg.swatch ? "swatch" : "named");
+    b.style.setProperty("--c", INKS[k].c);
+    b.dataset.key = k;
+    b.setAttribute("aria-label", INKS[k].name);
+    b.innerHTML = cfg.swatch
+      ? `<span class="kb">${idx+1}</span>`
+      : `<span class="dot"></span>${INKS[k].name}<span class="kb">${idx+1}</span>`;
+    b.addEventListener("pointerdown", ev=>answer(k, ev.timeStamp), {passive:true});
+    el.answers.appendChild(b);
+  });
+}
+
+function nextTrial(){
+  if(run.done) return;
+  if(run.i >= MAX_TRIALS){ finish(); return; }
+  run.locked = true;
+  el.trialCount.textContent = `${Math.min(run.i+1, MAX_TRIALS)} / ${MAX_TRIALS}`;
+  document.querySelectorAll(".ans").forEach(a=>a.classList.remove("hit","miss","reveal"));
+
+  const ink = run.keys[rint(run.keys.length)];
+  const congruent = Math.random() < P_CONGRUENT;
+  let word = ink;
+  if(!congruent){ do { word = run.keys[rint(run.keys.length)]; } while(word===ink); }
+
+  const showStim = ()=>{
+    el.stim.className = "stim enter";
+    el.stim.style.color = INKS[ink].c;
+    el.stim.textContent = INKS[word].name;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      run.stimAt = performance.now(); run.locked=false;
+    }));
+  };
+
+  if(cfg.fixation){
+    el.stim.className="fixation"; el.stim.style.color=""; el.stim.textContent="+";
+    const isi = 300 + rint(200);                 // jitter: mata la anticipación rítmica
+    tHandle = setTimeout(()=>{ run.cur={ink,word,congruent}; showStim(); }, isi);
+  } else {
+    run.cur={ink,word,congruent}; showStim();
+  }
+}
+
+function answer(key, ts){
+  if(run.locked || run.done) return;
+  run.locked = true;
+  const rt = Math.round((ts || performance.now()) - run.stimAt);
+  const ok = key === run.cur.ink;
+  run.trials.push({rt, ok, congruent:run.cur.congruent, ink:run.cur.ink, word:run.cur.word});
+  run.i++;
+
+  const btn = el.answers.querySelector(`[data-key="${key}"]`);
+  if(ok){
+    run.streak++; run.maxStreak = Math.max(run.maxStreak, run.streak);
+    btn.classList.add("hit");
+    el.streakN.textContent = run.streak;
+    el.streakBox.classList.toggle("hot", run.streak>=5);
+    el.streakBox.classList.remove("pop"); void el.streakBox.offsetWidth; el.streakBox.classList.add("pop");
+    setTimeout(nextTrial, 150);
+  } else {
+    run.streak = 0; el.streakN.textContent = "0"; el.streakBox.classList.remove("hot");
+    btn.classList.add("miss");
+    el.answers.querySelector(`[data-key="${run.cur.ink}"]`).classList.add("reveal");
+    el.stage.classList.remove("shake"); void el.stage.offsetWidth; el.stage.classList.add("shake");
+    setTimeout(nextTrial, 340);
+  }
+}
+
+function finish(){
+  if(run.done) return;
+  run.done = true; run.locked = true;
+  clearTimeout(tHandle); cancelAnimationFrame(rafHandle);
+  run.totalMs = Math.round(performance.now() - run.startedAt);
+  commitRound(); renderResult(); show("s-result");
+}
+
+/* ============================================================
+   RESULTADO
+   ============================================================ */
+const mean = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : null;
+function median(a){ if(!a.length) return null; const s=[...a].sort((x,y)=>x-y); const m=s.length>>1;
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2; }
+
+function stats(){
+  const t = run.trials;
+  const okT = t.filter(x=>x.ok);
+  const acc = t.length ? Math.round(okT.length/t.length*100) : 0;
+  const rt  = mean(okT.map(x=>x.rt));
+  const con = mean(okT.filter(x=>x.congruent).map(x=>x.rt));
+  const inc = mean(okT.filter(x=>!x.congruent).map(x=>x.rt));
+  const cost = (con!=null && inc!=null) ? Math.round(inc-con) : null;
+  return {t, acc, rt: rt!=null?Math.round(rt):null, con: con!=null?Math.round(con):null,
+          inc: inc!=null?Math.round(inc):null, cost, med: median(okT.map(x=>x.rt))};
+}
+
+/* commitRound corre UNA sola vez al terminar; renderResult es puro y se puede
+   repintar (cambio de tema, resize) sin ensuciar los récords. */
+function commitRound(){
+  const s = stats();
+  run.prevBest = session.best;
+  if(session.best==null || s.acc>session.best) session.best = s.acc;
+  if(s.rt!=null && (session.bestRT==null || s.rt<session.bestRT)) session.bestRT = s.rt;
+}
+
+function renderResult(){
+  const s = stats();
+  const prevBest = run.prevBest;
+
+  $("#resChip").textContent = `Stroop · ${DIFF[cfg.diff].label} · ${run.trials.length} intentos`;
+  $("#heroVal").innerHTML = `${s.acc}<span class="u">%</span>`;
+  const d = prevBest==null ? 0 : s.acc-prevBest;
+  $("#heroBest").innerHTML = prevBest==null
+    ? `Primera ronda registrada`
+    : d>0  ? `<b>Nuevo récord · +${d} pts</b>`
+    : d===0? `Igualaste tu mejor marca: ${session.best}%`
+    :        `Tu mejor marca: ${session.best}% · ${d} pts`;
+
+  $("#tRT").innerHTML   = s.rt!=null ? `${s.rt}<span style="font-size:.6em;color:var(--muted)"> ms</span>` : "—";
+  $("#tCost").innerHTML = s.cost!=null ? `${s.cost>0?"+":""}${s.cost}<span style="font-size:.6em;color:var(--muted)"> ms</span>` : "—";
+  $("#tStreak").textContent = run.maxStreak;
+
+  $("#oldN").textContent = s.acc+"%";
+  $("#oldBest").textContent = session.best+"%";
+  $("#oldRT").textContent = (s.rt??"—")+" ms";
+  $("#oldTot").textContent = Math.round(run.totalMs/1000)+"s";
+
+  drawTrials(s); drawCost(s);
+}
+
+/* --- gráfico 1: columnas por intento --- */
+function drawTrials(s){
+  const host = $("#chart1"), tip = $("#tip1");
+  host.querySelectorAll("svg").forEach(n=>n.remove());
+  const t = s.t;
+  if(!t.length){ return; }
+
+  const W = host.clientWidth || 480, H = 152, pad = {t:20, b:20, r:96};
+  const plotW = W - pad.r;                              // aire reservado para la etiqueta de mediana
+  const maxRT = Math.max(...t.map(x=>x.rt)) * 1.18;     // escala a los datos, no a un techo fijo
+  const slot = plotW / t.length;
+  const bw = Math.max(6, Math.min(24, slot - 4));       // ≤24px, 2px de aire a cada lado
+  const y = v => pad.t + (H-pad.t-pad.b) * (1 - v/maxRT);
+
+  const NS="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.setAttribute("height",H);
+
+  // línea de mediana — hairline, recesiva
+  if(s.med!=null){
+    const ln=document.createElementNS(NS,"line");
+    ln.setAttribute("x1",0); ln.setAttribute("x2",plotW+6);
+    ln.setAttribute("y1",y(s.med)); ln.setAttribute("y2",y(s.med));
+    ln.setAttribute("stroke","var(--border)"); ln.setAttribute("stroke-width","1");
+    svg.appendChild(ln);
+    const tx=document.createElementNS(NS,"text");
+    tx.setAttribute("x",plotW+12); tx.setAttribute("y",y(s.med));
+    tx.setAttribute("dominant-baseline","middle");
+    tx.setAttribute("fill","var(--muted)"); tx.setAttribute("font-size","10.5"); tx.setAttribute("font-weight","600");
+    tx.textContent = `mediana ${Math.round(s.med)} ms`;
+    svg.appendChild(tx);
+  }
+
+  const fastest = Math.min(...t.filter(x=>x.ok).map(x=>x.rt));
+  t.forEach((tr,i)=>{
+    const x = i*slot + (slot-bw)/2;
+    const top = y(tr.rt), h = Math.max(3, H-pad.b-top);
+    const r = document.createElementNS(NS,"path");
+    const rad = Math.min(4, bw/2);
+    // extremo de dato redondeado 4px, cuadrado en la base
+    r.setAttribute("d",`M${x},${top+rad} a${rad},${rad} 0 0 1 ${rad},-${rad} h${bw-2*rad} a${rad},${rad} 0 0 1 ${rad},${rad} v${h-rad} h-${bw} z`);
+    r.setAttribute("fill", tr.ok ? "var(--accent)" : "var(--bad)");
+    r.style.cursor="default";
+    r.addEventListener("pointerenter", ()=>{
+      tip.innerHTML = `${tr.rt} ms <span class="r">· ${tr.ok?"acierto":"error"} · ${tr.congruent?"congruente":"incongruente"}</span>`;
+      tip.style.left = Math.min(88, Math.max(12,(x+bw/2)/W*100))+"%"; tip.style.top = top-6+"px"; tip.style.opacity=1;
+    });
+    r.addEventListener("pointerleave", ()=>{ tip.style.opacity=0; });
+    svg.appendChild(r);
+
+    if(!tr.ok){  // el estado nunca va solo en color
+      const m=document.createElementNS(NS,"text");
+      m.setAttribute("x",x+bw/2); m.setAttribute("y",top-5); m.setAttribute("text-anchor","middle");
+      m.setAttribute("fill","var(--bad)"); m.setAttribute("font-size","10"); m.setAttribute("font-weight","700");
+      m.textContent="✕"; svg.appendChild(m);
+    }
+    if(tr.ok && tr.rt===fastest){   // etiqueta directa: solo el extremo
+      const m=document.createElementNS(NS,"text");
+      m.setAttribute("x",x+bw/2); m.setAttribute("y",top-6); m.setAttribute("text-anchor","middle");
+      m.setAttribute("fill","var(--text)"); m.setAttribute("font-size","10"); m.setAttribute("font-weight","700");
+      m.textContent=tr.rt; svg.appendChild(m);
+    }
+  });
+
+  const base=document.createElementNS(NS,"line");
+  base.setAttribute("x1",0); base.setAttribute("x2",plotW+6);
+  base.setAttribute("y1",H-pad.b); base.setAttribute("y2",H-pad.b);
+  base.setAttribute("stroke","var(--border)"); base.setAttribute("stroke-width","1");
+  svg.appendChild(base);
+  const lbl=document.createElementNS(NS,"text");
+  lbl.setAttribute("x",0); lbl.setAttribute("y",H-4);
+  lbl.setAttribute("fill","var(--muted)"); lbl.setAttribute("font-size","10"); lbl.setAttribute("font-weight","600");
+  lbl.textContent="intento 1 →"; svg.appendChild(lbl);
+
+  host.appendChild(svg);
+}
+
+/* --- gráfico 2: congruente vs incongruente --- */
+function drawCost(s){
+  const host = $("#chart2");
+  host.querySelectorAll("svg").forEach(n=>n.remove());
+  if(s.con==null || s.inc==null){
+    $("#costSub").textContent = "Necesitás al menos un acierto de cada tipo para medir el costo de interferencia.";
+    return;
+  }
+  $("#costSub").innerHTML = s.cost > 8
+    ? `Cuando la palabra contradice la tinta tardás <b>${s.cost} ms más</b>. Ese delta es tu efecto Stroop.`
+    : `Esta ronda no mostró interferencia medible (${s.cost>=0?"+":""}${s.cost} ms). Con pocos intentos el ruido tapa el efecto: jugá una ronda completa.`;
+  const W = host.clientWidth || 480, H = 96, labelW = 116, maxV = Math.max(s.con, s.inc)*1.25;
+  const NS="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.setAttribute("height",H);
+  const rows=[["Congruente",s.con],["Incongruente",s.inc]];
+  rows.forEach(([name,v],i)=>{
+    const y = 16 + i*40, bh = 20, w = (W-labelW-58)*(v/maxV), rad=4;
+    const tx=document.createElementNS(NS,"text");
+    tx.setAttribute("x",0); tx.setAttribute("y",y+14); tx.setAttribute("fill","var(--muted)");
+    tx.setAttribute("font-size","11.5"); tx.setAttribute("font-weight","600"); tx.textContent=name;
+    svg.appendChild(tx);
+    const r=document.createElementNS(NS,"path");
+    r.setAttribute("d",`M${labelW},${y} h${w-rad} a${rad},${rad} 0 0 1 ${rad},${rad} v${bh-2*rad} a${rad},${rad} 0 0 1 -${rad},${rad} h-${w-rad} z`);
+    r.setAttribute("fill", i===0 ? "color-mix(in srgb, var(--accent) 45%, transparent)" : "var(--accent)");
+    svg.appendChild(r);
+    const vl=document.createElementNS(NS,"text");
+    vl.setAttribute("x",labelW+w+9); vl.setAttribute("y",y+14); vl.setAttribute("fill","var(--text)");
+    vl.setAttribute("font-size","12"); vl.setAttribute("font-weight","700"); vl.textContent=v+" ms";
+    svg.appendChild(vl);
+  });
+  host.appendChild(svg);
+}
+
+/* ---------- acciones ---------- */
+$("#startBtn").addEventListener("click", startRound);
+$("#againBtn").addEventListener("click", startRound);
+$("#exitBtn").addEventListener("click", ()=>{ if(run){run.done=true;} clearTimeout(tHandle); cancelAnimationFrame(rafHandle); show("s-menu"); });
+$("#profileBtn").addEventListener("click", ()=>toast("Perfil — fuera del alcance del prototipo"));
+$("#oldBtn").addEventListener("click", e=>{
+  const b=$("#oldBox"); b.hidden=!b.hidden;
+  e.currentTarget.textContent = b.hidden ? "Ver la versión actual ↓" : "Ocultar la versión actual ↑";
+});
+$("#copyBtn").addEventListener("click", ()=>{
+  const s=stats();
+  const txt = `Q.Pulse · Stroop ${DIFF[cfg.diff].label}\n${s.acc}% de precisión · ${s.rt} ms de reacción media\nCosto Stroop: ${s.cost>=0?"+":""}${s.cost} ms · racha máx ${run.maxStreak}`;
+  navigator.clipboard?.writeText(txt).then(()=>toast("Resultado copiado")).catch(()=>toast("No se pudo copiar"));
+});
+$("#shareBtn").addEventListener("click", ()=>toast("En la app: html-to-image sobre la tarjeta de resultado"));
+
+document.addEventListener("keydown", e=>{
+  if(e.code==="Space"){
+    const menu=$("#s-menu").classList.contains("on"), res=$("#s-result").classList.contains("on");
+    if(menu||res){ e.preventDefault(); startRound(); }
+  }
+  if($("#s-play").classList.contains("on") && /^[1-9]$/.test(e.key)){
+    const idx=+e.key-1, b=el.answers.children[idx];
+    if(b) answer(b.dataset.key, e.timeStamp);
+  }
+  if(e.key==="Escape" && $("#s-play").classList.contains("on")) $("#exitBtn").click();
+});
+window.addEventListener("resize", ()=>{ if(run && run.done) renderResult(); });
+
+/* hook de inspección para el prototipo */
+window.QP = {cfg, session, startRound, get run(){return run}, finish};
+</script>
+</body>
+</html>

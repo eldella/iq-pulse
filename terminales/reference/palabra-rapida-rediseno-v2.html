@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IQ Pulse — Rediseño de Palabra Rápida</title>
+<style>
+:root{
+  --bg:#06080a; --panel:#0c1015; --panel-2:#12171f; --app:#000;
+  --line:rgba(255,255,255,.075); --line-2:rgba(255,255,255,.16);
+  --t1:#f2f5f8; --t2:#98a2b0; --t3:#69737f;
+  --blue:#2f80ff; --violet:#9b6bff; --green:#2ee06a; --amber:#f5b544; --neutral:#7d8792;
+  --r:14px;
+  --font:ui-sans-serif,-apple-system,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--t1);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{padding:28px 24px 80px}
+.wrap{max-width:1400px;margin:0 auto}
+
+/* ---------- page chrome ---------- */
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:22px}
+.masthead h1{font-size:21px;font-weight:650;letter-spacing:-.02em}
+.masthead p{color:var(--t2);font-size:13.5px;margin-top:5px;max-width:62ch;line-height:1.55}
+.badge{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:650}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.tbtn{background:var(--panel);border:1px solid var(--line);color:var(--t2);font:inherit;font-size:12.5px;
+      padding:7px 13px;border-radius:99px;cursor:pointer;transition:.16s}
+.tbtn:hover{border-color:var(--line-2);color:var(--t1)}
+.tbtn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.tbtn kbd{font:inherit;font-size:10.5px;opacity:.6;margin-left:6px}
+.tsep{width:1px;height:20px;background:var(--line);margin:0 4px}
+
+/* ---------- layout ---------- */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+@media(max-width:1080px){.cols{grid-template-columns:1fr}}
+
+/* ---------- the app frame ---------- */
+.frame{background:var(--app);border:1px solid var(--line);border-radius:18px;overflow:hidden;position:relative;
+       min-height:620px;display:flex;flex-direction:column;
+       background-image:radial-gradient(circle at 50% 0%,rgba(47,128,255,.07),transparent 62%)}
+.frame::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);background-size:26px 26px;opacity:.5}
+.frame>*{position:relative;z-index:1}
+
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0}
+.back{background:none;border:0;color:var(--t3);font:inherit;font-size:12.5px;cursor:pointer;display:flex;
+      align-items:center;gap:6px;padding:6px 8px;border-radius:8px;transition:.16s}
+.back:hover{color:var(--t1);background:rgba(255,255,255,.05)}
+.mode-chip{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+           font-weight:650;color:var(--t3)}
+.dot{width:6px;height:6px;border-radius:99px;background:var(--t3);transition:.3s}
+.dot.live{background:var(--blue);box-shadow:0 0 0 4px rgba(47,128,255,.16)}
+.dot.recall{background:var(--violet);box-shadow:0 0 0 4px rgba(155,107,255,.16)}
+
+/* sequence progress — ONE meaning per bar */
+.seqbar{padding:14px 20px 0}
+.seqbar .lbl{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.1em;
+             text-transform:uppercase;color:var(--t3);margin-bottom:7px;font-weight:600}
+.track{height:3px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.fill{height:100%;width:0;border-radius:99px;background:var(--blue);transition:width .18s linear}
+.fill.recall{background:var(--violet);transition:width .1s linear}
+.fill.warn{background:var(--amber)}
+
+/* stage */
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 24px 40px;text-align:center}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--blue);margin-bottom:10px}
+.eyebrow.v{color:var(--violet)}
+.title{font-size:26px;font-weight:680;letter-spacing:-.02em}
+.sub{color:var(--t2);font-size:14px;margin-top:8px;line-height:1.5}
+
+/* slots */
+.slots{display:flex;gap:10px;justify-content:center;margin:34px 0 0}
+.slot{width:62px;height:78px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.022);display:flex;align-items:center;justify-content:center;
+      font-size:36px;font-weight:700;position:relative;transition:.18s;color:var(--t1)}
+.slot .ghost{width:16px;height:2px;border-radius:9px;background:rgba(255,255,255,.13)}
+.slot.done{border-color:rgba(47,128,255,.32);background:rgba(47,128,255,.055)}
+.slot.done .ghost{background:var(--blue);opacity:.75;width:9px;height:9px;border-radius:99px}
+.slot.active{border-color:var(--blue);background:rgba(47,128,255,.09);
+             box-shadow:0 0 0 4px rgba(47,128,255,.11),0 0 36px rgba(47,128,255,.2)}
+.slot.active .ch{animation:pop .22s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:scale(1)}}
+/* the beat: depleting line inside the active slot = when the letter will change */
+.beat{position:absolute;left:10px;right:10px;bottom:9px;height:2px;border-radius:9px;background:rgba(255,255,255,.16);overflow:hidden}
+.beat i{display:block;height:100%;width:100%;background:var(--blue);transform-origin:left center}
+.slot.typed{border-color:var(--violet);background:rgba(155,107,255,.09)}
+.slot.caret{border-color:var(--violet);box-shadow:0 0 0 4px rgba(155,107,255,.12)}
+.slot.caret::after{content:"";position:absolute;width:2px;height:34px;background:var(--violet);border-radius:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.slot.caret.filled::after{display:none}
+
+.counter{margin-top:20px;font-size:13px;color:var(--t2);font-variant-numeric:tabular-nums}
+.counter b{color:var(--t1);font-weight:650}
+
+/* countdown */
+.cd{font-size:88px;font-weight:750;letter-spacing:-.04em;color:var(--blue);animation:pop .3s}
+
+/* ---------- result ---------- */
+.result{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center}
+.result h2{font-size:36px;font-weight:720;letter-spacing:-.03em}
+.verdict{color:var(--t2);font-size:14.5px;margin-top:7px;line-height:1.5;max-width:44ch}
+
+/* review = the hero */
+.review{width:100%;margin-top:26px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+        padding:18px 18px 16px}
+.review .rlbl{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--t3);font-weight:650;
+              text-align:left;margin-bottom:11px}
+.rrow{display:flex;gap:8px;justify-content:center}
+.rrow+.rlbl{margin-top:18px}
+.cell{width:50px;height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+      font-size:25px;font-weight:700;border:1.5px solid var(--line);background:rgba(255,255,255,.02);color:var(--t2)}
+.cell.hit{border-color:rgba(46,224,106,.45);background:rgba(46,224,106,.1);color:#8df0b2}
+.cell.moved{border-color:rgba(245,181,68,.45);background:rgba(245,181,68,.09);color:#f7cd85}
+.cell.miss{border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.02);color:var(--t3);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.25)}
+.cell.empty{text-decoration:none;color:#39404a;font-size:19px}
+.cell.truth{border-color:var(--line);background:rgba(255,255,255,.035);color:var(--t1)}
+.legend{display:flex;gap:14px;justify-content:center;margin-top:14px;flex-wrap:wrap;font-size:11px;color:var(--t3)}
+.legend span{display:flex;align-items:center;gap:6px}
+.lg{width:8px;height:8px;border-radius:3px}
+
+/* hero metric */
+.metric{width:100%;margin-top:16px;border-radius:var(--r);padding:20px;text-align:center;
+        border:1px solid var(--line);background:var(--panel)}
+.metric.lo{border-color:rgba(255,255,255,.1)}
+.metric.mid{border-color:rgba(47,128,255,.4);box-shadow:0 0 44px rgba(47,128,255,.1)}
+.metric.hi{border-color:rgba(46,224,106,.4);box-shadow:0 0 44px rgba(46,224,106,.11)}
+.metric .mlbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--t3)}
+.metric .mval{font-size:52px;font-weight:750;letter-spacing:-.035em;margin-top:4px;line-height:1.05;font-variant-numeric:tabular-nums}
+.metric.lo .mval{color:var(--neutral)}
+.metric.mid .mval{color:var(--t1)}
+.metric.hi .mval{color:#8df0b2}
+.metric .mcmp{font-size:12.5px;color:var(--t2);margin-top:6px}
+.metric .mcmp .up{color:var(--green)}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;margin-top:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 10px;text-align:center}
+.card .cv{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.card .cl{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--t3);margin-top:5px;font-weight:650}
+
+.nudge{margin-top:14px;display:inline-flex;align-items:center;gap:9px;font-size:12.5px;color:var(--t2);
+       background:rgba(245,181,68,.08);border:1px solid rgba(245,181,68,.25);padding:8px 13px;border-radius:99px}
+.nudge button{background:none;border:0;color:var(--amber);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+.ctas{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center}
+.btn{font:inherit;font-size:14px;font-weight:600;padding:12px 20px;border-radius:99px;cursor:pointer;border:1px solid transparent;transition:.16s;display:inline-flex;align-items:center;gap:9px}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.primary:hover{background:#4b91ff}
+.btn.ghost{background:rgba(255,255,255,.05);border-color:var(--line-2);color:var(--t1)}
+.btn.ghost:hover{background:rgba(255,255,255,.09)}
+.btn .k{font-size:11px;background:rgba(255,255,255,.2);padding:2.5px 7px;border-radius:6px;font-weight:600}
+.linkrow{margin-top:16px;display:flex;gap:18px;align-items:center;justify-content:center}
+.tlink{background:none;border:0;font:inherit;font-size:13px;color:var(--t2);cursor:pointer;
+       text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(255,255,255,.22);
+       display:inline-flex;align-items:center;gap:6px;padding:4px}
+.tlink:hover{color:var(--t1);text-decoration-color:var(--t1)}
+.disclaimer{margin-top:26px;font-size:11.5px;color:#7c8592;display:flex;align-items:flex-start;gap:8px;
+            justify-content:center;max-width:48ch;line-height:1.55;text-align:left}
+.disclaimer svg{flex:none;opacity:.8;margin-top:2px}
+
+/* ---------- notes rail ---------- */
+.rail{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;position:sticky;top:22px}
+.rail h3{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:4px}
+.rail .phase{font-size:15px;font-weight:650;margin-bottom:14px;letter-spacing:-.01em}
+.note{display:flex;gap:11px;padding:11px 0;border-top:1px solid var(--line)}
+.note:first-of-type{border-top:0}
+.note .n{flex:none;width:21px;height:21px;border-radius:99px;background:rgba(47,128,255,.14);color:var(--blue);
+         font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.note h4{font-size:13px;font-weight:640;margin-bottom:3px;letter-spacing:-.005em}
+.note p{font-size:12.5px;color:var(--t2);line-height:1.5}
+.note s{color:var(--t3);text-decoration-color:rgba(255,255,255,.25)}
+
+/* ---------- compare ---------- */
+.compare{margin-top:34px}
+.compare h2{font-size:17px;font-weight:650;letter-spacing:-.015em}
+.compare>p{color:var(--t2);font-size:13.5px;margin-top:5px;margin-bottom:16px;max-width:74ch;line-height:1.55}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.duo{grid-template-columns:1fr}}
+.pane{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--app)}
+.pane .ph{padding:10px 15px;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.12em;
+          text-transform:uppercase;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.pane.old .ph{color:#d97070;background:rgba(217,112,112,.06)}
+.pane.new .ph{color:#5fd98d;background:rgba(46,224,106,.06)}
+.pane .pb{padding:40px 22px 34px;text-align:center;min-height:430px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.tick{font-size:10px;letter-spacing:.06em;text-transform:none;color:var(--t3);font-weight:500}
+
+/* faithful repro of the current screen */
+.old-h{font-size:33px;font-weight:730;letter-spacing:-.03em}
+.old-lbl{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-top:22px}
+.old-val{font-size:62px;font-weight:750;letter-spacing:-.04em;line-height:1.05;margin-top:2px}
+.old-best{color:var(--green);font-size:13px;margin-top:6px}
+.old-time{color:var(--t2);font-size:12.5px;margin-top:4px}
+.old-links{margin-top:24px;font-size:13px;color:var(--t3)}
+.old-dis{margin-top:20px;font-size:10.5px;color:#4a525d;max-width:40ch;line-height:1.5}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:#1a2029;border:1px solid var(--line-2);
+       color:var(--t1);font-size:13px;padding:10px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:.22s;z-index:99}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+#sink{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;left:-9999px}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <div class="badge">IQ Pulse · Palabra Rápida</div>
+      <h1 style="margin-top:6px">Rediseño del ciclo memorizar → escribir → resultado</h1>
+      <p>Prototipo jugable. Escribí con el teclado durante la fase de recall. Los botones de arriba saltan directo a los estados que importan — sobre todo al resultado de 0 aciertos, que es donde la pantalla actual falla más.</p>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tbtn on" id="b-play">▶ Jugar el ciclo completo</button>
+    <div class="tsep"></div>
+    <button class="tbtn" id="b-r0">Resultado 0 / 5</button>
+    <button class="tbtn" id="b-r3">Resultado 3 / 5</button>
+    <button class="tbtn" id="b-r5">Resultado 5 / 5</button>
+    <div class="tsep"></div>
+    <button class="tbtn" id="b-slow">Ritmo lento</button>
+  </div>
+
+  <div class="cols">
+    <div class="frame" id="frame">
+      <div class="topbar">
+        <button class="back">← Volver a elegir</button>
+        <div class="mode-chip"><span class="dot" id="dot"></span><span id="modelabel">Listo</span></div>
+      </div>
+      <div class="seqbar">
+        <div class="lbl"><span id="barlabel">Secuencia</span><span id="barright"></span></div>
+        <div class="track"><div class="fill" id="fill"></div></div>
+      </div>
+      <div class="stage" id="stage"></div>
+    </div>
+
+    <aside class="rail">
+      <h3>Por qué este cambio</h3>
+      <div class="phase" id="railphase">—</div>
+      <div id="railnotes"></div>
+    </aside>
+  </div>
+
+  <section class="compare">
+    <h2>La pantalla de resultado, lado a lado</h2>
+    <p>Mismo intento: no acertaste ninguna letra. A la izquierda, lo que muestra hoy. A la derecha, la propuesta. El cambio de fondo no es estético: el número deja de ser el protagonista y pasa a serlo la revisión, que es lo único que te enseña algo.</p>
+    <div class="duo">
+      <div class="pane old">
+        <div class="ph"><span>Antes</span><span class="tick">estado actual</span></div>
+        <div class="pb">
+          <div class="old-h">Resultado</div>
+          <div class="old-lbl">Rendimiento</div>
+          <div class="old-val">0%</div>
+          <div class="old-best">Tu mejor marca: 60%</div>
+          <div class="old-time">Tiempo total: 41s</div>
+          <div style="display:flex;gap:10px;margin-top:26px">
+            <div class="btn ghost" style="cursor:default">⧉ Copiar resultado</div>
+            <div class="btn primary" style="cursor:default">Jugar de nuevo <span class="k">Espacio</span></div>
+          </div>
+          <div class="old-links">Ver tu perfil</div>
+          <div class="old-dis">Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.</div>
+        </div>
+      </div>
+      <div class="pane new">
+        <div class="ph"><span>Después</span><span class="tick">propuesta</span></div>
+        <div class="pb" id="mininew"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<input id="sink" autocomplete="off" autocapitalize="characters" inputmode="text" aria-hidden="true">
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ─────────── contenido ─────────── */
+var BANK = {4:["NODO","LUNA","RAIZ","ECOS"],5:["PULSO","CAUCE","TRAMA","NIMBO","RUMBO"],6:["ORBITA","LATIDO","ESPIRA","UMBRAL"]};
+var TIMING = {fast:{show:680,gap:180},slow:{show:1000,gap:260}};
+var RECALL_MS = 15000;
+
+var S = {len:5, word:"", ans:[], cur:0, phase:"idle", gen:0, best:4, streak:2, tempo:"fast", t0:0, elapsed:0};
+
+/* ─────────── notas por fase ─────────── */
+var NOTES = {
+  memorize:{name:"1 · Memorización", items:[
+    ["Casillas visibles desde el arranque","Ves las 5 posiciones vacías antes de la primera letra. Saber cuántas son es lo que te deja elegir una estrategia (agrupar de 3+2, armar una palabra). Hoy aparece una letra suelta y no sabés si es la primera de tres o de siete."],
+    ["Una barra, un significado","La barra mide el avance de la secuencia y lo dice con todas las letras. Hoy conviven una barra y un “28s” sin que se sepa cuál mide qué."],
+    ["Sin cuenta regresiva mientras memorizás","El reloj corriendo consume la misma atención que necesitás para codificar. El tiempo aparece recién en la fase de escritura, que es donde tiene sentido presionar."],
+    ["Pulso predecible","La línea que se vacía dentro de la casilla activa te dice cuándo cambia la letra. Con ritmo anticipable podés repasar mentalmente; sin él, solo reaccionás."],
+    ["Punto focal centrado","La letra estaba en el tercio superior con media pantalla vacía abajo. Centrada, el ojo no tiene que buscarla en cada beat."]
+  ]},
+  recall:{name:"2 · Escritura", items:[
+    ["Cambio de color = cambio de turno","Azul mientras mirás, violeta cuando te toca. Es la señal más barata y más rápida de leer para saber que el modo cambió."],
+    ["Mismas casillas, misma posición","La respuesta se escribe en la grilla donde viste las letras. La memoria se apoya en la posición espacial: romper el layout entre fases tira parte de esa ayuda."],
+    ["Casillas, no un campo de texto","Una casilla por letra da feedback de avance y hace que Backspace sea navegable. Un input libre no muestra cuánto te falta."],
+    ["Ahora sí, el tiempo","La barra se consume y se pone ámbar en los últimos 5 segundos. Presión donde corresponde, no antes."]
+  ]},
+  result:{name:"3 · Resultado", items:[
+    ["La revisión es el héroe, no el número","Tu respuesta contra la secuencia real, posición por posición. Es el momento de mayor plasticidad y hoy se desperdicia entero: la pantalla actual no te dice cuál era la palabra."],
+    ["Conteo absoluto antes que porcentaje","“0 de 5” informa; “0%” castiga y además miente de escala: con 5 letras, una sola vale 20%."],
+    ["El color sigue al rendimiento","Verde solo cuando hay algo que celebrar. Hoy un 0% aparece con “Tu mejor marca: 60%” en verde justo debajo — el color dice éxito mientras el número dice lo contrario."],
+    ["Tarjetas iguales a las del modo Reacción","Récord, racha y tiempo con el mismo componente que ya usás en la pantalla de reacción. Dos modos del mismo producto no deberían hablar idiomas distintos."],
+    ["Salida adaptativa","Con 0 aciertos el botón principal es “Reintentar esta secuencia”, no “Jugar de nuevo”. Cerrar el intento fallido antes de tirarte a uno nuevo es lo que convierte el fracaso en aprendizaje."],
+    ["El disclaimer, legible","Pasa de #4a525d (contraste 2.1:1, por debajo del mínimo) a un gris que se lee, con ícono. Si es una advertencia legal, tiene que poder leerse."]
+  ]},
+  idle:{name:"Antes de empezar", items:[
+    ["Tocá “Jugar el ciclo completo”","O saltá directo a un resultado con los botones de arriba. El de 0 / 5 es el caso que hoy peor resuelve la interfaz."]
+  ]}
+};
+
+/* ─────────── helpers ─────────── */
+var $ = function(id){return document.getElementById(id)};
+var stage=$("stage"), fill=$("fill"), dot=$("dot"), modelabel=$("modelabel"),
+    barlabel=$("barlabel"), barright=$("barright"), sink=$("sink");
+
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(function(){t.classList.remove("on")},1700)}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function setRail(k){
+  var n=NOTES[k]||NOTES.idle;
+  $("railphase").textContent=n.name;
+  $("railnotes").innerHTML=n.items.map(function(it,i){
+    return '<div class="note"><div class="n">'+(i+1)+'</div><div><h4>'+it[0]+'</h4><p>'+it[1]+'</p></div></div>';
+  }).join("");
+}
+function setMode(k){
+  dot.className="dot"+(k==="memorize"?" live":k==="recall"?" recall":"");
+  modelabel.textContent = k==="memorize"?"Memorizando":k==="recall"?"Tu turno":k==="result"?"Resultado":"Listo";
+}
+
+/* ─────────── fase: countdown ─────────── */
+function start(len, sameWord){
+  S.gen++; var g=S.gen;
+  S.len = len||S.len;
+  S.word = sameWord || pick(BANK[S.len]);
+  S.ans = new Array(S.word.length).fill("");
+  S.cur = 0; S.phase="countdown";
+  setRail("memorize"); setMode("idle");
+  barlabel.textContent="Preparate"; barright.textContent=""; fill.style.width="0%"; fill.className="fill";
+
+  var n=3;
+  (function tick(){
+    if(g!==S.gen) return;
+    if(n===0){ memorize(g); return; }
+    stage.innerHTML='<div class="eyebrow">Palabra rápida · '+S.word.length+' letras</div><div class="cd">'+n+'</div>'+
+                    '<div class="sub">Vas a ver '+S.word.length+' letras, una por una.</div>';
+    n--; setTimeout(tick,520);
+  })();
+}
+
+/* ─────────── fase: memorización ─────────── */
+function slotsHTML(cls){
+  var h='<div class="slots">';
+  for(var i=0;i<S.word.length;i++) h+='<div class="slot" data-i="'+i+'"><span class="ghost"></span></div>';
+  return h+"</div>";
+}
+function memorize(g){
+  S.phase="memorize"; setMode("memorize"); setRail("memorize");
+  barlabel.textContent="Secuencia";
+  stage.innerHTML='<div class="eyebrow">Palabra rápida · Fácil</div>'+
+    '<div class="title">Memorizá las letras</div>'+
+    '<div class="sub">Guardá el orden. Después las escribís.</div>'+
+    slotsHTML()+
+    '<div class="counter">Letra <b id="ci">1</b> de <b>'+S.word.length+'</b></div>';
+  var slots=stage.querySelectorAll(".slot");
+  var T=TIMING[S.tempo];
+
+  (function step(i){
+    if(g!==S.gen) return;
+    if(i>=S.word.length){ setTimeout(function(){ if(g===S.gen) recall(g) },320); return; }
+    $("ci").textContent=i+1;
+    barright.textContent=(i+1)+" / "+S.word.length;
+    fill.style.width=((i+1)/S.word.length*100)+"%";
+    for(var j=0;j<slots.length;j++){
+      slots[j].className="slot"+(j<i?" done":j===i?" active":"");
+      slots[j].innerHTML = j<i ? '<span class="ghost"></span>' : (j===i
+        ? '<span class="ch">'+esc(S.word[i])+'</span><span class="beat"><i></i></span>'
+        : '<span class="ghost"></span>');
+    }
+    var bi=slots[i].querySelector(".beat i");
+    if(bi){ bi.animate([{transform:"scaleX(1)"},{transform:"scaleX(0)"}],{duration:T.show,easing:"linear",fill:"forwards"}) }
+    setTimeout(function(){
+      if(g!==S.gen) return;
+      slots[i].className="slot done"; slots[i].innerHTML='<span class="ghost"></span>';
+      setTimeout(function(){ step(i+1) }, T.gap);
+    }, T.show);
+  })(0);
+}
+
+/* ─────────── fase: escritura ─────────── */
+var recallTimer=null;
+function recall(g){
+  S.phase="recall"; setMode("recall"); setRail("recall");
+  S.cur=0; S.t0=Date.now();
+  barlabel.textContent="Tiempo restante";
+  fill.className="fill recall"; fill.style.width="100%";
+  stage.innerHTML='<div class="eyebrow v">Tu turno</div>'+
+    '<div class="title">Escribí la secuencia</div>'+
+    '<div class="sub">Enter para confirmar · Backspace para corregir</div>'+
+    slotsHTML()+
+    '<div class="counter">Podés confirmar incompleta — se puntúa lo que esté en posición.</div>';
+  paint();
+  try{ sink.value=""; sink.focus({preventScroll:true}); }catch(e){}
+  var end=Date.now()+RECALL_MS;
+  clearInterval(recallTimer);
+  recallTimer=setInterval(function(){
+    if(g!==S.gen||S.phase!=="recall"){ clearInterval(recallTimer); return }
+    var left=Math.max(0,end-Date.now());
+    fill.style.width=(left/RECALL_MS*100)+"%";
+    fill.className="fill recall"+(left<5000?" warn":"");
+    barright.textContent=(left/1000).toFixed(1)+"s";
+    if(left<=0){ clearInterval(recallTimer); submit(g) }
+  },50);
+}
+function paint(){
+  var slots=stage.querySelectorAll(".slot"); if(!slots.length) return;
+  for(var i=0;i<slots.length;i++){
+    var v=S.ans[i];
+    slots[i].className="slot"+(v?" typed":"")+(i===S.cur?" caret"+(v?" filled":""):"");
+    slots[i].innerHTML = v?'<span class="ch">'+esc(v)+'</span>':'<span class="ghost"></span>';
+  }
+}
+function type(ch){
+  if(S.phase!=="recall") return;
+  if(S.cur>=S.word.length) return;
+  S.ans[S.cur]=ch.toUpperCase();
+  S.cur=Math.min(S.cur+1,S.word.length);
+  paint();
+}
+function back(){
+  if(S.phase!=="recall") return;
+  if(S.ans[S.cur]){ S.ans[S.cur]="" } else if(S.cur>0){ S.cur--; S.ans[S.cur]="" }
+  paint();
+}
+
+/* ─────────── fase: resultado ─────────── */
+function grade(){
+  var st=[],hits=0,pool=S.word.split("");
+  for(var i=0;i<S.word.length;i++) if(S.ans[i]===S.word[i]){st[i]="hit";hits++;pool[i]=null}
+  for(var j=0;j<S.word.length;j++){
+    if(st[j]) continue;
+    var a=S.ans[j];
+    if(!a){ st[j]="miss"; continue }
+    var k=pool.indexOf(a);
+    if(k>-1){ st[j]="moved"; pool[k]=null } else { st[j]="miss" }
+  }
+  return {st:st,hits:hits};
+}
+function submit(g){
+  clearInterval(recallTimer);
+  if(g!==undefined && g!==S.gen) return;
+  S.elapsed=(Date.now()-S.t0)/1000;
+  S.phase="result"; setMode("result"); setRail("result");
+  var r=grade();
+  var prevBest=S.best;
+  S.streak = r.hits===S.word.length ? S.streak+1 : 0;
+  if(r.hits>S.best) S.best=r.hits;
+  fill.className="fill"; fill.style.width="100%";
+  barlabel.textContent="Intento terminado"; barright.textContent="";
+  stage.innerHTML=resultHTML(r.hits,r.st,S.word,S.ans,S.elapsed,prevBest,S.streak);
+  wireResult();
+}
+
+function resultHTML(hits,st,word,ans,secs,best,streak){
+  var n=word.length, ratio=hits/n;
+  var tier = ratio>=.8?"hi":ratio>=.4?"mid":"lo";
+  var head, verdict;
+  if(ratio===1){ head="Secuencia completa"; verdict="Las "+n+" letras en su lugar. Subir una letra te va a costar más de lo que parece."; }
+  else if(ratio>=.8){ head="Casi entera"; verdict="Te faltó "+(n-hits)+". Mirá abajo dónde se corrió el orden."; }
+  else if(ratio>=.4){ head="Vas por la mitad"; verdict="Retuviste el arranque. La cola de la secuencia es donde se cae casi siempre."; }
+  else if(hits>0){ head="Se te escaparon varias"; verdict="Con "+n+" letras conviene agrupar de a 3 y 2 en vez de repetir la lista entera."; }
+  else { head="Se fue entera"; verdict="Pasa. La secuencia era <b style=\"color:var(--t1);letter-spacing:.12em\">"+word.split("").join("·")+"</b> — reintentala ahora que la tenés a la vista."; }
+
+  var rowA='<div class="rrow">'+word.split("").map(function(_,i){
+      var v=ans[i];
+      return '<div class="cell '+st[i]+(v?"":" empty")+'">'+esc(v||"·")+'</div>';
+    }).join("")+'</div>';
+  var rowB='<div class="rrow">'+word.split("").map(function(c){
+      return '<div class="cell truth">'+esc(c)+'</div>';
+    }).join("")+'</div>';
+
+  var cmp = hits>best ? '<span class="up">↑ récord nuevo</span>' :
+            hits===best ? 'Igualaste tu récord' :
+            'Tu récord: '+best+' / '+n;
+
+  var ctaPrimary = ratio<.6 ? 'Reintentar esta secuencia' : (ratio===1 ? 'Subir a '+(n+1)+' letras' : 'Nueva palabra');
+  var ctaGhost   = ratio<.6 ? 'Nueva palabra' : 'Reintentar esta secuencia';
+
+  var nudge = ratio===0 && n>4 ?
+    '<div class="nudge">¿La secuencia de '+n+' te está costando? <button id="down">Bajar a '+(n-1)+' letras</button></div>' : '';
+
+  return '<div class="result">'+
+    '<h2>'+head+'</h2><div class="verdict">'+verdict+'</div>'+
+    '<div class="review">'+
+      '<div class="rlbl">Escribiste</div>'+rowA+
+      '<div class="rlbl">La secuencia era</div>'+rowB+
+      '<div class="legend">'+
+        '<span><i class="lg" style="background:#2ee06a"></i>en posición</span>'+
+        '<span><i class="lg" style="background:#f5b544"></i>letra correcta, lugar equivocado</span>'+
+        '<span><i class="lg" style="background:#3a424e"></i>fuera</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="metric '+tier+'">'+
+      '<div class="mlbl">Letras en posición</div>'+
+      '<div class="mval">'+hits+' / '+n+'</div>'+
+      '<div class="mcmp">'+cmp+'</div>'+
+    '</div>'+
+    '<div class="cards">'+
+      '<div class="card"><div class="cv">'+Math.max(best,hits)+' / '+n+'</div><div class="cl">Récord personal</div></div>'+
+      '<div class="card"><div class="cv">'+streak+'</div><div class="cl">Racha perfecta</div></div>'+
+      '<div class="card"><div class="cv">'+secs.toFixed(1)+'s</div><div class="cl">Tiempo de escritura</div></div>'+
+    '</div>'+
+    nudge+
+    '<div class="ctas">'+
+      '<button class="btn ghost" id="alt">'+ctaGhost+'</button>'+
+      '<button class="btn primary" id="main">'+ctaPrimary+' <span class="k">Espacio</span></button>'+
+    '</div>'+
+    '<div class="linkrow">'+
+      '<button class="tlink" id="copy">⧉ Copiar resultado</button>'+
+      '<button class="tlink">Ver tu perfil →</button>'+
+    '</div>'+
+    '<div class="disclaimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'+
+      '<span>Resultado ilustrativo. El motor de quiz sigue en construcción — este número no reemplaza un test cognitivo validado.</span></div>'+
+  '</div>';
+}
+
+function wireResult(){
+  var n=S.word.length, ratio=grade().hits/n;
+  var main=$("main"), alt=$("alt"), copy=$("copy"), down=$("down");
+  var again = function(){ start(n, null) };
+  var retry = function(){ start(n, S.word) };
+  var up    = function(){ start(Math.min(6,n+1), null) };
+  if(main) main.onclick = ratio<.6 ? retry : (ratio===1 ? up : again);
+  if(alt)  alt.onclick  = ratio<.6 ? again : retry;
+  if(down) down.onclick = function(){ start(Math.max(4,n-1), null) };
+  if(copy) copy.onclick = function(){
+    var t="IQ Pulse · Palabra Rápida — "+grade().hits+"/"+n+" letras en posición ("+S.elapsed.toFixed(1)+"s)";
+    if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){toast("Copiado")},function(){toast(t)});
+    else toast("Copiado");
+  };
+}
+
+/* ─────────── saltos de estado ─────────── */
+function jump(hits){
+  S.gen++; clearInterval(recallTimer);
+  S.len=5; S.word="PULSO"; S.elapsed=6.4; S.best=4; S.streak= hits===5?3:0;
+  var scripted={0:["","","","",""],3:["P","U","L","O","S"],5:["P","U","L","S","O"]};
+  S.ans=scripted[hits].slice();
+  S.phase="result"; setMode("result"); setRail("result");
+  fill.className="fill"; fill.style.width="100%";
+  barlabel.textContent="Intento terminado"; barright.textContent="";
+  var r=grade();
+  stage.innerHTML=resultHTML(r.hits,r.st,S.word,S.ans,S.elapsed,S.best,S.streak);
+  wireResult();
+  if(hits===0) renderMini();
+}
+
+/* mini versión para el bloque comparativo */
+function renderMini(){}
+
+/* ─────────── teclado ─────────── */
+document.addEventListener("keydown",function(e){
+  if(S.phase==="recall"){
+    if(/^[a-zA-ZñÑáéíóúÁÉÍÓÚ]$/.test(e.key)){ e.preventDefault(); type(e.key); return }
+    if(e.key==="Backspace"){ e.preventDefault(); back(); return }
+    if(e.key==="ArrowLeft"){ e.preventDefault(); S.cur=Math.max(0,S.cur-1); paint(); return }
+    if(e.key==="ArrowRight"){ e.preventDefault(); S.cur=Math.min(S.word.length-1,S.cur+1); paint(); return }
+    if(e.key==="Enter"){ e.preventDefault(); submit(S.gen); return }
+  }
+  if(S.phase==="result" && e.code==="Space" && e.target.tagName!=="BUTTON"){ e.preventDefault(); var m=$("main"); if(m) m.click() }
+});
+sink.addEventListener("input",function(){
+  var v=sink.value; sink.value="";
+  for(var i=0;i<v.length;i++) if(/[a-zA-ZñÑ]/.test(v[i])) type(v[i]);
+});
+stage.addEventListener("click",function(e){
+  var s=e.target.closest(".slot");
+  if(s && S.phase==="recall"){ S.cur=+s.dataset.i; paint(); try{sink.focus({preventScroll:true})}catch(err){} }
+});
+
+/* ─────────── toolbar ─────────── */
+var tbtns=[["b-play",function(){start(5,null)}],["b-r0",function(){jump(0)}],["b-r3",function(){jump(3)}],["b-r5",function(){jump(5)}]];
+tbtns.forEach(function(p){
+  $(p[0]).onclick=function(){
+    document.querySelectorAll(".toolbar .tbtn").forEach(function(b){ if(b.id!=="b-slow") b.classList.remove("on") });
+    this.classList.add("on"); p[1]();
+  };
+});
+$("b-slow").onclick=function(){
+  S.tempo = S.tempo==="fast"?"slow":"fast";
+  this.classList.toggle("on", S.tempo==="slow");
+  this.textContent = S.tempo==="slow" ? "Ritmo lento ✓" : "Ritmo lento";
+};
+
+/* ─────────── bloque comparativo (estático, 0/5) ─────────── */
+(function mini(){
+  var word="PULSO", ans=["","","","",""], st=["miss","miss","miss","miss","miss"];
+  var html=resultHTML(0,st,word,ans,41,3,0);
+  var el=$("mininew");
+  el.innerHTML='<div style="transform:scale(.86);transform-origin:top center;width:100%">'+html+'</div>';
+  el.querySelectorAll("button").forEach(function(b){ b.style.cursor="default"; b.removeAttribute("id") });
+})();
+
+/* arranque */
+setRail("idle");
+stage.innerHTML='<div class="eyebrow">Palabra rápida</div><div class="title">Prototipo listo</div>'+
+  '<div class="sub">Tocá <b style="color:var(--t1)">Jugar el ciclo completo</b> arriba, o saltá a un resultado.<br>Durante la escritura usá el teclado.</div>';
+})();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-TERMINAL 3 - JUEGOS DE VELOCIDAD RESTANTES - IQ.PULSE
+TERMINAL 3 - JUEGOS DE VELOCIDAD - IQ.PULSE
 =========================================================
 Reglas generales del proyecto y de las 5 terminales: ver CLAUDE.md,
 seccion "Trabajo en Paralelo (5 Terminales)". Este archivo es SOLO lo
@@ -8,35 +8,186 @@ Rama: feat/speed-results
 Setup (una sola vez, desde D:\Paginaminijuegos):
   git worktree add ../iqpulse-speed -b feat/speed-results
 
+Terminal 5 ya mergeo su refactor a master - no hay que esperar nada.
+Sincronizar con master antes de seguir (git merge master --ff-only): trae
+el fix del badge de resultado que siempre salia verde. Ya tenias trabajo
+sin commitear en practiceResults.ts (el CardConfig kind "accuracy" para
+Stroop/Comparacion) - eso sigue siendo la base, esta seccion la extiende.
 
-TU TAREA
-------------
-Juegos: Stroop, Comparacion rapida. (Reaccion YA esta hecho - no tocar.)
 
-Mismo tratamiento que Reaccion (ya sirve de referencia exacta: card
-principal con glow, grid de stats, record personal). Diferencia: Stroop y
-Comparacion rapida usan precision como metrica principal (no es opcional
-como en Reaccion), asi que el layout final se va a parecer mas al branch
-"accuracy" que ya existe en QuizPage.tsx que al de Reaccion.
+==================================================
+JUEGO 1 - STROOP (StroopGame.tsx)
+==================================================
+Referencia completa: terminales/reference/stroop-rediseno.html - SOLO
+para comportamiento/timing, no para arquitectura ni paleta (ver abajo
+por que).
 
-Nota sobre animaciones: Reaccion corre SIN animacion de entrada por
-pedido explicito (ver el comentario en QuizPage.tsx junto a
-`activeGame.id === "reactionCircle"`). Stroop y Comparacion rapida NO
-tienen ese pedido - mantienen la animacion normal salvo que se confirme
-lo contrario.
+PALETA: se mantiene la actual, no se toca
+--------------------------------------------
+El codigo actual usa 8 colores con turquesa en vez de verde, a proposito
+(comentario explicito en StroopGame.tsx sobre por que se evita el par
+rojo/verde clasico de confusion en daltonismo). El mockup de referencia
+usa 6 colores que reintroducen rojo+verde juntos en "Dificil" - NO
+adoptar esa paleta, deshace una decision de accesibilidad ya tomada.
+Todo lo demas del spec se aplica sobre la paleta que ya existe.
+
+BOTONES DE RESPUESTA: solo color, sin texto ni punto
+---------------------------------------------------------
+El bug original nunca fue "tiene color", fue "tiene nombre Y color
+redundantes" (el punto de color al lado del nombre deja resolver por
+matching visual directo sin leer la tinta). Sacando el texto entero no
+queda ningun atajo que resolver - hay que mirar la tinta y tocar el
+color que coincide. aria-label con el nombre del color en cada boton,
+para lectores de pantalla.
+
+MEDICION DEL RT - mejora sobre lo que ya existe
+----------------------------------------------------
+- Doble requestAnimationFrame para tomar el timestamp recien despues del
+  pintado real - mismo principio que ya usa ReactionCircleGame.tsx.
+- Usar event.timeStamp del evento de puntero en vez de llamar a now()
+  dentro del handler - mas preciso, refleja cuando el navegador recibio
+  el toque, no cuando React llego a ejecutar el codigo. (Aplicar tambien
+  a ReactionCircleGame.tsx por consistencia si hay tiempo, no es
+  bloqueante para Stroop.)
+- Bloquear respuestas mientras corre la cruz de fijacion y mientras se
+  muestra el feedback - sin esto se registran tiempos falsos.
+
+CRUZ DE FIJACION con jitter (300-500ms antes de cada estimulo, aleatorio
+dentro del rango) - para que el intervalo no sea predecible y el jugador
+no entre en un ritmo de anticipacion.
+
+POSICIONES DE RESPUESTA FIJAS durante toda la sesion de 30s, no
+rebarajadas en cada pregunta como hoy - rebarajar convierte parte de la
+tarea en busqueda visual y contamina el tiempo que se supone mide
+interferencia, no busqueda.
+
+COSTO STROOP como metrica nueva (tiempo medio en respuestas
+incongruentes menos tiempo medio en congruentes), calculado en el
+momento con los datos de la sesion actual, SIN persistir nada nuevo en
+Supabase - si no hay al menos un acierto de cada tipo, mostrar "-" en
+vez de inventar el numero.
+
+Arquitectura: se queda donde esta. StroopGame.tsx + practiceResults.ts -
+NO crear carpeta features/, NO sumar Zustand (no se usa en ningun otro
+juego del proyecto hoy, seria el primer caso).
+
+Fuera de alcance explicito: migracion de Supabase para historial
+persistente por intento - queda para cuando se decida construir esa
+feature de verdad (terminales/futuro/).
+
+
+==================================================
+JUEGO 2 - REACCION (ReactionCircleGame.tsx)
+==================================================
+Referencia completa: terminales/reference/reaccion-rediseno.html.
+
+YA IMPLEMENTADO ESTA SESION - NO TOCAR:
+doble requestAnimationFrame para el timestamp post-pintado, onPointerDown
+como handler primario, sin transicion CSS en el cambio de color del
+disco, tres valores separados (promedio/mejor toque/record) para evitar
+la confusion de "promedio = mejor toque". Todo esto ya esta en el
+archivo real.
+
+Esto es trabajo NUEVO sobre la pantalla de juego (la de resultado ya
+esta terminada y no se toca):
+
+Animaciones - decidido:
+- Anillo que respira alrededor del circulo mientras esta en espera
+  (antes de que aparezca el verde) - permitido, no toca el estimulo.
+- Onda/halo expansivo - dispara SOLO cuando se toca el verde (respuesta
+  ya registrada), NUNCA en el instante en que aparece el estimulo.
+- El salto de color del disco a verde sigue siendo instantaneo, sin
+  transicion, siempre - no negociable.
+
+Nuevo, sin conflictos:
+- Piso de 100ms: un toque mas rapido que eso se marca "Anticipado" y no
+  entra al promedio - distincion que hoy no existe (solo se distingue
+  toque-antes-del-verde como falso arranque).
+- Espera con distribucion exponencial truncada en vez de uniforme, para
+  que no se pueda aprender a anticipar el final de la ventana:
+    const lambda = 1/1400;
+    const t = -Math.log(1 - Math.random()) / lambda;
+    const wait = 1200 + Math.min(t, 3600); // 1200-4800ms
+- Toda el area de juego acepta el toque, no solo el circulo - separa
+  reaccion de punteria (ley de Fitts).
+- Punto de fijacion estatico en el centro del circulo en espera (sin
+  animacion).
+- Ocultar/atenuar el cronometro y la barra compartidos durante el
+  ensayo activo - mismo pedido cruzado que Stroop/Rafaga/Retencion de
+  Digitos, va a la cola del header centralizado, no es exclusivo de
+  este juego.
+- Barra de las rondas individuales en el resultado (una barra por
+  toque, la mejor en verde) - visualizacion nueva, no reemplaza nada
+  del sistema de tarjetas actual.
+
+Pendiente de decidir, NO asumido: el mockup fija Reaccion en 5 rondas
+exactas. Hoy corre en el motor compartido normal (hasta 10 preguntas en
+30s, sin cantidad fija) - a diferencia de Memoria Espacial y Retencion
+de Digitos, Reaccion nunca se independizo de ese motor. Fijarlo en 5
+rondas seria una decision de producto nueva - confirmar con la madre
+antes de implementarlo, no darlo por hecho.
+
+
+==================================================
+JUEGO 3 - COMPARACION RAPIDA (QuickCompareGame.tsx)
+==================================================
+IMPORTANTE - LEER ANTES DE TOCAR NADA:
+El usuario ya reescribio a mano la logica de dificultad de este juego
+(generateTrial, la tabla TIERS con ratios fijos por nivel) para arreglar
+un problema de puntos desbordando y ratios ilegibles en dificultad alta.
+ESA LOGICA NO SE TOCA - ni el generador de puntos, ni la tabla TIERS, ni
+dotPositions(). Es trabajo del usuario en curso, no de esta terminal.
+
+Lo unico en alcance es la PANTALLA DE RESULTADO (vive en
+practiceResults.ts como CardConfig, no en QuickCompareGame.tsx):
+
+Bloque principal:
+- Titulo: PRECISION
+- Numero gigante: 80%
+- Subtexto: "16 de 20 aciertos (Tu mejor marca: 90%)"
+
+Tarjetas inferiores:
+- record: FRACCION CRUDA, no % (ej. "18/20", no "90%") - para que se
+  entienda sin traducir.
+- velocidad promedio.
+
+Badge de record (arriba del bloque principal, cuando aplica):
+- nuevo record, o "A solo 2 aciertos de tu record (90%)" si esta cerca
+  sin superarlo.
+
+Botones y disclaimer: mismo patron ya establecido en el resto de los
+juegos.
+
+Nota tecnica: hoy el sistema solo guarda el % de precision, no el
+conteo crudo (16/20, 18/20) - hay que agregar esos dos numeros (aciertos,
+total) al modelo de datos de PracticeResult para poder mostrarlos. Esto
+es plomeria de conteo en QuizPage.tsx/practiceResults.ts, NO toca
+generateTrial ni la logica de dificultad del usuario.
+
+
+==================================================
+REGLA GENERAL DE FORMATO (compartida con Terminal 2)
+==================================================
+Si el valor de tiempo supera 1000ms, mostrar en segundos con un decimal
+(1.2 s); si no, ms enteros (954 ms). Funcion compartida formatMs() en
+lib/timing.ts - si Terminal 2 ya la agrego, reusarla, no duplicarla.
 
 
 ARCHIVOS
 ------------
 Propios (sin conflicto con otras terminales):
   components/jugar/games/StroopGame.tsx
-  components/jugar/games/QuickCompareGame.tsx
+  components/jugar/games/ReactionCircleGame.tsx
 
-Compartido - NO TOCAR hasta que Terminal 5 confirme que mergeo su
-refactor a master (ver "Orden" en CLAUDE.md):
-  components/jugar/QuizPage.tsx (solo la parte de resultados de estos 2
-  juegos, nada mas de ese archivo)
+Propio con restriccion - SOLO la parte de resultado, no el generador:
+  components/jugar/games/QuickCompareGame.tsx (no tocar generateTrial,
+  dotPositions, TIERS - es trabajo del usuario en curso)
 
-NO tocar: ReactionCircleGame.tsx ni la logica ya armada para Reaccion,
-RecordConfetti.tsx, StatCard.tsx (son de Terminal 5 - si te faltan,
-pediselos, no los reimplementes).
+Compartido - coordinar con la madre antes de tocar:
+  components/jugar/practiceResults.ts (extender el CardConfig
+  "accuracy" que ya empezaste, o declarar uno nuevo si Comparacion lo
+  necesita distinto)
+  lib/timing.ts (formatMs() si no existe todavia)
+
+NO tocar: juegos de otros dominios, RecordConfetti.tsx, StatCard.tsx (son
+de Terminal 5 - si te faltan, pediselos, no los reimplementes).

@@ -8,17 +8,273 @@ Rama: feat/memory-results
 Setup (una sola vez, desde D:\Paginaminijuegos):
   git worktree add ../iqpulse-memory -b feat/memory-results
 
+Terminal 5 ya mergeo su refactor a master - no hay que esperar nada,
+arrancar directo. Sincronizar con master antes de empezar
+(git merge master --ff-only): trae el fix del flash de letras/digitos/
+palabras (ya no usa animacion, aparecen y desaparecen instantaneo) y el
+fix del badge de resultado que siempre salia verde.
 
-TU TAREA
-------------
-Juegos: Retencion de digitos, Rafaga de palabras, Memoria espacial,
-Palabra rapida.
+Sos la terminal que mas juegos toca (4) - commitea por juego a medida
+que lo termines, no los 4 juntos al final, asi lint/typecheck se corren
+seguido y no se acumula un diff gigante para revisar.
 
-Mismo tratamiento visual que Reaccion (card principal con glow segun
-rendimiento + grid de stats chicas), adaptado a memoria: probablemente
-precision como metrica principal + la secuencia/nivel mas largo alcanzado
-como "record" (en vez de mejor toque en ms, que es especifico de
-Reaccion).
+
+==================================================
+JUEGO 1 - RETENCION DE DIGITOS (DigitSpanGame.tsx)
+==================================================
+Se independiza del motor compartido: pasa a manejar su propio ciclo
+completo (reloj propio, vidas propias, escalera de niveles propia) en
+vez de ser "una pregunta mas" de QuizPage.tsx - mismo tratamiento que
+Memoria Espacial, ver esa seccion mas abajo para el patron completo de
+integracion (level se lee una sola vez al arrancar, se suma a la lista
+de excepcion de escalada global junto a Reaccion y Memoria Espacial,
+onAnswer se llama una sola vez al terminar toda la corrida).
+
+Progresion:
+  nivel n -> digitos = inicio + n (arranca en 3 facil / 4 medio / 5 dificil)
+- 2 intentos por nivel: el primer fallo repite el mismo nivel con
+  secuencia nueva; el segundo termina la partida.
+- Reloj de recall (~20s facil, mas corto en dificultades altas) - NO
+  visible durante la fase de memorizar, solo mientras se escribe.
+
+Pantalla de memorizacion:
+- Digito grande centrado con halo pulsante, duracion ligada a la config
+  de dificultad (no fija).
+- Fila de pips marcando posicion dentro de la secuencia
+  (activo/visto/pendiente) - hoy no existe ningun indicador de en que
+  parte de la secuencia vas.
+- Progreso por segmentos de nivel (uno por nivel de la escalera), no una
+  barra continua.
+
+Pantalla de recall:
+- CASILLEROS VISIBLES DESDE EL ARRANQUE, uno por digito esperado - mismo
+  patron que Palabra Rapida (ver mas abajo). Hoy el campo de entrada es
+  una caja que crece sin mostrar cuantos digitos hacen falta de
+  antemano.
+- Teclado numerico en pantalla + soporte completo de teclado fisico
+  (0-9, Backspace, Enter).
+- Boton de confirmar deshabilitado hasta completar todos los digitos,
+  con estado "listo" visualmente distinto al deshabilitado.
+- El veredicto por ronda YA muestra la secuencia correcta cuando fallas
+  (esto ya existe en el codigo, no es nuevo) - solo mejorar la
+  presentacion: mostrar secuencia correcta vs. lo que se escribio, lado
+  a lado.
+
+Resultado:
+- Numero grande: SPAN MAXIMO alcanzado (digitos), nunca precision ni 0%
+  pelado - si fallo en el primer nivel, mostrar el span intentado con
+  nota aclaratoria en vez de un cero.
+- Recuadro verde solo con record nuevo, azul el resto - reusar el
+  sistema de tiers existente.
+- Tres tiles: niveles superados, precision (%), tiempo total.
+- Escalera de niveles jugados (barras, verde superado / rojo donde se
+  trabo) - mismo concepto que la escalera de Memoria Espacial.
+
+
+==================================================
+JUEGO 2 - MEMORIA ESPACIAL (SpatialMemoryGame.tsx)
+==================================================
+Se independiza del motor compartido de QuizPage.tsx (nivel/dificultad/
+30s globales) - reloj propio, vidas propias, escalera de niveles propia.
+
+Integracion con el motor compartido:
+- El `level` que llega desde afuera se usa UNA SOLA VEZ, al arrancar,
+  solo para elegir el multiplicador de dificultad (facil/medio/
+  dificil/extremo - mapear los 4 tiers reales, no 3). No se vuelve a
+  leer durante la corrida.
+- Se suma a la lista de excepcion que ya tiene Reaccion en QuizPage.tsx
+  (`if (gameId !== "reactionCircle")`) para que el motor NO intente
+  escalar su nivel global - aca la escalera la maneja el juego solo.
+- Llama a onAnswer(...) UNA SOLA VEZ, cuando termina la corrida completa
+  (segunda vida perdida, o se acaba el reloj propio con bonus). Como esa
+  corrida ya dura >=30s en la mayoria de los casos, el reloj compartido
+  de la practica ya esta vencido para cuando eso pasa, asi que la sesion
+  termina ahi sola - EXCEPTO si el jugador pierde rapidisimo (dos
+  fallos casi de entrada): ahi el motor compartido podria arrancar una
+  segunda corrida completa dentro de la misma practica. Es un caso
+  borde aceptado, no bloqueante.
+- practiceResults.ts necesita un tipo de tarjeta nuevo (`span`, no
+  `accuracy` ni `reactionMs`) - el dato principal ya no es % ni ms, es
+  "hasta que nivel llegaste". Compartir este CardConfig kind con
+  Retencion de Digitos, no duplicarlo.
+
+Progresion (mas rapida y con mas cuadros que hoy):
+  nivel n -> casillas = n + 2
+  size = 3x3 hasta 4 casillas, 4x4 hasta 7, 5x5 hasta 10, 6x6 de ahi en mas
+  exposicion ~= (700 + casillas x 160) x multiplicador de dificultad
+- 1 VIDA: el primer fallo repite el mismo nivel con patron nuevo; el
+  segundo termina la partida.
+- +4s de bonus por nivel superado, sin tope fijo - el jugador llega tan
+  lejos como su memoria de.
+- Densidad de casillas encendidas entre 31%-44% (por debajo se lee como
+  ruido disperso, por encima como "casi todo lleno").
+
+Pantalla de juego:
+- Layout centrado en viewports altos, mismo patron que Palabra Rapida
+  (min(100dvh, 780px)).
+- Header: volver + timer (con +4s que aparece y se desvanece al superar
+  nivel) + barra + eyebrow/dificultad en una linea + "Nivel N . X
+  casillas" + chip de vida.
+- TABLERO DE HUELLA FIJA: siempre min(300px, 100vw-56px), nunca cambia
+  de tamano ni posicion entre 3x3 y 6x6 - solo se achican celda y gap.
+  Es el ancla visual del juego; si se mueve, el jugador pierde el mapa
+  mental.
+- Anillo de exposicion alrededor del tablero (mismo recurso que el
+  anillo de Palabra Rapida), se vacia durante el tiempo de mirar el
+  patron.
+- Patron entra escalonado (una celda cada ~30ms); el cronometro de
+  exposicion arranca recien cuando termino de aparecer completo.
+- Fase de marcado: tocar marca/desmarca, tope duro en N marcadas,
+  contador de puntitos debajo (mismo rol que los casilleros de letras).
+- FEEDBACK DE 3 ESTADOS, no 2: acierto (verde relleno), error (rojo
+  relleno), y FALTANTE (borde punteado azul, sin relleno) - la que
+  estaba y no se marco. El tercero es el que falta hoy y es el que
+  enseña.
+
+Resultado:
+- Numero grande: el SPAN alcanzado (ultima cantidad de casillas
+  superada), no %.
+- "Tu mejor marca: X casillas" o "Nuevo record".
+- Recuadro verde solo con record nuevo, azul el resto.
+- Escalera de niveles (chips 3 a 12: verde superado, rojo donde se
+  trabo, apagado el resto) en vez de puntitos - aca importa hasta donde
+  llego, no cuantos acerto.
+- Dos tarjetas: record (casillas) + velocidad promedio por patron.
+- Plegable con nivel, casillas, tamano de grilla y tiempo de cada ronda.
+
+Higiene tecnica (aplica a Retencion de Digitos tambien, mismo patron):
+- Token de partida (contador que se incrementa al arrancar) que invalida
+  timers de la corrida anterior al salir a mitad de ronda.
+- getTotalLength() del anillo SVG puede tirar excepcion si no esta
+  renderizado - chequear clientWidth antes y envolver en try/catch.
+
+
+==================================================
+JUEGO 3 - PALABRA RAPIDA (WordTypingGame.tsx)
+==================================================
+NO se independiza del motor compartido - sigue siendo una pregunta mas
+del ciclo normal de QuizPage.tsx.
+
+FASE 1 - el juego en si:
+- CASILLEROS VISIBLES DESDE EL ARRANQUE, uno por letra de la palabra -
+  se sabe cuantas letras vienen antes de empezar a memorizar.
+- Los casilleros son el input real: un unico <input> invisible
+  posicionado sobre ellos captura el teclado (y levanta el teclado en
+  mobile); los casilleros solo reflejan su valor. Mismo nivel de
+  complejidad que ya tiene DigitSpanGame con su input propio.
+- Hueco (~140ms) entre cada letra mostrada, INCLUSO si se repite - sin
+  esto, dos letras iguales seguidas (ej. la doble L de "LLAMA") se leen
+  como una sola. (El flash ya se saco de toda animacion esta sesion -
+  este hueco es aparte, especifico para distinguir letras repetidas.)
+- Anillo de cadencia alrededor de la letra: se vacia durante el tiempo
+  que esa letra esta en pantalla.
+- Al pasar a escribir, el anillo se retira (opacidad baja, achica) y el
+  foco visual pasa a los casilleros.
+- Velocidad por dificultad, 4 tiers reales: Facil 700ms . Medio 480ms .
+  Dificil 320ms . Extremo 220ms (el piso que ya existe en el codigo,
+  MIN_LETTER_INTERVAL_MS).
+
+Resultado (fase 1):
+- Numero grande: aciertos/total (ej. 6/10), no porcentaje.
+- "Tu mejor marca: X/10" o "Nuevo record".
+- Reusa el mismo sistema de tarjeta con glow que ya tiene Stroop/
+  Comparacion (record/great/good/neutral).
+- Dos tarjetas: record + velocidad promedio (segundos si supera 1000ms,
+  ver regla general mas abajo).
+- Botones y disclaimer: mismo patron ya establecido.
+
+FASE 2 - repaso de la ronda (solo se muestra cuando fallo):
+Decision de puntaje CERRADA: el desglose letra por letra es SOLO
+visual/diagnostico. La ronda sigue siendo todo-o-nada - cuenta como
+acierto unicamente con la palabra exacta. La grilla no cambia el
+puntaje, explica por que fallo.
+- Dos filas alineadas letra por letra: lo que se escribio vs. la palabra
+  real. Tres estados: correcta en su lugar (exito), letra correcta,
+  lugar equivocado (warn), no estaba (tachada, neutro).
+- Algoritmo de dos pasadas con consumo (estilo Wordle) para que una
+  letra repetida no se marque "en otro lugar" mas veces de las que
+  corresponde:
+    function grade(word, typed) {
+      const st = [], pool = word.split("");
+      let hits = 0;
+      for (let i = 0; i < word.length; i++)
+        if (typed[i] === word[i]) { st[i] = "hit"; hits++; pool[i] = null; }
+      for (let j = 0; j < word.length; j++) {
+        if (st[j]) continue;
+        if (!typed[j]) { st[j] = "miss"; continue; }
+        const k = pool.indexOf(typed[j]);
+        if (k > -1) { st[j] = "moved"; pool[k] = null; } else { st[j] = "miss"; }
+      }
+      return { st, hits };
+    }
+- Cuenta regresiva 3-2-1 antes de que aparezca la primera letra.
+- CTA adaptativo segun el resultado de la ronda: <60% aciertos -> primario
+  "Reintentar esta palabra"; 60-99% -> primario "Nueva palabra"; 100% ->
+  primario "Subir de dificultad".
+- Nueva tarjeta de racha perfecta (rondas consecutivas acertadas
+  completas) - requiere un contador nuevo, no existe hoy.
+- Nudge opcional cuando falla con 0 aciertos y la palabra tiene mas de 4
+  letras: chip chico ofreciendo bajar de dificultad para esa sesion.
+
+
+==================================================
+JUEGO 4 - RAFAGA DE PALABRAS (WordBurstGame.tsx)
+==================================================
+Decision de puntaje CERRADA (igual criterio que Palabra Rapida): la
+ronda sigue siendo todo-o-nada (acertas solo si marcaste el set exacto
+completo). La revision de palabras es solo visual, no cambia si "ganaste"
+la ronda.
+
+Gap real, confirmado en el codigo: hoy una palabra que FALTO marcar
+(estaba en la rafaga, no se toco) se pinta EXACTAMENTE IGUAL de verde
+que una que si se acerto - no hay forma de distinguirlas hoy.
+
+FIX - revision con 3 estados en vez de 2:
+- Acertada -> verde.
+- Se te escapo (estaba, no la marcaste) -> AMBAR punteado + tag "ESTABA".
+- Falso positivo (la marcaste, no estaba) -> rojo tachado.
+- Descarte correcto (ni se mostro ni se marco) -> gris, sin cambios.
+
+Otros cambios de la pantalla de juego:
+- Centrado real (justify-content:center), no arriba con vacio abajo.
+- Palabra a clamp(46px, 9.5vw, 74px) - hoy es chica para ser el unico
+  contenido de la pantalla.
+- Fila de "beats" (una por palabra de la rafaga): pendiente tenue, vista
+  mas clara, actual ensanchada con glow - para saber cuantas vienen y en
+  cual vas. Debajo, "2 de 6".
+- Un solo indicador de tiempo: barra full-bleed arriba; el numero solo
+  aparece bajo 5s, en warn.
+- Header colapsado: categoria + dificultad en una linea.
+
+Pantalla de recall:
+- Grilla 2 columnas, targets de 62px (hoy mas chicos - dificil de tocar
+  con el pulgar sin mirar).
+- Estado seleccionado inequivoco: fondo + borde + check.
+- CTA con contador ("Confirmar . 3"), deshabilitado en 0.
+- FRAME DE FEEDBACK ANTES DE NAVEGAR AL RESULTADO (~1.7s): acertada ->
+  verde; se te escapo -> ambar punteado + tag "ESTABA"; falso positivo
+  -> rojo tachado. Hoy no existe este momento - se confirma y se salta
+  directo al resultado sin aprender nada.
+
+Resultado:
+- Card heroe con el mismo tratamiento que Reaccion: label azul small-caps
+  -> numero grande -> fraccion ("2 de 4 palabras") debajo, no solo el %.
+- Linea de comparacion: "Primera vez que jugas esto" en gris - VERDE
+  SOLO SI ES RECORD REAL O MEJORA, nunca por defecto.
+- Tres tiles: aciertos, falsos positivos (en ambar si >0), tiempo.
+- Fila de revision: chips de cada palabra, coloreados por resultado (los
+  4 estados de arriba).
+- Sacar "tiempo de reaccion promedio" - no aplica a un test de recall;
+  si se conserva la velocidad, llamarla "respuesta".
+
+
+==================================================
+REGLA GENERAL DE FORMATO (aplica a los 4 juegos de arriba)
+==================================================
+Si el valor de tiempo supera 1000ms, mostrar en segundos con un decimal
+(1.2 s); si no, ms enteros (954 ms). Es una funcion compartida nueva
+(algo como formatMs() al lado de formatElapsed en lib/timing.ts) - no
+algo que dependa de cada juego.
 
 
 ARCHIVOS
@@ -29,17 +285,14 @@ Propios (sin conflicto con otras terminales):
   components/jugar/games/SpatialMemoryGame.tsx
   components/jugar/games/WordTypingGame.tsx
 
-Compartido - NO TOCAR hasta que Terminal 5 confirme que mergeo su
-refactor a master (ver "Orden" en CLAUDE.md):
-  components/jugar/QuizPage.tsx (solo la parte de resultados de estos 4
-  juegos, nada mas de ese archivo)
+Compartido - coordinar con la madre antes de tocar:
+  components/jugar/QuizPage.tsx (la lista de excepcion de escalada
+  global para Memoria Espacial y Retencion de Digitos, avisando antes)
+  components/jugar/practiceResults.ts (CardConfig kind "span" nuevo,
+  compartido entre Memoria Espacial y Retencion de Digitos - declararlo
+  una sola vez)
+  lib/timing.ts (formatMs() nueva, compartida con Terminal 1 y 3 si la
+  necesitan)
 
 NO tocar: juegos de otros dominios, RecordConfetti.tsx, StatCard.tsx (son
 de Terminal 5 - si te faltan, pediselos, no los reimplementes).
-
-
-NOTA
---------
-Sos la terminal que mas juegos toca (4) - commiteá por juego a medida que
-lo termines, no los 4 juntos al final, asi lint/typecheck se corren
-seguido y no se acumula un diff gigante para revisar.

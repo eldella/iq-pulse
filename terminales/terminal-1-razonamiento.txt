@@ -10,25 +10,123 @@ Setup (una sola vez, desde D:\Paginaminijuegos):
 
 Terminal 5 ya mergeo su refactor a master (el patron de tarjetas de
 resultados vive en components/jugar/practiceResults.ts) - no hay que
-esperar nada, arrancar directo.
+esperar nada, arrancar directo. Sincronizar con master antes de empezar
+(git merge master --ff-only) para traer el fix reciente del badge que
+siempre salia verde (ver mas abajo, seccion COMPARTIDO).
+
+Matriz de patrones fue eliminada del proyecto - testeaba practicamente lo
+mismo que Secuencia numerica (mismo layout de 4 opciones para adivinar el
+numero que falta). Secuencia numerica paso a ocupar su lugar en el
+assessment completo de 3 dominios.
 
 
-TU TAREA
-------------
-Juegos: Camino optimo, Secuencia numerica.
+==================================================
+JUEGO 1 - CAMINO OPTIMO (PathfinderGame.tsx)
+==================================================
 
-(Matriz de patrones fue eliminada del proyecto - testeaba practicamente
-lo mismo que Secuencia numerica, mismo layout de 4 opciones para adivinar
-el numero que falta. Secuencia numerica paso a ocupar su lugar en el
-assessment completo de 3 dominios.)
+PROBLEMA REAL (verificado en el codigo)
+----------------------------------------
+El generador actual elige el obstaculo de forma casi libre entre las
+celdas interiores, y solo exige "al menos 1 camino valido y al menos 3
+invalidos" - sin verificar que los 3 distractores fallen en pasos
+distintos ni que no compartan un patron detectable a simple vista. Con
+un solo obstaculo asi, es facil que termine pegado a la salida y mate 3
+de las 4 opciones en el primer movimiento - el puzzle se resuelve sin
+mirar el tablero, "la unica que empieza distinto".
 
-Aplicar a estos 2 juegos el mismo tratamiento de tarjetas que ya tiene
-Reaccion en su pantalla de resultados (card principal con glow segun
-rendimiento + grid de stats chicas). Terminal 3 ya armo un tipo de tarjeta
-"accuracy" en practiceResults.ts (record % + tiempo promedio) para
-Stroop/Comparacion rapida - lo mas probable es que razonamiento reuse ese
-mismo tipo en vez de inventar uno nuevo; confirmar con la madre antes de
-declarar un CardConfig distinto.
+FIX - GENERADOR ANTI-ATAJO
+----------------------------------
+No elegir el obstaculo libremente. En cambio:
+
+1. Elegir primero el CONJUNTO de 4 secuencias de opciones (mismo
+   multiconjunto de movimientos, comparten un prefijo minimo, y en
+   ninguna columna de flechas hay una que sea la unica con ese valor -
+   eso es lo que mata el bug de "la unica que empieza distinto").
+2. Verificar que LAS 4 secuencias del conjunto admitan una asignacion de
+   obstaculos que bloquee a las otras tres en pasos DISTINTOS (nunca en
+   el mismo paso), sin tocar el camino de la candidata.
+3. Recien ENTONCES sortear uniformemente cual de las 4 es la correcta.
+   La respuesta se decide despues de fijar el conjunto - asi ninguna
+   propiedad de las opciones (donde empiezan, cuantos giros tienen, que
+   tan distinta es del resto) puede delatarla. Es una garantia por
+   construccion, no una lista de parches.
+4. Cachear los conjuntos validos por (dx, dy, prefijoMinimo) - sin
+   cache, generar un puzzle con estas garantias tarda ~1.6s; con cache,
+   ~7ms.
+
+TEST DE VERIFICACION (obligatorio, no opcional)
+----------------------------------------------------
+Implementar ~15 "jugadores tramposos" que solo miran las 4 opciones sin
+mirar el tablero (el impar de tal columna de flechas, la mas
+zigzagueante, la mas parecida al resto, posicion fija, etc.) y correr
+miles de puzzles generados. Si el generador es correcto, NINGUNO deberia
+superar ~32% de aciertos (25% es azar puro con 4 opciones). Si alguno le
+gana al azar, el generador todavia tiene una fuga - no dar el trabajo
+por terminado hasta que este test pase.
+
+PANTALLA DE JUEGO
+----------------------
+- Sin preview del camino al pasar el mouse por una opcion - el trazado
+  se muestra SOLO despues de responder (mostrar el camino antes seria
+  regalar la respuesta).
+- Opciones siempre barajadas, nunca en orden fijo.
+- Tamano de las flechas escalado segun la longitud de la secuencia (7
+  movimientos vs 8) para que no desborden el chip.
+- Teclado 1-4 para responder, Espacio para jugar de nuevo.
+
+RESULTADO
+-------------
+- Tira de items clickeable (uno por ronda, correcto/fallado) que abre
+  una revision con el tablero, el camino correcto marcado y - si fallo -
+  donde choco la eleccion del jugador.
+- Etiqueta "tiempo por item", NO "tiempo de reaccion" - en un puzzle de
+  razonamiento no es lo mismo, y compararlo contra los ms de Reaccion no
+  tiene sentido.
+- Hero card y tarjetas reusando el sistema existente de tiers
+  (record/great/good/neutral) via practiceResults.ts - no inventar uno
+  aparte. Reusar el mismo CardConfig kind "accuracy" que ya armo
+  Terminal 3 para Stroop/Comparacion (record % + tiempo promedio),
+  agregandole el tercer stat "tiempo por item" si hace falta un
+  CardConfig kind propio - confirmar con la madre antes de declarar uno
+  nuevo.
+
+
+==================================================
+JUEGO 2 - SECUENCIA NUMERICA (NumberSequenceGame.tsx)
+==================================================
+
+PROBLEMA REAL (verificado en el codigo)
+----------------------------------------
+En NumberSequenceGame.tsx, los numeros mostrados (5 . 9 . 13 . ?) y las
+4 opciones de respuesta usan identico tamano, radio, fondo y tipografia.
+En una prueba cronometrada, el jugador gasta tiempo descifrando que fila
+es clickeable, contaminando la metrica que se esta midiendo (tiempo de
+respuesta).
+
+FIX
+-------
+- Los numeros de la secuencia van sobre un riel no interactivo: sin
+  fondo de boton, cursor:default, tipografia monoespaciada con cifras
+  tabulares (font-variant-numeric: tabular-nums), separados por puntos
+  chicos.
+- El numero faltante (?) pasa a ser un SLOT PUNTEADO (borde discontinuo,
+  sin relleno) en vez de una tarjeta llena - un contorno abierto
+  comunica "aca falta algo"; una tarjeta azul con "?" se leia como una
+  quinta opcion clickeable.
+- Las 4 opciones de respuesta mantienen el tratamiento de boton que ya
+  tienen (fondo glass, borde, hover) sin cambios de fondo/tipografia -
+  la idea es que el contraste con el riel sea obvio de un vistazo, no
+  rediseñar el boton en si.
+
+
+==================================================
+COMPARTIDO - YA RESUELTO, SOLO PARA QUE LO SEPAS
+==================================================
+QuizPage.tsx linea ~634/660 tenia el texto del badge de resultado
+("Tu mejor marca: X") pintado SIEMPRE en verde, sin importar si el
+intento actual la habia superado o no. Ya esta arreglado en master
+(practiceResults.ts ahora expone badgeTone: "success" | "neutral"). No
+hace falta tocarlo, solo sincronizar con master antes de empezar.
 
 
 ARCHIVOS

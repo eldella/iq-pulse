@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>IQ Pulse — Reacción</title>
+<style>
+:root{
+  /* --- superficie --- */
+  --bg:            #05070b;
+  --bg-elev:       #0d1017;
+  --bg-card:       #10131b;
+  --line:          #1b202b;
+  --line-soft:     #14181f;
+
+  /* --- texto --- */
+  --fg:            #f2f5f9;
+  --fg-mute:       #7e879a;
+  --fg-dim:        #4a5265;
+
+  /* --- acento --- */
+  --blue:          #2b7fff;
+  --blue-deep:     #0e4bb0;
+  --green:         #22e06a;
+  --green-deep:    #0a7f3a;
+  --red:           #ff4d5e;
+  --gold:          #c99432;
+
+  /* --- ritmo --- */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --dot: rgba(255,255,255,.045);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:manipulation;
+  -webkit-user-select:none;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* trama de puntos: se mantiene, es parte de la identidad */
+.grid{
+  position:fixed;inset:0;
+  background-image:radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size:26px 26px;
+  pointer-events:none;
+  transition:opacity .5s ease;
+}
+
+/* halo ambiental: azul armado -> verde disparo -> rojo falla */
+.ambient{
+  position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(60% 55% at 50% 46%, var(--amb, rgba(43,127,255,.07)), transparent 72%);
+  transition:background .45s ease;
+}
+
+/* ══════════════════ NAV ══════════════════ */
+nav{
+  position:relative;z-index:5;
+  display:flex;justify-content:center;gap:6px;
+  padding:14px;
+  border-bottom:1px solid var(--line-soft);
+  transition:opacity .45s ease, filter .45s ease;
+}
+nav a{
+  color:var(--fg-mute);text-decoration:none;
+  font-size:14px;font-weight:500;
+  padding:8px 18px;border-radius:999px;
+  transition:color .2s;
+}
+nav a.on{background:var(--blue);color:#fff}
+
+/* durante la prueba el cromo se retira, no compite con el estímulo */
+body.trial nav{opacity:.12;filter:saturate(0);pointer-events:none}
+body.trial .grid{opacity:.35}
+body.trial .eyebrow,
+body.trial .diff{opacity:.3;transition:opacity .45s ease}
+body.trial .rounds{opacity:.55}
+.eyebrow,.diff{transition:opacity .45s ease}
+
+/* ══════════════════ ESCENARIO ══════════════════ */
+main{
+  position:relative;z-index:2;
+  height:calc(100% - 53px);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:20px;
+}
+.screen{display:none;width:100%;max-width:520px;flex-direction:column;align-items:center}
+.screen.on{display:flex}
+
+/* ---- cabecera de ronda: segmentos discretos, sin animación durante la espera ---- */
+.rounds{
+  display:flex;align-items:center;gap:14px;
+  margin-bottom:34px;
+  transition:opacity .4s ease;
+}
+.segs{display:flex;gap:5px}
+.seg{
+  width:26px;height:3px;border-radius:2px;
+  background:var(--line);
+  transition:background .3s ease;
+}
+.seg.done{background:var(--blue)}
+.seg.now{background:rgba(43,127,255,.4)}
+.rlabel{
+  font-size:10px;font-weight:600;letter-spacing:.14em;
+  color:var(--fg-dim);text-transform:uppercase;
+  font-variant-numeric:tabular-nums;
+}
+
+.eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.2em;
+  color:var(--blue);text-transform:uppercase;margin-bottom:8px;
+}
+.diff{font-size:22px;font-weight:600;margin-bottom:6px}
+.hint{font-size:13px;color:var(--fg-mute);margin-bottom:30px;text-align:center;min-height:19px}
+
+/* ══════════════════ EL BLANCO ══════════════════ */
+.target{
+  position:relative;
+  width:min(74vw,300px);aspect-ratio:1;
+  display:grid;place-items:center;
+  border-radius:50%;
+  cursor:pointer;
+}
+
+/* anillo de carga: respira lento. Sostiene la fijación en vez de robarla. */
+.ring{
+  position:absolute;inset:-14px;border-radius:50%;
+  border:1px solid rgba(43,127,255,.22);
+  opacity:0;transition:opacity .3s ease;
+}
+.target.armed .ring{opacity:1;animation:breathe 2.6s ease-in-out infinite}
+@keyframes breathe{
+  0%,100%{transform:scale(.965);border-color:rgba(43,127,255,.13)}
+  50%    {transform:scale(1.015);border-color:rgba(43,127,255,.38)}
+}
+
+.disc{
+  position:absolute;inset:0;border-radius:50%;
+  background:var(--bg-elev);
+  border:1px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+  /* la transición vive acá y se ANULA en .go: el estímulo no puede tardar */
+  transition:background .35s ease, border-color .35s ease, box-shadow .35s ease;
+}
+.target.armed .disc{border-color:rgba(43,127,255,.22)}
+
+/* halo como capa propia y no como box-shadow: un blur enorme dentro de una
+   capa con transform se recorta contra los límites de la capa y deja un
+   rectángulo visible alrededor del círculo */
+.halo{
+  position:absolute;inset:-42%;border-radius:50%;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.target.go .halo{
+  transition:none;opacity:1;
+  background:radial-gradient(circle, rgba(34,224,106,.34) 0%, rgba(34,224,106,.12) 42%, transparent 66%);
+}
+.target.bad .halo{
+  opacity:1;
+  background:radial-gradient(circle, rgba(255,77,94,.26) 0%, rgba(255,77,94,.08) 42%, transparent 66%);
+}
+
+/* punto de fijación: el ojo ya está en el blanco cuando llega el verde */
+.fix{
+  position:relative;z-index:2;
+  width:7px;height:7px;border-radius:50%;
+  background:var(--fg-dim);
+  transition:opacity .2s ease, transform .2s ease;
+}
+.target.armed .fix{background:rgba(43,127,255,.55)}
+
+/* ---- DISPARO: salto de luminancia + escala. Sin transición = sin latencia falsa ---- */
+.target.go .disc{
+  transition:none;
+  background:radial-gradient(circle at 50% 42%, #5cff9e, var(--green) 55%, var(--green-deep));
+  border-color:#7dffb4;
+  box-shadow:inset 0 0 40px rgba(255,255,255,.22);
+}
+.target.go{transform:scale(1.05);transition:transform 90ms cubic-bezier(.2,.9,.3,1)}
+.target.go .fix{opacity:0}
+.target.go .ring{animation:none;opacity:0}
+
+/* onda expansiva del disparo: puro deleite, no informa nada crítico */
+.wave{
+  position:absolute;inset:0;border-radius:50%;
+  border:2px solid rgba(34,224,106,.55);
+  opacity:0;pointer-events:none;
+}
+.target.go .wave{animation:wave .55s ease-out forwards}
+@keyframes wave{
+  from{transform:scale(1);opacity:.8}
+  to  {transform:scale(1.55);opacity:0}
+}
+
+/* ---- FALSO ARRANQUE ---- */
+.target.bad .disc{
+  background:radial-gradient(circle at 50% 42%, #ff8a94, var(--red) 60%, #8f1420);
+  border-color:#ff8a94;
+}
+.target.bad{animation:shake .34s ease}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-9px)}
+  45%{transform:translateX(7px)}
+  70%{transform:translateX(-4px)}
+}
+.target.bad .fix{opacity:0}
+
+/* número dentro del disco, sólo DESPUÉS del toque */
+.ms{
+  position:absolute;z-index:3;
+  font-size:44px;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+  color:#03210f;opacity:0;transform:scale(.9);
+  transition:opacity .12s ease, transform .12s cubic-bezier(.2,.9,.3,1);
+}
+.ms.show{opacity:1;transform:scale(1)}
+.ms.err{color:#fff;font-size:19px;font-weight:600;letter-spacing:.02em}
+
+/* ---- estado bajo el blanco: el texto sale de adentro del círculo ---- */
+.state{
+  margin-top:26px;
+  font-size:11px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--fg-dim);
+  min-height:16px;text-align:center;
+  transition:color .25s ease;
+}
+.state.hot{color:var(--green)}
+.state.cold{color:var(--red)}
+
+/* ---- tira de rondas ya jugadas + referencia del récord ---- */
+.strip{
+  display:flex;gap:7px;margin-top:22px;min-height:28px;
+  align-items:center;flex-wrap:wrap;justify-content:center;
+}
+.chip{
+  font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;
+  padding:5px 10px;border-radius:7px;
+  background:var(--bg-card);border:1px solid var(--line);
+  color:var(--fg-mute);
+  animation:pop .25s ease;
+}
+.chip.best{border-color:rgba(34,224,106,.4);color:var(--green)}
+.chip.void{border-color:rgba(255,77,94,.3);color:var(--red)}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.pb{
+  font-size:11px;color:var(--fg-dim);margin-top:16px;
+  font-variant-numeric:tabular-nums;
+}
+.pb b{color:var(--fg-mute);font-weight:600}
+
+/* salida discreta: ya no es un link grande arriba a la izquierda */
+.escape{
+  position:fixed;left:0;right:0;bottom:18px;z-index:6;
+  text-align:center;font-size:11px;color:var(--fg-dim);
+  transition:opacity .3s;
+}
+.escape kbd{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:5px;padding:2px 6px;font-family:inherit;font-size:10px;
+  color:var(--fg-mute);
+}
+
+/* ══════════════════ RESULTADO ══════════════════ */
+.res-title{font-size:34px;font-weight:700;margin-bottom:22px;letter-spacing:-.02em}
+.hero{
+  width:100%;padding:26px 22px;border-radius:var(--r-lg);
+  background:linear-gradient(180deg,#14110a,#0c0a06);
+  border:1px solid rgba(201,148,50,.45);
+  text-align:center;margin-bottom:12px;
+}
+.hero .k{font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--blue);text-transform:uppercase}
+.hero .v{font-size:60px;font-weight:700;letter-spacing:-.03em;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.hero .s{font-size:12px;color:var(--fg-mute)}
+.hero .s b{font-variant-numeric:tabular-nums}
+.delta{font-weight:600}
+.delta.up{color:var(--green)}
+.delta.down{color:var(--fg-mute)}
+
+/* tira de rondas del resultado: el dato que hoy falta */
+.spark{
+  width:100%;display:flex;gap:6px;align-items:flex-end;
+  height:60px;padding:18px 4px 0;margin:10px 0 16px;
+}
+.bar{flex:1;position:relative;border-radius:4px 4px 2px 2px;background:var(--blue);opacity:.5;min-height:6px}
+.bar.best{background:var(--green);opacity:1}
+.bar.void{background:var(--red);opacity:.45}
+.bar span{
+  position:absolute;top:-15px;left:50%;transform:translateX(-50%);
+  font-size:9.5px;color:var(--fg-dim);font-variant-numeric:tabular-nums;
+}
+.bar.best span{color:var(--green)}
+.spark-cap{
+  width:100%;text-align:center;font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fg-dim);margin:-8px 0 16px;
+}
+
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:20px}
+.tile{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:14px;text-align:center;
+}
+.tile .i{font-size:16px}
+.tile .v{font-size:19px;font-weight:700;margin:3px 0 2px;font-variant-numeric:tabular-nums}
+.tile .k{font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--fg-dim);text-transform:uppercase}
+
+.actions{display:flex;gap:10px;width:100%}
+.btn{
+  flex:1;padding:13px;border-radius:999px;border:1px solid var(--line);
+  background:var(--bg-card);color:var(--fg);
+  font:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:border-color .2s, background .2s;
+}
+.btn:hover{border-color:#2b323f}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{background:#3d8bff}
+.btn kbd{
+  background:rgba(255,255,255,.18);border-radius:5px;
+  padding:2px 7px;font-family:inherit;font-size:10px;font-weight:600;
+}
+.note{font-size:10.5px;color:var(--fg-dim);text-align:center;margin-top:18px;line-height:1.5;max-width:400px}
+
+/* ── móvil: sin teclado, los kbd sobran y desbalancean ── */
+@media (pointer:coarse), (max-width:520px){
+  .btn kbd{display:none}
+  .escape .desk{display:none}
+  .escape .touch{display:inline}
+  .hero .v{font-size:52px}
+  .tile .k{font-size:8.5px;letter-spacing:.07em}
+  .spark-cap{font-size:9px}
+}
+.escape .touch{display:none}
+.escape .touch b{color:var(--fg-mute);font-weight:600}
+
+@media (prefers-reduced-motion: reduce){
+  .target.armed .ring{animation:none;opacity:.6}
+  .target.go .wave{animation:none}
+  .target.bad{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="grid"></div>
+<div class="ambient" id="amb"></div>
+
+<nav>
+  <a href="#">Inicio</a>
+  <a href="#" class="on">Jugar</a>
+  <a href="#">Ranking</a>
+</nav>
+
+<main>
+  <!-- ════════ JUEGO ════════ -->
+  <section class="screen on" id="game">
+    <div class="rounds">
+      <div class="segs" id="segs"></div>
+      <div class="rlabel" id="rlabel">Ronda 1 / 5</div>
+    </div>
+
+    <div class="eyebrow">Reacción</div>
+    <div class="diff">Fácil</div>
+    <div class="hint" id="hint">Tocá en cuanto se ponga verde.</div>
+
+    <div class="target" id="target">
+      <div class="halo"></div>
+      <div class="ring"></div>
+      <div class="wave"></div>
+      <div class="disc"></div>
+      <div class="fix"></div>
+      <div class="ms" id="ms"></div>
+    </div>
+
+    <div class="state" id="state">Tocá para empezar</div>
+    <div class="strip" id="strip"></div>
+    <div class="pb" id="pb">Récord personal <b>180 ms</b></div>
+  </section>
+
+  <!-- ════════ RESULTADO ════════ -->
+  <section class="screen" id="result">
+    <div class="res-title">Resultado</div>
+    <div class="hero">
+      <div class="k">Tiempo de reacción promedio</div>
+      <div class="v" id="rAvg">—</div>
+      <div class="s" id="rSub"></div>
+    </div>
+    <div class="spark" id="spark"></div>
+    <div class="spark-cap">Tus 5 rondas, en orden · más bajo es más rápido</div>
+    <div class="tiles">
+      <div class="tile"><div class="i">🏆</div><div class="v" id="rPb">—</div><div class="k">Récord personal</div></div>
+      <div class="tile"><div class="i">⚡</div><div class="v" id="rBest">—</div><div class="k">Mejor de la serie</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="copy">Copiar resultado</button>
+      <button class="btn primary" id="again">Jugar de nuevo <kbd>Espacio</kbd></button>
+    </div>
+    <div class="note">Resultado ilustrativo — mientras el motor de quiz sigue en construcción,<br>este número no reemplaza un test cognitivo validado.</div>
+  </section>
+</main>
+
+<div class="escape" id="escape">
+  <span class="desk"><kbd>Esc</kbd> volver a elegir modalidad</span>
+  <span class="touch">Deslizá hacia abajo para <b>volver a elegir</b></span>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const ROUNDS   = 5;
+const MIN_WAIT = 1200;
+const MAX_WAIT = 4800;
+const FLOOR_MS = 100;   // por debajo de esto no hay reacción humana: es anticipación
+
+const $ = id => document.getElementById(id);
+const target=$('target'), disc=target.querySelector('.disc');
+const msEl=$('ms'), stateEl=$('state'), hintEl=$('hint'),
+      stripEl=$('strip'), segsEl=$('segs'), rlabel=$('rlabel'),
+      amb=$('amb'), pbEl=$('pb');
+
+let phase='idle';        // idle | waiting | go | feedback | done
+let round=0, times=[], timer=null, goAt=0;
+let pb = 180;            // récord previo simulado
+
+/* ---------- espera con tasa de riesgo plana ----------
+   Un random uniforme se vuelve predecible: cuanto más pasa, más "toca ya".
+   Una exponencial truncada mantiene la sorpresa constante en toda la ventana. */
+function waitMs(){
+  const lambda = 1/1400;
+  const t = -Math.log(1 - Math.random()) / lambda;
+  return MIN_WAIT + Math.min(t, MAX_WAIT - MIN_WAIT);
+}
+
+function segs(){
+  segsEl.innerHTML='';
+  for(let i=0;i<ROUNDS;i++){
+    const d=document.createElement('div');
+    d.className='seg'+(i<times.filter(t=>t!==null).length?' done':(i===round?' now':''));
+    segsEl.appendChild(d);
+  }
+  rlabel.textContent=`Ronda ${Math.min(round+1,ROUNDS)} / ${ROUNDS}`;
+}
+
+function setAmb(c){ amb.style.setProperty('--amb', c); }
+
+function reset(){
+  phase='idle'; round=0; times=[];
+  target.className='target';
+  msEl.className='ms'; msEl.textContent='';
+  stripEl.innerHTML='';
+  stateEl.className='state'; stateEl.textContent='Tocá para empezar';
+  hintEl.textContent='Tocá en cuanto se ponga verde.';
+  pbEl.innerHTML=`Récord personal <b>${pb} ms</b>`;
+  document.body.classList.remove('trial');
+  setAmb('rgba(43,127,255,.07)');
+  segs();
+}
+
+function arm(){
+  phase='waiting';
+  document.body.classList.add('trial');
+  target.className='target armed';
+  msEl.className='ms'; msEl.textContent='';
+  stateEl.className='state'; stateEl.textContent='Esperá el verde';
+  hintEl.textContent='';
+  setAmb('rgba(43,127,255,.09)');
+  segs();
+
+  timer=setTimeout(()=>{
+    /* El sello de tiempo se toma en el frame que REALMENTE pinta el verde,
+       no cuando mutamos la clase. Si no, se regalan 8–16 ms. */
+    requestAnimationFrame(()=>{
+      target.className='target go';
+      setAmb('rgba(34,224,106,.16)');
+      requestAnimationFrame(ts=>{ goAt=ts; phase='go'; });
+    });
+    stateEl.className='state hot'; stateEl.textContent='¡Ahora!';
+  }, waitMs());
+}
+
+function tap(){
+  if(phase==='feedback') return;
+
+  if(phase==='idle' || phase==='done'){ arm(); return; }
+
+  if(phase==='waiting'){                       // falso arranque
+    clearTimeout(timer);
+    phase='feedback';
+    target.className='target bad';
+    setAmb('rgba(255,77,94,.13)');
+    msEl.className='ms show err'; msEl.textContent='Muy pronto';
+    stateEl.className='state cold'; stateEl.textContent='La ronda no cuenta — repetila';
+    chip(null);
+    setTimeout(()=>{ arm(); }, 1150);
+    return;
+  }
+
+  if(phase==='go'){
+    const rt = Math.round(performance.now() - goAt);
+    phase='feedback';
+    clearTimeout(timer);
+
+    if(rt < FLOOR_MS){                          // anticipación disfrazada de reflejo
+      target.className='target bad';
+      setAmb('rgba(255,77,94,.13)');
+      msEl.className='ms show err'; msEl.textContent='Anticipado';
+      stateEl.className='state cold'; stateEl.textContent=`${rt} ms es adivinar, no reaccionar`;
+      chip(null);
+      setTimeout(arm, 1300);
+      return;
+    }
+
+    times.push(rt); round++;
+    msEl.className='ms show'; msEl.textContent=rt;
+    const isPb = rt < pb;
+    stateEl.className='state hot';
+    stateEl.textContent = isPb ? 'Récord personal' : (rt<=Math.min(...times)?'Tu mejor de la serie':'Bien');
+    chip(rt);
+    segs();
+
+    setTimeout(()=>{
+      if(round>=ROUNDS) finish();
+      else arm();
+    }, 800);
+  }
+}
+
+function chip(rt){
+  const c=document.createElement('div');
+  if(rt===null){ c.className='chip void'; c.textContent='✕'; }
+  else{ c.className='chip'+(rt===Math.min(...times)?' best':''); c.textContent=rt+' ms'; }
+  stripEl.appendChild(c);
+}
+
+function finish(){
+  phase='done';
+  document.body.classList.remove('trial');
+  const avg  = Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+  const best = Math.min(...times);
+
+  $('rAvg').textContent = avg+' ms';
+
+  /* Antes: "promedio 353" y "mejor toque 353" con una sola ronda — parecía un bug.
+     Ahora el subtítulo siempre dice algo distinto del número grande. */
+  const sub=$('rSub');
+  if(best<pb) sub.innerHTML=`Bajaste tu récord: <b>${pb} ms</b> → <span class="delta up">${best} ms</span>`;
+  else if(avg<=pb+40) sub.innerHTML=`A <span class="delta down">${best-pb} ms</span> de tu récord de <b>${pb} ms</b>`;
+  else sub.innerHTML=`Tu récord sigue siendo <b>${pb} ms</b>`;
+
+  $('rPb').textContent   = Math.min(pb,best)+' ms';
+  $('rBest').textContent = best+' ms';
+
+  const sp=$('spark'); sp.innerHTML='';
+  const max=Math.max(...times);
+  times.forEach(t=>{
+    const b=document.createElement('div');
+    b.className='bar'+(t===best?' best':'');
+    b.style.height=Math.max(12,(t/max)*100)+'%';
+    b.innerHTML=`<span>${t}</span>`;
+    sp.appendChild(b);
+  });
+
+  pb=Math.min(pb,best);
+  setAmb('rgba(201,148,50,.07)');
+  $('game').classList.remove('on');
+  $('result').classList.add('on');
+  $('escape').style.opacity='0';
+}
+
+/* ---------- entrada ----------
+   pointerdown, no click: click dispara en el pointerUP y regala 30–80 ms. */
+target.addEventListener('pointerdown', e=>{e.preventDefault(); tap();});
+/* toda el área de juego acepta el toque: así se mide reacción y no puntería (Fitts) */
+$('game').addEventListener('pointerdown', e=>{ if(e.target!==target && !target.contains(e.target)) tap(); });
+
+document.addEventListener('keydown', e=>{
+  if(e.code==='Space'){
+    e.preventDefault();
+    if($('result').classList.contains('on')){
+      $('result').classList.remove('on'); $('game').classList.add('on');
+      $('escape').style.opacity=''; reset(); arm();
+    } else tap();
+  }
+  if(e.code==='Escape'){ clearTimeout(timer); $('result').classList.remove('on'); $('game').classList.add('on'); $('escape').style.opacity=''; reset(); }
+});
+document.addEventListener('contextmenu', e=>e.preventDefault());
+
+$('again').addEventListener('click',()=>{
+  $('result').classList.remove('on'); $('game').classList.add('on');
+  $('escape').style.opacity=''; reset(); arm();
+});
+$('copy').addEventListener('click',e=>{
+  const txt=`IQ Pulse · Reacción (Fácil) — promedio ${$('rAvg').textContent}, mejor ${$('rBest').textContent}`;
+  navigator.clipboard?.writeText(txt);
+  e.target.textContent='Copiado ✓';
+  setTimeout(()=>e.target.textContent='Copiar resultado',1500);
+});
+
+reset();
+window.__setPhase = s => { if(s==='go'){ target.className='target go'; setAmb('rgba(34,224,106,.16)'); document.body.classList.add('trial'); stateEl.className='state hot'; stateEl.textContent='¡Ahora!'; hintEl.textContent=''; }
+  if(s==='wait'){ document.body.classList.add('trial'); target.className='target armed'; stateEl.textContent='Esperá el verde'; hintEl.textContent=''; }
+  if(s==='bad'){ document.body.classList.add('trial'); target.className='target bad'; setAmb('rgba(255,77,94,.13)'); msEl.className='ms show err'; msEl.textContent='Muy pronto'; stateEl.className='state cold'; stateEl.textContent='La ronda no cuenta — repetila'; hintEl.textContent=''; }
+  if(s==='res'){ times=[241,198,353,212,187]; round=5; finish(); } };
+})();
+</script>
+</body>
+</html>
