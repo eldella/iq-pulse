@@ -672,6 +672,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                   >
                     {practiceResultsView.badgeText}
                   </p>
+                  {practiceResultsView.subtext && (
+                    <p className="text-xs text-muted-foreground">{practiceResultsView.subtext}</p>
+                  )}
                 </div>
 
                 {practiceResultsView.statCards.length > 0 && (

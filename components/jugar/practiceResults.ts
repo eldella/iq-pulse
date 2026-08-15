@@ -45,6 +45,13 @@ export type PracticeResultsView = {
    * and the plain "here's your best for reference" case.
    */
   badgeTone: "success" | "neutral";
+  /**
+   * Optional fixed line rendered inside the hero card, below the badge -
+   * for a raw comparison count ("16 de 20 aciertos") that needs to sit
+   * separately from the conditional record/close-to-record badge above it.
+   * Undefined means no games rendered card needs a second line here yet.
+   */
+  subtext?: string;
   showConfetti: boolean;
   statCards: PracticeStatCard[];
   footerLines: PracticeFooterLine[];
