@@ -29,7 +29,12 @@ import { WeeklyChallengeCard } from "@/components/stats/WeeklyChallengeCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { StatCard } from "@/components/jugar/StatCard";
 import { RecordConfetti } from "@/components/jugar/RecordConfetti";
-import { buildPracticeResultsView, type PracticeResult, type PracticeResultTier } from "@/components/jugar/practiceResults";
+import {
+  buildPracticeResultsView,
+  type PracticeResult,
+  type PracticeResultTier,
+  type SpanRunSummary,
+} from "@/components/jugar/practiceResults";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
@@ -51,7 +56,7 @@ import {
   useDailyTraining,
 } from "@/lib/dailyTraining";
 import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
-import { recordPracticeResult, recordPracticeReactionTime } from "@/lib/practicePerformance";
+import { recordPracticeResult, recordPracticeReactionTime, recordPracticeSpan } from "@/lib/practicePerformance";
 import { cn } from "@/lib/utils";
 
 /**
@@ -82,7 +87,11 @@ type GameDef = {
   Icon: typeof MapPin;
   Component: (props: {
     level: number;
-    onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
+    // spanSummary is only passed by games that run their own independent
+    // level ladder (see the exception list in handleAnswer below) - every
+    // other game leaves it undefined and QuizPage builds the practice
+    // result from isCorrect/responseTimeMs as before.
+    onAnswer: (isCorrect: boolean, responseTimeMs: number, spanSummary?: SpanRunSummary) => void;
   }) => React.ReactElement;
 };
 
@@ -259,7 +268,12 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     setSessionId(null);
   }
 
-  async function handleAnswer(gameId: GameId, isCorrect: boolean, responseTimeMs: number) {
+  async function handleAnswer(
+    gameId: GameId,
+    isCorrect: boolean,
+    responseTimeMs: number,
+    spanSummary?: SpanRunSummary
+  ) {
     if (!sessionId) return;
     const domain = GAMES[gameId].domain;
 
@@ -276,7 +290,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     // top comment) and every round already draws its own fresh 1-5s delay,
     // so there's no real difficulty to escalate - pinned at 1x instead of
     // riding the same streak-driven multiplier the other games use.
-    if (gameId !== "reactionCircle") {
+    // Retención de Dígitos and Memoria Espacial run their own independent
+    // level ladder (own clock/lives, see their components) instead of
+    // being "one more question" in this engine's escalation, so the global
+    // level/tier here would just be dead weight for them too.
+    if (gameId !== "reactionCircle" && gameId !== "digitSpan" && gameId !== "spatialMemory") {
       setLevel((current) => nextLevel(current, isCorrect, newStreak));
     }
 
@@ -323,6 +341,21 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           streak: getCurrentStreak(),
           sessionId,
         }).catch(() => {});
+      } else if (spanSummary) {
+        const { previousBest, improved } = recordPracticeSpan(gameId, spanSummary.span);
+        setPracticeResult({
+          headline: "span",
+          accuracy: spanSummary.accuracy,
+          avgResponseMs: spanSummary.avgResponseMs,
+          bestTapMs: null,
+          previousBest,
+          improved,
+          span: spanSummary.span,
+          spanUnitLabel: spanSummary.spanUnitLabel,
+          spanNote: spanSummary.spanNote,
+          extraStatCards: spanSummary.extraStatCards,
+          ladder: spanSummary.ladder,
+        });
       } else {
         const finalCorrect = domainStats[domain].correct + (isCorrect ? 1 : 0);
         const finalAnswered = domainStats[domain].answered + 1;
@@ -569,7 +602,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
           <activeGame.Component
             level={level}
-            onAnswer={(isCorrect, ms) => handleAnswer(activeGame.id, isCorrect, ms)}
+            onAnswer={(isCorrect, ms, spanSummary) => handleAnswer(activeGame.id, isCorrect, ms, spanSummary)}
           />
         </motion.div>
       )}
@@ -678,6 +711,25 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                   <div className="grid w-full grid-cols-2 gap-2">
                     {practiceResultsView.statCards.map((card) => (
                       <StatCard key={card.label} {...card} />
+                    ))}
+                  </div>
+                )}
+
+                {practiceResultsView.ladder && practiceResultsView.ladder.length > 0 && (
+                  <div className="flex w-full flex-wrap items-center justify-center gap-1.5">
+                    {practiceResultsView.ladder.map((step, index) => (
+                      <span
+                        key={`${step.label}-${index}`}
+                        title={step.label}
+                        aria-label={step.label}
+                        className={cn(
+                          "h-6 w-4 shrink-0 rounded-sm",
+                          step.tone === "success" && "bg-success",
+                          step.tone === "danger" && "bg-danger/70",
+                          step.tone === "warn" && "border-2 border-dashed border-warn bg-transparent",
+                          step.tone === "off" && "bg-surface-hover"
+                        )}
+                      />
                     ))}
                   </div>
                 )}

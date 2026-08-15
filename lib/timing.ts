@@ -23,3 +23,8 @@ export function formatElapsed(ms: number): string {
   const seconds = totalSeconds % 60;
   return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 }
+
+/** Formats a short duration for inline stats: "1.2 s" above 1000ms, "954 ms" below. */
+export function formatMs(ms: number): string {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms)} ms`;
+}
