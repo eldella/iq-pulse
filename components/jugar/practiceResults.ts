@@ -65,7 +65,6 @@ export type WordReviewRunSummary = {
   fractionValue: string;
   accuracy: number;
   hits: number;
-  falsePositives: number;
   totalTimeMs: number;
   ladder: PracticeLadderStep[];
 };
@@ -211,6 +210,12 @@ type CardConfig = ReactionMsCardConfig | AccuracyTierCardConfig | AccuracyCardCo
 const CARD_CONFIG: Partial<Record<GameId, CardConfig>> = {
   wordTyping: { kind: "accuracyTier", greatMin: 0.9, goodMin: 0.6 },
   wordBurst: { kind: "accuracyTier", greatMin: 0.9, goodMin: 0.6 },
+  // Never got their own CARD_CONFIG entry when Terminal 1 rewrote the
+  // generator/UI - they fell back to the plain no-card layout while every
+  // other domain's games got the bordered/glow treatment. Same thresholds
+  // as the memory-domain games above, no reason for reasoning to differ.
+  pathfinder: { kind: "accuracyTier", greatMin: 0.9, goodMin: 0.6 },
+  numberSequence: { kind: "accuracyTier", greatMin: 0.9, goodMin: 0.6 },
   reactionCircle: {
     kind: "reactionMs",
     fastMs: REACTION_FAST_MS,

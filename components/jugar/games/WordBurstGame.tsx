@@ -105,7 +105,6 @@ export function WordBurstGame({
 
     const isCorrect = shownSet.size === selectedSet.size && [...shownSet].every((w) => selectedSet.has(w));
     const hits = round.shown.filter((w) => selectedSet.has(w)).length;
-    const falsePositives = selected.filter((w) => !shownSet.has(w)).length;
     const ladder: PracticeLadderStep[] = round.shown.map((w) => ({
       label: w,
       tone: selectedSet.has(w) ? "success" : "warn",
@@ -116,7 +115,6 @@ export function WordBurstGame({
         fractionValue: `${hits}/${round.shown.length}`,
         accuracy: round.shown.length > 0 ? hits / round.shown.length : 0,
         hits,
-        falsePositives,
         totalTimeMs: responseTimeMs,
         ladder,
       });

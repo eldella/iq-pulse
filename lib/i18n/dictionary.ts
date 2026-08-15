@@ -183,7 +183,6 @@ export type Dictionary = {
     wordBurstMissedTag: string;
     wordBurstOfLabel: string;
     wordBurstHitsLabel: string;
-    wordBurstFalsePositivesLabel: string;
     wordBurstResponseLabel: string;
     stroopInstructions: string;
     resultsHeading: string;
@@ -476,7 +475,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       wordBurstMissedTag: "ESTABA",
       wordBurstOfLabel: "de",
       wordBurstHitsLabel: "Aciertos",
-      wordBurstFalsePositivesLabel: "Falsos positivos",
       wordBurstResponseLabel: "Respuesta",
       stroopInstructions: "Tocá el color de la TINTA, no lo que dice la palabra.",
       resultsHeading: "Resultado",
@@ -768,7 +766,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       wordBurstMissedTag: "MISSED",
       wordBurstOfLabel: "of",
       wordBurstHitsLabel: "Hits",
-      wordBurstFalsePositivesLabel: "False positives",
       wordBurstResponseLabel: "Response",
       stroopInstructions: "Tap the INK color, not what the word says.",
       resultsHeading: "Result",

@@ -344,9 +344,16 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     setElapsedMs(Math.round(now() - startTimeRef.current));
 
     try {
-      const finalResult = await completeSession(sessionId);
-
       if (isDailyRun) {
+        // completeSession() reads back this run's answers from Supabase and
+        // scores them - only the daily assessment needs that (iqEstimate/
+        // percentile below). Practice runs already have everything they
+        // need synchronously (spanSummary/wordReview/accuracy computed
+        // above), so this network round-trip was blocking every practice
+        // results screen from appearing for however long it took, even
+        // though its result was thrown away right after (confirmed live -
+        // results felt delayed).
+        const finalResult = await completeSession(sessionId);
         const points = Math.round(finalResult.normalized * 1000);
         setResult({ ...finalResult, points });
         // Non-fatal, matching recordAnswer above: the results screen and
@@ -424,7 +431,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             fractionValue: wordReview.fractionValue,
             extraStatCards: [
               { emoji: "✅", value: `${wordReview.hits}`, label: t.quiz.wordBurstHitsLabel },
-              { emoji: "⚠️", value: `${wordReview.falsePositives}`, label: t.quiz.wordBurstFalsePositivesLabel },
               { emoji: "⏱️", value: formatMs(wordReview.totalTimeMs), label: t.quiz.resultsTimeLabel },
             ],
             ladder: wordReview.ladder,
