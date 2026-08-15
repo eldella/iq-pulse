@@ -59,6 +59,11 @@ Reglas generales para cuando el trabajo se reparte en varias terminales/worktree
   git worktree add ../iqpulse-core -b feat/shared-core
   ```
   Si corren el dev server en simultáneo, puertos distintos (`next dev -p 3001`, `-p 3002`, ...).
+  `.env.local` está gitignoreado, así que `git worktree add` no lo copia — sin él, `/jugar` tira 500 (falta NEXT_PUBLIC_SUPABASE_URL/ANON_KEY). Copiarlo a mano a cada worktree nueva:
+  ```
+  cp .env.local ../iqpulse-core/.env.local
+  ```
+  (repetir por cada carpeta), y reiniciar el dev server después de copiarlo — Next.js solo lee `.env.local` al arrancar.
 - **Nadie toca archivos de otra terminal.** Si hace falta algo de un archivo compartido (clave de i18n nueva, token de color nuevo), se le pide a la terminal dueña de ese archivo — no se agrega por cuenta propia, para no duplicar con nombres distintos.
 - **Orden: Terminal 5 (núcleo compartido) primero, sola.** Las Terminales 1-3 tocan la pantalla de resultados de sus juegos, que hoy vive dentro de `components/jugar/QuizPage.tsx` (archivo compartido). Terminal 5 saca ese patrón a algo declarativo por juego y mergea a `master` antes de que las demás empiecen a tocar ese archivo. Terminal 4 (página Rendimiento) no depende de `QuizPage.tsx` y puede arrancar en paralelo desde el día 1.
 - **Antes de cada commit:** `npx tsc --noEmit -p tsconfig.json` y `npm run lint` limpios. Para cambios grandes, correr también `npm run build`.
