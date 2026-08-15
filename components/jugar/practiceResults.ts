@@ -37,6 +37,14 @@ export type PracticeResultsView = {
   headlineValue: string;
   tier: PracticeResultTier;
   badgeText: string;
+  /**
+   * "success" only for a genuine new record - the badge text itself was
+   * always rendered green regardless (e.g. "Tu mejor marca: 268 ms" showing
+   * up green under a run that didn't beat it), which reads as good news
+   * when there wasn't any. "neutral" covers first-time, close-to-record,
+   * and the plain "here's your best for reference" case.
+   */
+  badgeTone: "success" | "neutral";
   showConfetti: boolean;
   statCards: PracticeStatCard[];
   footerLines: PracticeFooterLine[];
@@ -116,6 +124,7 @@ function buildReactionMsView(config: ReactionMsCardConfig, result: PracticeResul
     headlineValue: `${avgResponseMs} ms`,
     tier,
     badgeText,
+    badgeTone: isNewRecord ? "success" : "neutral",
     showConfetti: isNewRecord,
     statCards: [
       { emoji: config.recordEmoji, value: `${recordMs} ms`, label: t.quiz.practiceRecordLabel },
@@ -155,6 +164,7 @@ function buildPlainAccuracyView(result: PracticeResult, t: Dictionary, elapsedMs
     headlineValue: `${Math.round(result.accuracy * 100)}%`,
     tier: "plain",
     badgeText,
+    badgeTone: result.previousBest !== null && result.improved ? "success" : "neutral",
     showConfetti: false,
     statCards: [],
     footerLines,

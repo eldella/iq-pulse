@@ -631,7 +631,14 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                 <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
                   {practiceResultsView.headlineValue}
                 </p>
-                <p className="text-sm font-semibold text-success">{practiceResultsView.badgeText}</p>
+                <p
+                  className={cn(
+                    "text-sm font-semibold",
+                    practiceResultsView.badgeTone === "success" ? "text-success" : "text-muted-foreground"
+                  )}
+                >
+                  {practiceResultsView.badgeText}
+                </p>
                 {practiceResultsView.footerLines.map((line) => (
                   <p key={line.text} className={line.className}>
                     {line.text}
@@ -657,7 +664,14 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                   <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
                     {practiceResultsView.headlineValue}
                   </p>
-                  <p className="text-sm font-semibold text-success">{practiceResultsView.badgeText}</p>
+                  <p
+                    className={cn(
+                      "text-sm font-semibold",
+                      practiceResultsView.badgeTone === "success" ? "text-success" : "text-muted-foreground"
+                    )}
+                  >
+                    {practiceResultsView.badgeText}
+                  </p>
                 </div>
 
                 {practiceResultsView.statCards.length > 0 && (
