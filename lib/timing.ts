@@ -15,3 +15,11 @@ export function now(): number {
 export function epochNow(): number {
   return Date.now();
 }
+
+/** Formats a duration in ms as "Xm Ys" (or just "Ys" under a minute) for results screens. */
+export function formatElapsed(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+}

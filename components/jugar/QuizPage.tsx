@@ -30,6 +30,7 @@ import { WeeklyChallengeCard } from "@/components/stats/WeeklyChallengeCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { StatCard } from "@/components/jugar/StatCard";
 import { RecordConfetti } from "@/components/jugar/RecordConfetti";
+import { buildPracticeResultsView, type PracticeResult, type PracticeResultTier } from "@/components/jugar/practiceResults";
 import { PatternMatrixGame } from "@/components/jugar/games/PatternMatrixGame";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
@@ -43,7 +44,7 @@ import { WordTypingGame } from "@/components/jugar/games/WordTypingGame";
 import { startSession, recordAnswer, completeSession, upsertDailyResult } from "@/lib/supabase/quiz";
 import { classifyIQ, levelToBucket, nextLevel, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
-import { now } from "@/lib/timing";
+import { now, formatElapsed } from "@/lib/timing";
 import {
   DAILY_TARGET_COUNT,
   getCurrentStreak,
@@ -65,17 +66,6 @@ import { cn } from "@/lib/utils";
 const GAME_DURATION_MS = 30_000;
 /** Hard cap regardless of remaining time, so rapid-fire guessing can't inflate answeredCount. */
 const MAX_QUESTIONS_PER_GAME = 10;
-
-/**
- * Rough bands for coloring Reacción's results card - grounded in published
- * simple-visual-reaction-time norms (typical adult range is ~200-300ms), not
- * arbitrary. Below FAST is a genuinely quick result; above NORMAL isn't
- * flagged as "bad", it just doesn't get the extra glow.
- */
-const REACTION_FAST_MS = 250;
-const REACTION_NORMAL_MS = 400;
-/** How close (ms) a non-improving best tap has to be to the record to still get an encouraging "close!" nudge. */
-const REACTION_CLOSE_TO_RECORD_MS = 20;
 
 export type GameId =
   | "matrix"
@@ -117,6 +107,20 @@ const GAMES: Record<GameId, GameDef> = {
 // default 3-game sequence, so that sequence's meaning stays stable.
 const FULL_ASSESSMENT: readonly GameId[] = ["matrix", "digitSpan", "stroop"];
 
+/**
+ * Border/glow classes per PracticeResultTier - the only styling QuizPage
+ * owns for the declarative results card (see components/jugar/practiceResults.ts).
+ * "plain" is never actually read (that tier skips the card entirely) but is
+ * listed so this stays a total mapping.
+ */
+const TIER_BORDER_CLASSES: Record<PracticeResultTier, string> = {
+  record: "border-success shadow-success-lg",
+  great: "border-success/50 shadow-success-md",
+  good: "border-warn/50",
+  neutral: "border-glass-border",
+  plain: "",
+};
+
 type Phase = "idle" | GameId | "finished";
 
 type DomainStats = { correct: number; answered: number };
@@ -126,13 +130,6 @@ const EMPTY_STATS: Record<Domain, DomainStats> = {
   memory: { correct: 0, answered: 0 },
   speed: { correct: 0, answered: 0 },
 };
-
-function formatElapsed(ms: number) {
-  const totalSeconds = Math.round(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-}
 
 function gameCopy(id: GameId, t: Dictionary) {
   return {
@@ -181,23 +178,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   const [result, setResult] = useState<{ iqEstimate: number; percentile: number; points?: number } | null>(
     null
   );
-  const [practiceResult, setPracticeResult] = useState<{
-    // Reacción's "correct" answer is nearly always 100% (only an early tap
-    // misses), so accuracy is a meaningless headline there - it leads with
-    // its average reaction time instead. Every other practice game still
-    // leads with accuracy, the metric that's actually being tested.
-    headline: "accuracy" | "reactionTime";
-    accuracy: number;
-    avgResponseMs: number | null;
-    // Fastest single correct tap this run - the average blurs together
-    // with slower taps in the same session, so it's a confusing thing to
-    // call a "personal best" (confirmed with the user after they hit a
-    // fast single tap that the average then buried). previousBest/improved
-    // below compare against this, not the average.
-    bestTapMs: number | null;
-    previousBest: number | null;
-    improved: boolean;
-  } | null>(null);
+  const [practiceResult, setPracticeResult] = useState<PracticeResult | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -387,26 +368,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
   const activeGame = phase !== "idle" && phase !== "finished" ? GAMES[phase] : null;
 
-  const isReactionResult = practiceResult?.headline === "reactionTime";
-  const reactionPerfTier =
-    isReactionResult && practiceResult?.avgResponseMs !== null && practiceResult?.avgResponseMs !== undefined
-      ? practiceResult.avgResponseMs < REACTION_FAST_MS
-        ? "fast"
-        : practiceResult.avgResponseMs < REACTION_NORMAL_MS
-          ? "normal"
-          : "slow"
-      : null;
-  const isNewRecord = isReactionResult && !!practiceResult?.improved && practiceResult?.previousBest !== null;
-  const isCloseToRecord =
-    isReactionResult &&
-    !isNewRecord &&
-    practiceResult?.previousBest !== null &&
-    practiceResult?.previousBest !== undefined &&
-    practiceResult?.bestTapMs !== null &&
-    practiceResult?.bestTapMs !== undefined &&
-    practiceResult.bestTapMs - practiceResult.previousBest <= REACTION_CLOSE_TO_RECORD_MS;
-  const reactionRecordMs =
-    practiceResult?.previousBest === null || isNewRecord ? practiceResult?.bestTapMs : practiceResult?.previousBest;
+  // Practice always runs a single game (plan.length === 1 outside the daily
+  // run), so plan[0] is the game this practiceResult belongs to.
+  const practiceResultsView = practiceResult ? buildPracticeResultsView(plan[0], practiceResult, t, elapsedMs) : null;
+
   const todayLabel = new Intl.DateTimeFormat(lang === "es" ? "es-AR" : "en-US", {
     weekday: "long",
     day: "numeric",
@@ -662,76 +627,57 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               </div>
             </>
           ) : (
-            practiceResult &&
-            (isReactionResult ? (
+            practiceResultsView &&
+            (practiceResultsView.tier === "plain" ? (
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+                  {practiceResultsView.headlineLabel}
+                </p>
+                <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
+                  {practiceResultsView.headlineValue}
+                </p>
+                <p className="text-sm font-semibold text-success">{practiceResultsView.badgeText}</p>
+                {practiceResultsView.footerLines.map((line) => (
+                  <p key={line.text} className={line.className}>
+                    {line.text}
+                  </p>
+                ))}
+              </div>
+            ) : (
               <div className="flex w-full max-w-xs flex-col items-center gap-3">
                 {/* Headline card - border/glow reflects how the run went:
-                    gold-ish success glow for a new record, a lighter success
-                    tint for a fast result, a warn border for a merely average
-                    one, nothing special otherwise. */}
+                    gold-ish success glow for a "record" tier, a lighter
+                    success tint for "great", a warn border for "good",
+                    nothing special for "neutral" (see TIER_BORDER_CLASSES). */}
                 <div
                   className={cn(
                     "relative flex w-full flex-col items-center gap-1 overflow-visible rounded-card border p-6 theme-transition",
-                    isNewRecord
-                      ? "border-success shadow-success-lg"
-                      : reactionPerfTier === "fast"
-                        ? "border-success/50 shadow-success-md"
-                        : reactionPerfTier === "normal"
-                          ? "border-warn/50"
-                          : "border-glass-border"
+                    TIER_BORDER_CLASSES[practiceResultsView.tier]
                   )}
                 >
-                  {isNewRecord && !shouldReduceMotion && <RecordConfetti />}
+                  {practiceResultsView.showConfetti && !shouldReduceMotion && <RecordConfetti />}
                   <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
-                    {t.quiz.practiceAvgResponseLabel}
+                    {practiceResultsView.headlineLabel}
                   </p>
                   <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
-                    {practiceResult.avgResponseMs} ms
+                    {practiceResultsView.headlineValue}
                   </p>
-                  <p className="text-sm font-semibold text-success">
-                    {practiceResult.previousBest === null
-                      ? t.quiz.practiceFirstTimeLabel
-                      : isNewRecord
-                        ? `🎉 ${t.quiz.practiceNewRecordBadge}`
-                        : isCloseToRecord
-                          ? t.quiz.practiceCloseToRecordLabel
-                          : `${t.quiz.practiceBestLabel} ${practiceResult.previousBest} ms`}
-                  </p>
+                  <p className="text-sm font-semibold text-success">{practiceResultsView.badgeText}</p>
                 </div>
 
-                {/* No "total time" card here on purpose: Reacción's rounds
-                    take long enough (1-5s wait each) that the 30s clock
-                    almost always runs out before the 10-question cap does,
-                    so that stat was reading ~30s on effectively every run -
-                    not useful information (confirmed with the user). */}
-                <div className="grid w-full grid-cols-2 gap-2">
-                  <StatCard emoji="🏆" value={`${reactionRecordMs} ms`} label={t.quiz.practiceRecordLabel} />
-                  <StatCard emoji="⚡" value={`${practiceResult.bestTapMs} ms`} label={t.quiz.practiceBestTapLabel} />
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
-                  {t.quiz.practiceAccuracyLabel}
-                </p>
-                <p className="tabular-nums text-6xl font-semibold tracking-tight text-foreground">
-                  {Math.round(practiceResult.accuracy * 100)}%
-                </p>
-                <p className="text-sm font-semibold text-success">
-                  {practiceResult.previousBest === null
-                    ? t.quiz.practiceFirstTimeLabel
-                    : practiceResult.improved
-                      ? t.quiz.practiceImprovedLabel
-                      : `${t.quiz.practiceBestLabel} ${Math.round(practiceResult.previousBest * 100)}%`}
-                </p>
-                {practiceResult.avgResponseMs !== null && (
-                  <p className="tabular-nums text-sm text-muted-foreground">
-                    {t.quiz.practiceAvgResponseLabel}: {practiceResult.avgResponseMs} ms
-                  </p>
+                {practiceResultsView.statCards.length > 0 && (
+                  <div className="grid w-full grid-cols-2 gap-2">
+                    {practiceResultsView.statCards.map((card) => (
+                      <StatCard key={card.label} {...card} />
+                    ))}
+                  </div>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  {t.quiz.resultsTimeLabel}: {formatElapsed(elapsedMs)}
-                </p>
+
+                {practiceResultsView.footerLines.map((line) => (
+                  <p key={line.text} className={line.className}>
+                    {line.text}
+                  </p>
+                ))}
               </div>
             ))
           )}
