@@ -161,6 +161,29 @@ export type Dictionary = {
     digitSpanClear: string;
     digitSpanSubmit: string;
     digitSpanCorrectSequence: string;
+    digitSpanAttemptLabel: string;
+    digitSpanLevelsPassedLabel: string;
+    digitSpanAccuracyTileLabel: string;
+    digitSpanSpanUnit: string;
+    digitSpanSpanNoteNoLevel: string;
+    recallYouTypedLabel: string;
+    practiceSpanLabel: string;
+    spatialMemoryLevelLabel: string;
+    spatialMemoryCellsLabel: string;
+    spatialMemoryAvgSpeedLabel: string;
+    spatialMemoryLifeLabel: string;
+    resultsRoundLogCta: string;
+    wordTypingStreakLabel: string;
+    wordTypingRetryCta: string;
+    wordTypingNewWordCta: string;
+    wordTypingUpgradeCta: string;
+    wordTypingLowerDifficultyNudge: string;
+    wordTypingLowerDifficultyCta: string;
+    wordBurstMissedTag: string;
+    wordBurstOfLabel: string;
+    wordBurstHitsLabel: string;
+    wordBurstFalsePositivesLabel: string;
+    wordBurstResponseLabel: string;
     stroopInstructions: string;
     resultsHeading: string;
     resultsIqLabel: string;
@@ -426,6 +449,29 @@ export const dictionary: Record<Lang, Dictionary> = {
       digitSpanClear: "Borrar",
       digitSpanSubmit: "Confirmar",
       digitSpanCorrectSequence: "Era:",
+      digitSpanAttemptLabel: "Intento",
+      digitSpanLevelsPassedLabel: "Niveles superados",
+      digitSpanAccuracyTileLabel: "Precisión",
+      digitSpanSpanUnit: "dígitos",
+      digitSpanSpanNoteNoLevel: "No llegaste a superar el primer nivel — se muestra el intento.",
+      recallYouTypedLabel: "Escribiste:",
+      practiceSpanLabel: "Span máximo",
+      spatialMemoryLevelLabel: "Nivel",
+      spatialMemoryCellsLabel: "casillas",
+      spatialMemoryAvgSpeedLabel: "Velocidad promedio",
+      spatialMemoryLifeLabel: "Vida",
+      resultsRoundLogCta: "Ver detalle por ronda",
+      wordTypingStreakLabel: "Racha perfecta",
+      wordTypingRetryCta: "Reintentar esta palabra",
+      wordTypingNewWordCta: "Nueva palabra",
+      wordTypingUpgradeCta: "Subir de dificultad",
+      wordTypingLowerDifficultyNudge: "¿Bajamos la dificultad por esta sesión?",
+      wordTypingLowerDifficultyCta: "Bajar dificultad",
+      wordBurstMissedTag: "ESTABA",
+      wordBurstOfLabel: "de",
+      wordBurstHitsLabel: "Aciertos",
+      wordBurstFalsePositivesLabel: "Falsos positivos",
+      wordBurstResponseLabel: "Respuesta",
       stroopInstructions: "Tocá el color de la TINTA, no lo que dice la palabra.",
       resultsHeading: "Resultado",
       resultsIqLabel: "CI estimado",
@@ -690,6 +736,29 @@ export const dictionary: Record<Lang, Dictionary> = {
       digitSpanClear: "Clear",
       digitSpanSubmit: "Submit",
       digitSpanCorrectSequence: "It was:",
+      digitSpanAttemptLabel: "Attempt",
+      digitSpanLevelsPassedLabel: "Levels passed",
+      digitSpanAccuracyTileLabel: "Accuracy",
+      digitSpanSpanUnit: "digits",
+      digitSpanSpanNoteNoLevel: "You didn't clear the first level — showing your attempt.",
+      recallYouTypedLabel: "You typed:",
+      practiceSpanLabel: "Max span",
+      spatialMemoryLevelLabel: "Level",
+      spatialMemoryCellsLabel: "cells",
+      spatialMemoryAvgSpeedLabel: "Average speed",
+      spatialMemoryLifeLabel: "Life",
+      resultsRoundLogCta: "See round-by-round detail",
+      wordTypingStreakLabel: "Perfect streak",
+      wordTypingRetryCta: "Retry this word",
+      wordTypingNewWordCta: "New word",
+      wordTypingUpgradeCta: "Level up difficulty",
+      wordTypingLowerDifficultyNudge: "Lower the difficulty for this session?",
+      wordTypingLowerDifficultyCta: "Lower difficulty",
+      wordBurstMissedTag: "MISSED",
+      wordBurstOfLabel: "of",
+      wordBurstHitsLabel: "Hits",
+      wordBurstFalsePositivesLabel: "False positives",
+      wordBurstResponseLabel: "Response",
       stroopInstructions: "Tap the INK color, not what the word says.",
       resultsHeading: "Result",
       resultsIqLabel: "Estimated IQ",

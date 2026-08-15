@@ -29,7 +29,13 @@ import { WeeklyChallengeCard } from "@/components/stats/WeeklyChallengeCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { StatCard } from "@/components/jugar/StatCard";
 import { RecordConfetti } from "@/components/jugar/RecordConfetti";
-import { buildPracticeResultsView, type PracticeResult, type PracticeResultTier } from "@/components/jugar/practiceResults";
+import {
+  buildPracticeResultsView,
+  type PracticeResult,
+  type PracticeResultTier,
+  type SpanRunSummary,
+  type WordReviewRunSummary,
+} from "@/components/jugar/practiceResults";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
@@ -42,7 +48,7 @@ import { WordTypingGame } from "@/components/jugar/games/WordTypingGame";
 import { startSession, recordAnswer, completeSession, upsertDailyResult } from "@/lib/supabase/quiz";
 import { classifyIQ, levelToBucket, nextLevel, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
-import { now, formatElapsed } from "@/lib/timing";
+import { now, formatElapsed, formatMs } from "@/lib/timing";
 import {
   DAILY_TARGET_COUNT,
   getCurrentStreak,
@@ -51,7 +57,7 @@ import {
   useDailyTraining,
 } from "@/lib/dailyTraining";
 import { getAlias, getDeviceId } from "@/lib/deviceIdentity";
-import { recordPracticeResult, recordPracticeReactionTime } from "@/lib/practicePerformance";
+import { recordPracticeResult, recordPracticeReactionTime, recordPracticeSpan } from "@/lib/practicePerformance";
 import { cn } from "@/lib/utils";
 
 /**
@@ -82,7 +88,17 @@ type GameDef = {
   Icon: typeof MapPin;
   Component: (props: {
     level: number;
-    onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
+    // spanSummary is only passed by games that run their own independent
+    // level ladder (see the exception list in handleAnswer below); wordReview
+    // is only passed by Ráfaga de Palabras, for its per-round miss detail.
+    // Every other game leaves both undefined and QuizPage builds the
+    // practice result from isCorrect/responseTimeMs as before.
+    onAnswer: (
+      isCorrect: boolean,
+      responseTimeMs: number,
+      spanSummary?: SpanRunSummary,
+      wordReview?: WordReviewRunSummary
+    ) => void;
   }) => React.ReactElement;
 };
 
@@ -185,6 +201,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   // per handleStart, read once at completion to average into practiceResult.
   const responseTimesRef = useRef<number[]>([]);
   const gameStartRef = useRef(0);
+  // Highest consecutive-correct streak reached this run - reuses the same
+  // streak the escalation ladder already tracks (see setStreak below), just
+  // remembers its peak instead of resetting to 0 on a miss. Surfaced as
+  // Palabra Rápida's "racha perfecta" stat card.
+  const maxStreakRef = useRef(0);
 
   async function handleStart(chosenPlan: readonly GameId[], { daily = false }: { daily?: boolean } = {}) {
     if (starting) return;
@@ -198,6 +219,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setPlan(chosenPlan);
       setIsDailyRun(daily);
       responseTimesRef.current = [];
+      maxStreakRef.current = 0;
       setLevel(1);
       setStreak(0);
       setQuestionIndex(0);
@@ -259,7 +281,13 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     setSessionId(null);
   }
 
-  async function handleAnswer(gameId: GameId, isCorrect: boolean, responseTimeMs: number) {
+  async function handleAnswer(
+    gameId: GameId,
+    isCorrect: boolean,
+    responseTimeMs: number,
+    spanSummary?: SpanRunSummary,
+    wordReview?: WordReviewRunSummary
+  ) {
     if (!sessionId) return;
     const domain = GAMES[gameId].domain;
 
@@ -272,11 +300,16 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
     const newStreak = isCorrect ? streak + 1 : 0;
     setStreak(newStreak);
+    maxStreakRef.current = Math.max(maxStreakRef.current, newStreak);
     // Reacción's content doesn't scale with level (see ReactionCircleGame's
     // top comment) and every round already draws its own fresh 1-5s delay,
     // so there's no real difficulty to escalate - pinned at 1x instead of
     // riding the same streak-driven multiplier the other games use.
-    if (gameId !== "reactionCircle") {
+    // Retención de Dígitos and Memoria Espacial run their own independent
+    // level ladder (own clock/lives, see their components) instead of
+    // being "one more question" in this engine's escalation, so the global
+    // level/tier here would just be dead weight for them too.
+    if (gameId !== "reactionCircle" && gameId !== "digitSpan" && gameId !== "spatialMemory") {
       setLevel((current) => nextLevel(current, isCorrect, newStreak));
     }
 
@@ -323,6 +356,22 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           streak: getCurrentStreak(),
           sessionId,
         }).catch(() => {});
+      } else if (spanSummary) {
+        const { previousBest, improved } = recordPracticeSpan(gameId, spanSummary.span);
+        setPracticeResult({
+          headline: "span",
+          accuracy: spanSummary.accuracy,
+          avgResponseMs: spanSummary.avgResponseMs,
+          bestTapMs: null,
+          previousBest,
+          improved,
+          span: spanSummary.span,
+          spanUnitLabel: spanSummary.spanUnitLabel,
+          spanNote: spanSummary.spanNote,
+          extraStatCards: spanSummary.extraStatCards,
+          ladder: spanSummary.ladder,
+          roundLog: spanSummary.roundLog,
+        });
       } else {
         const finalCorrect = domainStats[domain].correct + (isCorrect ? 1 : 0);
         const finalAnswered = domainStats[domain].answered + 1;
@@ -335,9 +384,41 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
         if (gameId === "reactionCircle" && bestTapMs !== null) {
           const { previousBest, improved } = recordPracticeReactionTime(gameId, bestTapMs);
           setPracticeResult({ headline: "reactionTime", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
+        } else if (wordReview) {
+          const { previousBest, improved } = recordPracticeResult(gameId, wordReview.accuracy);
+          setPracticeResult({
+            headline: "accuracy",
+            accuracy: wordReview.accuracy,
+            // Not applicable to a recall test the way it is for a
+            // stimulus-response one - dropped in favor of the "tiempo"
+            // stat tile below (confirmed in the brief).
+            avgResponseMs: null,
+            bestTapMs: null,
+            previousBest,
+            improved,
+            fractionValue: wordReview.fractionValue,
+            extraStatCards: [
+              { emoji: "✅", value: `${wordReview.hits}`, label: t.quiz.wordBurstHitsLabel },
+              { emoji: "⚠️", value: `${wordReview.falsePositives}`, label: t.quiz.wordBurstFalsePositivesLabel },
+              { emoji: "⏱️", value: formatMs(wordReview.totalTimeMs), label: t.quiz.resultsTimeLabel },
+            ],
+            ladder: wordReview.ladder,
+          });
         } else {
           const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
-          setPracticeResult({ headline: "accuracy", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
+          setPracticeResult({
+            headline: "accuracy",
+            accuracy,
+            avgResponseMs,
+            bestTapMs,
+            previousBest,
+            improved,
+            fractionValue: `${finalCorrect}/${finalAnswered}`,
+            extraStatCards:
+              gameId === "wordTyping"
+                ? [{ emoji: "🔥", value: `${maxStreakRef.current}`, label: t.quiz.wordTypingStreakLabel }]
+                : undefined,
+          });
         }
       }
     } catch {
@@ -568,7 +649,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
           <activeGame.Component
             level={level}
-            onAnswer={(isCorrect, ms) => handleAnswer(activeGame.id, isCorrect, ms)}
+            onAnswer={(isCorrect, ms, spanSummary, wordReview) =>
+              handleAnswer(activeGame.id, isCorrect, ms, spanSummary, wordReview)
+            }
           />
         </motion.div>
       )}
@@ -684,11 +767,49 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                   </div>
                 )}
 
+                {practiceResultsView.ladder && practiceResultsView.ladder.length > 0 && (
+                  <div className="flex w-full flex-wrap items-center justify-center gap-1.5">
+                    {practiceResultsView.ladder.map((step, index) => (
+                      <span
+                        key={`${step.label}-${index}`}
+                        title={step.label}
+                        aria-label={step.label}
+                        className={cn(
+                          "h-6 w-4 shrink-0 rounded-sm",
+                          step.tone === "success" && "bg-success",
+                          step.tone === "danger" && "bg-danger/70",
+                          step.tone === "warn" && "border-2 border-dashed border-warn bg-transparent",
+                          step.tone === "off" && "bg-surface-hover"
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 {practiceResultsView.footerLines.map((line) => (
                   <p key={line.text} className={line.className}>
                     {line.text}
                   </p>
                 ))}
+
+                {practiceResultsView.roundLog && practiceResultsView.roundLog.length > 0 && (
+                  <details className="w-full text-left">
+                    <summary className="cursor-pointer text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+                      {t.quiz.resultsRoundLogCta}
+                    </summary>
+                    <ul className="mt-2 flex flex-col gap-1">
+                      {practiceResultsView.roundLog.map((entry, index) => (
+                        <li
+                          key={index}
+                          className="flex items-center justify-between gap-2 text-xs text-muted-foreground"
+                        >
+                          <span>{entry.label}</span>
+                          <span className="tabular-nums text-foreground">{entry.value}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
               </div>
             ))
           )}

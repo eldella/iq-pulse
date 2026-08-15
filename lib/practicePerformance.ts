@@ -8,6 +8,7 @@
 
 type PracticeRecord = { bestAccuracy: number };
 type PracticeTimeRecord = { bestAvgResponseMs: number };
+type PracticeSpanRecord = { bestSpan: number };
 
 function storageKey(gameId: string): string {
   return `iqpulse-practice-${gameId}`;
@@ -15,6 +16,10 @@ function storageKey(gameId: string): string {
 
 function timeStorageKey(gameId: string): string {
   return `iqpulse-practice-time-${gameId}`;
+}
+
+function spanStorageKey(gameId: string): string {
+  return `iqpulse-practice-span-${gameId}`;
 }
 
 function readBestAccuracy(gameId: string): number | null {
@@ -61,6 +66,30 @@ export function recordPracticeReactionTime(
   const improved = previousBest === null || avgResponseMs < previousBest;
   if (improved) {
     window.localStorage.setItem(timeStorageKey(gameId), JSON.stringify({ bestAvgResponseMs: avgResponseMs }));
+  }
+  return { previousBest, improved };
+}
+
+function readBestSpan(gameId: string): number | null {
+  try {
+    const raw = window.localStorage.getItem(spanStorageKey(gameId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PracticeSpanRecord;
+    return typeof parsed.bestSpan === "number" ? parsed.bestSpan : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Compares this run's max span reached (higher is better) against the stored best for this game, updates it if beaten. */
+export function recordPracticeSpan(
+  gameId: string,
+  span: number
+): { previousBest: number | null; improved: boolean } {
+  const previousBest = readBestSpan(gameId);
+  const improved = previousBest === null || span > previousBest;
+  if (improved) {
+    window.localStorage.setItem(spanStorageKey(gameId), JSON.stringify({ bestSpan: span }));
   }
   return { previousBest, improved };
 }
