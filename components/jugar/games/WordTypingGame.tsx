@@ -92,6 +92,13 @@ export function WordTypingGame({
   const [submitted, setSubmitted] = useState<{ isCorrect: boolean } | null>(null);
 
   const recallStartRef = useRef(0);
+  // Speed should measure typing, not "time since the recall screen
+  // appeared" - a slow starter (reading the boxes, gathering themselves)
+  // would otherwise get penalized the same as someone who typed slowly.
+  // null until the first keystroke of this word; falls back to
+  // recallStartRef in the (practically unreachable) case handleSubmit/
+  // handleProceed fire with zero keystrokes.
+  const firstKeystrokeRef = useRef<number | null>(null);
   const tokenRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -136,6 +143,7 @@ export function WordTypingGame({
       if (tokenRef.current !== myToken) return;
       setPhase("recall");
       recallStartRef.current = now();
+      firstKeystrokeRef.current = null;
     }, t);
 
     return () => {
@@ -152,7 +160,7 @@ export function WordTypingGame({
   function handleSubmit() {
     if (phase !== "recall" || submitted || typed.length !== word.length) return;
     const isCorrect = typed.toLowerCase() === word.toLowerCase();
-    const responseTimeMs = Math.round(now() - recallStartRef.current);
+    const responseTimeMs = Math.round(now() - (firstKeystrokeRef.current ?? recallStartRef.current));
     setSubmitted({ isCorrect });
     if (isCorrect) {
       window.setTimeout(() => onAnswer(true, responseTimeMs), ANSWER_FEEDBACK_MS);
@@ -162,7 +170,7 @@ export function WordTypingGame({
   }
 
   function handleProceed() {
-    const responseTimeMs = Math.round(now() - recallStartRef.current);
+    const responseTimeMs = Math.round(now() - (firstKeystrokeRef.current ?? recallStartRef.current));
     onAnswer(false, responseTimeMs);
   }
 
@@ -209,7 +217,10 @@ export function WordTypingGame({
               type="text"
               value={typed}
               disabled={phase !== "recall" || submitted !== null}
-              onChange={(e) => setTyped(e.target.value.slice(0, word.length))}
+              onChange={(e) => {
+                if (firstKeystrokeRef.current === null) firstKeystrokeRef.current = now();
+                setTyped(e.target.value.slice(0, word.length));
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSubmit();
               }}
