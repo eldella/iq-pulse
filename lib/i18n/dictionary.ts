@@ -175,7 +175,6 @@ export type Dictionary = {
     spatialMemoryLifeLabel: string;
     resultsRoundLogCta: string;
     wordTypingStreakLabel: string;
-    wordTypingRetryCta: string;
     wordTypingNewWordCta: string;
     wordTypingUpgradeCta: string;
     wordTypingLowerDifficultyNudge: string;
@@ -467,7 +466,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       spatialMemoryLifeLabel: "Vida",
       resultsRoundLogCta: "Ver detalle por ronda",
       wordTypingStreakLabel: "Racha perfecta",
-      wordTypingRetryCta: "Reintentar esta palabra",
       wordTypingNewWordCta: "Nueva palabra",
       wordTypingUpgradeCta: "Subir de dificultad",
       wordTypingLowerDifficultyNudge: "¿Bajamos la dificultad por esta sesión?",
@@ -758,7 +756,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       spatialMemoryLifeLabel: "Life",
       resultsRoundLogCta: "See round-by-round detail",
       wordTypingStreakLabel: "Perfect streak",
-      wordTypingRetryCta: "Retry this word",
       wordTypingNewWordCta: "New word",
       wordTypingUpgradeCta: "Level up difficulty",
       wordTypingLowerDifficultyNudge: "Lower the difficulty for this session?",

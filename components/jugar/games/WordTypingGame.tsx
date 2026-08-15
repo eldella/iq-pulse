@@ -84,7 +84,6 @@ export function WordTypingGame({
   const tier = contentTier(level);
   const showMs = Math.max(80, LETTER_INTERVAL_BY_TIER[tier] - GAP_MS);
 
-  const [attempt, setAttempt] = useState(1);
   const [countdown, setCountdown] = useState(3);
   const [phase, setPhase] = useState<Phase>("countdown");
   const [visibleIndex, setVisibleIndex] = useState(0);
@@ -109,7 +108,7 @@ export function WordTypingGame({
       }, step * COUNTDOWN_STEP_MS)
     );
     return () => timers.forEach(window.clearTimeout);
-  }, [word, attempt]);
+  }, [word]);
 
   useEffect(() => {
     if (phase !== "flash") return;
@@ -162,16 +161,6 @@ export function WordTypingGame({
     }
   }
 
-  function handleRetrySameWord() {
-    setVisibleIndex(0);
-    setShowingLetter(false);
-    setTyped("");
-    setSubmitted(null);
-    setCountdown(3);
-    setPhase("countdown");
-    setAttempt((a) => a + 1);
-  }
-
   function handleProceed() {
     const responseTimeMs = Math.round(now() - recallStartRef.current);
     onAnswer(false, responseTimeMs);
@@ -180,7 +169,6 @@ export function WordTypingGame({
   const ready = phase === "recall" && typed.length === word.length;
   const { states, hits } = useMemo(() => grade(word, typed), [word, typed]);
   const hitRatio = word.length > 0 ? hits / word.length : 0;
-  const primaryIsRetry = phase === "review" && hitRatio < 0.6;
   const primaryIsUpgrade = phase === "review" && hitRatio >= 1;
   const showLowerDifficultyNudge = phase === "review" && hits === 0 && word.length > 4;
 
@@ -305,31 +293,11 @@ export function WordTypingGame({
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <motion.button
                   type="button"
-                  onClick={handleRetrySameWord}
-                  whileHover={{ y: -1 }}
-                  whileTap={tapScale}
-                  transition={springTransition}
-                  className={cn(
-                    "inline-flex h-11 items-center rounded-full px-5 text-sm font-semibold focus-visible:outline-none",
-                    primaryIsRetry
-                      ? "shine-hover bg-accent text-accent-foreground shadow-accent-md"
-                      : "border border-glass-border bg-glass text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {t.quiz.wordTypingRetryCta}
-                </motion.button>
-                <motion.button
-                  type="button"
                   onClick={handleProceed}
                   whileHover={{ y: -1 }}
                   whileTap={tapScale}
                   transition={springTransition}
-                  className={cn(
-                    "inline-flex h-11 items-center rounded-full px-5 text-sm font-semibold focus-visible:outline-none",
-                    !primaryIsRetry
-                      ? "shine-hover bg-accent text-accent-foreground shadow-accent-md"
-                      : "border border-glass-border bg-glass text-muted-foreground hover:text-foreground"
-                  )}
+                  className="shine-hover inline-flex h-11 items-center rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-accent-md focus-visible:outline-none"
                 >
                   {primaryIsUpgrade ? t.quiz.wordTypingUpgradeCta : t.quiz.wordTypingNewWordCta}
                 </motion.button>
