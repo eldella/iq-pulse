@@ -1,20 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
 import { ANSWER_FEEDBACK_MS } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { cn } from "@/lib/utils";
 
-// Randomized wait before the circle turns green (1-5s, confirmed with the
-// user), same range at every level on purpose - unlike the other games'
-// content, this one isn't meant to get easier to predict as level climbs,
-// it's meant to stay unpredictable so the reading is a genuine reaction
-// time. The level multiplier still scores this game (see lib/scoring.ts),
-// it just doesn't change what's rendered here.
-const DELAY_RANGE_MS: [number, number] = [1000, 5000];
+const MIN_WAIT_MS = 1200;
+const MAX_WAIT_MS = 4800;
+// Exponential (truncated) wait instead of uniform: a uniform wait gets more
+// predictable the longer it's already run ("it's got to turn green any
+// second now"), which trains anticipation instead of measuring reaction. An
+// exponential keeps the instantaneous odds of "it happens now" flat across
+// the whole window - same distribution used in
+// terminales/reference/reaccion-rediseno.html.
+const WAIT_LAMBDA = 1 / 1400;
+function waitMs(): number {
+  const t = -Math.log(1 - Math.random()) / WAIT_LAMBDA;
+  return MIN_WAIT_MS + Math.min(t, MAX_WAIT_MS - MIN_WAIT_MS);
+}
 
-/** Classic reaction-time test: wait for green, tap as fast as possible - tapping early is a miss. */
+/** Below this, it's not a reaction - the tap landed before anyone could actually perceive and respond to green, same as guessing. */
+const ANTICIPATION_FLOOR_MS = 100;
+
+/** Classic reaction-time test: wait for green, tap as fast as possible - tapping early, or absurdly fast, is a miss. */
 export function ReactionCircleGame({
   onAnswer,
 }: {
@@ -22,7 +32,8 @@ export function ReactionCircleGame({
   onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
 }) {
   const { t } = useLanguage();
-  const [stage, setStage] = useState<"waiting" | "go" | "early" | "done">("waiting");
+  const shouldReduceMotion = useReducedMotion();
+  const [stage, setStage] = useState<"waiting" | "go" | "early" | "anticipated" | "done">("waiting");
   const [reactionMs, setReactionMs] = useState<number | null>(null);
   const goTimeRef = useRef(0);
   const goTimeoutRef = useRef<number | null>(null);
@@ -31,12 +42,10 @@ export function ReactionCircleGame({
   const debugRef = useRef<{ timeoutFired: number; raf1: number } | null>(null);
 
   useEffect(() => {
-    const [min, max] = DELAY_RANGE_MS;
-    const delay = min + Math.random() * (max - min);
     goTimeoutRef.current = window.setTimeout(() => {
       debugRef.current = { timeoutFired: now(), raf1: 0 };
       setStage("go");
-    }, delay);
+    }, waitMs());
     return () => {
       if (goTimeoutRef.current !== null) window.clearTimeout(goTimeoutRef.current);
     };
@@ -74,15 +83,16 @@ export function ReactionCircleGame({
   // Guards against handling the same tap twice - see handleActivate below.
   const firedRef = useRef(false);
 
-  // `onClick` fires on mouseup/touchend, not on first contact - for a quick
-  // tap, the press-to-release gap alone can add 50-100ms on top of the real
-  // reaction, which lines up with readings coming in ~50-100ms above what
-  // the player feels. `onPointerDown` fires at first contact (mousedown /
-  // touchstart) instead, so it's the primary path here; `onClick` stays
-  // wired to the same handler purely as the keyboard-activation fallback
-  // (Enter/Space on a focused button fire click, not pointerdown). firedRef
-  // makes sure only whichever event fires first actually counts - once a
-  // pointerdown has been handled, the click that follows it is a no-op.
+  // `onPointerDown` is the primary path (fires at first contact, not on
+  // release - `onClick` fires on mouseup/touchend, which for a quick tap
+  // alone can add 50-100ms on top of the real reaction). It's wired on the
+  // OUTER wrapper (see the returned JSX below), not just the disc, so the
+  // whole game area accepts the tap - this measures reaction, not aim
+  // (Fitts's law says a bigger target is faster to hit, which would be
+  // measuring the wrong thing here). `onClick` stays on the disc itself as
+  // the keyboard-activation fallback (Enter/Space on a focused button fire
+  // click, not pointerdown). firedRef makes sure only whichever fires first
+  // actually counts.
   function handleActivate() {
     if (firedRef.current) return;
 
@@ -100,6 +110,18 @@ export function ReactionCircleGame({
       firedRef.current = true;
       const activationTime = now();
       const responseTimeMs = Math.round(activationTime - goTimeRef.current);
+
+      // Faster than genuinely humanly possible off a visual stimulus - this
+      // is a guess that happened to land after green appeared, not an
+      // actual reaction to it. Doesn't count toward the average, same as a
+      // true false start, but with its own message so it reads as "you
+      // guessed the timing" rather than "you jumped the gun".
+      if (responseTimeMs < ANTICIPATION_FLOOR_MS) {
+        setStage("anticipated");
+        window.setTimeout(() => onAnswer(false, 0), ANSWER_FEEDBACK_MS);
+        return;
+      }
+
       console.log(
         `[ReactionCircle] measured reaction time: ${responseTimeMs}ms (from post-paint go→pointerdown${
           debugRef.current ? `, naive timeout→pointerdown would have read ${Math.round(activationTime - debugRef.current.timeoutFired)}ms` : ""
@@ -111,40 +133,87 @@ export function ReactionCircleGame({
     }
   }
 
+  const stageLabel =
+    stage === "waiting"
+      ? t.quiz.reactionCircleWait
+      : stage === "go"
+        ? t.quiz.reactionCircleGo
+        : stage === "early"
+          ? t.quiz.reactionCircleEarly
+          : stage === "anticipated"
+            ? t.quiz.reactionCircleAnticipated
+            : reactionMs !== null
+              ? `${reactionMs} ms`
+              : "";
+
   return (
-    <div className="flex flex-col items-center gap-6">
+    // The whole area accepts the tap, not just the disc - see the
+    // handleActivate comment above.
+    <div className="flex flex-col items-center gap-6" onPointerDown={handleActivate}>
       <p className="text-sm text-muted-foreground">
-        {stage === "early" ? t.quiz.reactionCircleEarly : t.quiz.reactionCircleInstructions}
+        {stage === "early" ? t.quiz.reactionCircleEarly : stage === "anticipated" ? t.quiz.reactionCircleAnticipated : t.quiz.reactionCircleInstructions}
       </p>
 
-      {/*
-        Plain button, not motion.button: this is the one place in the app
-        where render/composite cost directly pollutes the number shown to
-        the player, so it skips Framer Motion's tap gesture handling and the
-        backdrop-blur compositing layer entirely - both were candidate
-        sources of the measurement bias reported, and neither is worth the
-        risk here even if hard to pin down for certain without profiling.
-      */}
-      <button
-        type="button"
-        onPointerDown={handleActivate}
-        onClick={handleActivate}
-        className={cn(
-          "flex h-56 w-56 items-center justify-center rounded-full border-4 text-sm font-semibold focus-visible:outline-none active:scale-95 sm:h-72 sm:w-72",
-          stage === "waiting"
-            ? "border-glass-border bg-glass text-muted-foreground"
-            : stage === "go"
-              ? "border-success bg-success/25 text-success"
-              : stage === "early"
-                ? "border-danger bg-danger/15 text-danger"
-                : "border-success bg-success/15 text-success"
+      <div className="relative flex h-56 w-56 items-center justify-center sm:h-72 sm:w-72">
+        {/* Breathing ring while armed - holds the gaze on the target
+            without stealing it, gone the instant green appears. */}
+        {stage === "waiting" && !shouldReduceMotion && (
+          <motion.div
+            className="pointer-events-none absolute -inset-3 rounded-full border border-accent/25"
+            animate={{ scale: [0.98, 1.02, 0.98], opacity: [0.3, 0.7, 0.3] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+            aria-hidden="true"
+          />
         )}
-      >
-        {stage === "waiting" && t.quiz.reactionCircleWait}
-        {stage === "go" && t.quiz.reactionCircleGo}
-        {stage === "early" && t.quiz.reactionCircleEarly}
-        {stage === "done" && reactionMs !== null && `${reactionMs} ms`}
-      </button>
+
+        {/* Expanding wave - fires only on a successful tap (response
+            already registered), never at the instant the stimulus appears:
+            it's a reward, not a cue, so it can't leak timing information. */}
+        <AnimatePresence>
+          {stage === "done" && !shouldReduceMotion && (
+            <motion.div
+              key="wave"
+              className="pointer-events-none absolute inset-0 rounded-full border-2 border-success"
+              initial={{ scale: 1, opacity: 0.8 }}
+              animate={{ scale: 1.5, opacity: 0 }}
+              transition={{ duration: 0.55, ease: "easeOut" }}
+              aria-hidden="true"
+            />
+          )}
+        </AnimatePresence>
+
+        {/*
+          Plain button, not motion.button: this is the one place in the app
+          where render/composite cost directly pollutes the number shown to
+          the player, so it skips Framer Motion's tap gesture handling and the
+          backdrop-blur compositing layer entirely - both were candidate
+          sources of the measurement bias reported, and neither is worth the
+          risk here even if hard to pin down for certain without profiling.
+        */}
+        <button
+          type="button"
+          onClick={handleActivate}
+          aria-label={stageLabel}
+          className={cn(
+            "relative flex h-full w-full items-center justify-center rounded-full border-4 text-sm font-semibold focus-visible:outline-none active:scale-95",
+            stage === "waiting"
+              ? "border-glass-border bg-glass text-muted-foreground"
+              : stage === "go"
+                ? "border-success bg-success/25 text-success"
+                : stage === "early" || stage === "anticipated"
+                  ? "border-danger bg-danger/15 text-danger"
+                  : "border-success bg-success/15 text-success"
+          )}
+        >
+          {stage === "waiting" ? (
+            // Static fixation point - the eye is already on the target by
+            // the time green arrives, no animation to compete with it.
+            <span className="h-2 w-2 rounded-full bg-muted-foreground" aria-hidden="true" />
+          ) : (
+            <span aria-hidden="true">{stageLabel}</span>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

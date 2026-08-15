@@ -138,6 +138,7 @@ export type Dictionary = {
     reactionCircleWait: string;
     reactionCircleGo: string;
     reactionCircleEarly: string;
+    reactionCircleAnticipated: string;
     wordTypingTitle: string;
     wordTypingDescription: string;
     wordTypingFlash: string;
@@ -172,6 +173,9 @@ export type Dictionary = {
     resultsPointsLabel: string;
     resultsBody: string;
     practiceAccuracyLabel: string;
+    practicePrecisionLabel: string;
+    practiceRawCountConnector: string;
+    practiceRawCountSuffix: string;
     practiceImprovedLabel: string;
     practiceFirstTimeLabel: string;
     practiceBestLabel: string;
@@ -180,6 +184,8 @@ export type Dictionary = {
     practiceRecordLabel: string;
     practiceNewRecordBadge: string;
     practiceCloseToRecordLabel: string;
+    practiceStroopCostLabel: string;
+    practiceRoundBarsCaption: string;
     playAgainShortcutHint: string;
     practiceReactionShareLead: string;
     practiceReactionShareTail: string;
@@ -403,6 +409,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       reactionCircleWait: "Esperá…",
       reactionCircleGo: "¡Ahora!",
       reactionCircleEarly: "Muy pronto — esperá al verde",
+      reactionCircleAnticipated: "Anticipado — eso fue adivinar, no reaccionar",
       wordTypingTitle: "Palabra rápida",
       wordTypingDescription: "Mirá las letras que aparecen una por una y escribí la palabra.",
       wordTypingFlash: "Memorizá las letras",
@@ -446,6 +453,9 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsPointsLabel: "Puntos de hoy",
       resultsBody: "Resultado ilustrativo — mientras el motor de quiz sigue en construcción, este número no reemplaza un test cognitivo validado.",
       practiceAccuracyLabel: "Rendimiento",
+      practicePrecisionLabel: "Precisión",
+      practiceRawCountConnector: "de",
+      practiceRawCountSuffix: "aciertos",
       practiceImprovedLabel: "¡Superaste tu marca!",
       practiceFirstTimeLabel: "Primera vez que jugás esto",
       practiceBestLabel: "Tu mejor marca:",
@@ -454,6 +464,8 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceRecordLabel: "Récord personal",
       practiceNewRecordBadge: "¡Nuevo récord!",
       practiceCloseToRecordLabel: "Cerca de tu récord",
+      practiceStroopCostLabel: "Costo Stroop",
+      practiceRoundBarsCaption: "Tus rondas, en orden · más bajo es más rápido",
       playAgainShortcutHint: "Espacio",
       practiceReactionShareLead: "¡Hice",
       practiceReactionShareTail: "en el test de reacción de IQ.Pulse! ⚡",
@@ -667,6 +679,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       reactionCircleWait: "Wait…",
       reactionCircleGo: "Go!",
       reactionCircleEarly: "Too soon — wait for green",
+      reactionCircleAnticipated: "Anticipated — that was a guess, not a reaction",
       wordTypingTitle: "Quick word",
       wordTypingDescription: "Watch the letters flash one by one, then type the word.",
       wordTypingFlash: "Memorize the letters",
@@ -710,6 +723,9 @@ export const dictionary: Record<Lang, Dictionary> = {
       resultsPointsLabel: "Today's points",
       resultsBody: "Illustrative result — while the quiz engine is still being built, this number doesn't replace a validated cognitive test.",
       practiceAccuracyLabel: "Performance",
+      practicePrecisionLabel: "Accuracy",
+      practiceRawCountConnector: "of",
+      practiceRawCountSuffix: "correct",
       practiceImprovedLabel: "New personal best!",
       practiceFirstTimeLabel: "First time playing this one",
       practiceBestLabel: "Your best:",
@@ -718,6 +734,8 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceRecordLabel: "Personal record",
       practiceNewRecordBadge: "New record!",
       practiceCloseToRecordLabel: "Close to your record",
+      practiceStroopCostLabel: "Stroop cost",
+      practiceRoundBarsCaption: "Your rounds, in order · lower is faster",
       playAgainShortcutHint: "Space",
       practiceReactionShareLead: "I got",
       practiceReactionShareTail: "on IQ.Pulse's reaction test! ⚡",

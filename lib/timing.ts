@@ -16,6 +16,11 @@ export function epochNow(): number {
   return Date.now();
 }
 
+/** Formats a duration in ms as "1.2 s" past the 1000ms mark, "954 ms" under it - shared across every game's speed stat card. */
+export function formatMs(ms: number): string {
+  return ms > 1000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms)} ms`;
+}
+
 /** Formats a duration in ms as "Xm Ys" (or just "Ys" under a minute) for results screens. */
 export function formatElapsed(ms: number): string {
   const totalSeconds = Math.round(ms / 1000);

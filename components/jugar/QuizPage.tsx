@@ -29,6 +29,7 @@ import { WeeklyChallengeCard } from "@/components/stats/WeeklyChallengeCard";
 import { RadarChart } from "@/components/jugar/RadarChart";
 import { StatCard } from "@/components/jugar/StatCard";
 import { RecordConfetti } from "@/components/jugar/RecordConfetti";
+import { ReactionRoundBars } from "@/components/jugar/ReactionRoundBars";
 import { buildPracticeResultsView, type PracticeResult, type PracticeResultTier } from "@/components/jugar/practiceResults";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
@@ -83,6 +84,10 @@ type GameDef = {
   Component: (props: {
     level: number;
     onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
+    // Fresh per handleStart, stable across the remounts a single run's
+    // trials go through (see the key comment below) - only Stroop reads
+    // this today, to key its cross-trial scratch data (lib/stroopSession.ts).
+    sessionId?: string | null;
   }) => React.ReactElement;
 };
 
@@ -334,10 +339,41 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
         if (gameId === "reactionCircle" && bestTapMs !== null) {
           const { previousBest, improved } = recordPracticeReactionTime(gameId, bestTapMs);
-          setPracticeResult({ headline: "reactionTime", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
+          setPracticeResult({
+            headline: "reactionTime",
+            accuracy,
+            avgResponseMs,
+            bestTapMs,
+            previousBest,
+            improved,
+            correctCount: finalCorrect,
+            totalCount: finalAnswered,
+            previousBestCorrectCount: null,
+            previousBestTotalCount: null,
+            sessionId,
+            responseTimes: times,
+          });
         } else {
-          const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
-          setPracticeResult({ headline: "accuracy", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
+          const { previousBest, improved, previousBestCorrectCount, previousBestTotalCount } = recordPracticeResult(
+            gameId,
+            accuracy,
+            finalCorrect,
+            finalAnswered
+          );
+          setPracticeResult({
+            headline: "accuracy",
+            accuracy,
+            avgResponseMs,
+            bestTapMs,
+            previousBest,
+            improved,
+            correctCount: finalCorrect,
+            totalCount: finalAnswered,
+            previousBestCorrectCount,
+            previousBestTotalCount,
+            sessionId,
+            responseTimes: times,
+          });
         }
       }
     } catch {
@@ -570,6 +606,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           <activeGame.Component
             level={level}
             onAnswer={(isCorrect, ms) => handleAnswer(activeGame.id, isCorrect, ms)}
+            sessionId={sessionId}
           />
         </motion.div>
       )}
@@ -683,6 +720,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                       <StatCard key={card.label} {...card} />
                     ))}
                   </div>
+                )}
+
+                {practiceResultsView.tapBars && (
+                  <ReactionRoundBars bars={practiceResultsView.tapBars} caption={t.quiz.practiceRoundBarsCaption} />
                 )}
 
                 {practiceResultsView.footerLines.map((line) => (
