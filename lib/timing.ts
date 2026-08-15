@@ -16,15 +16,15 @@ export function epochNow(): number {
   return Date.now();
 }
 
+/** Formats a duration in ms as "1.2 s" from the 1000ms mark up, "954 ms" under it - shared across every game's speed stat card. */
+export function formatMs(ms: number): string {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms)} ms`;
+}
+
 /** Formats a duration in ms as "Xm Ys" (or just "Ys" under a minute) for results screens. */
 export function formatElapsed(ms: number): string {
   const totalSeconds = Math.round(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-}
-
-/** Formats a short duration for inline stats: "1.2 s" above 1000ms, "954 ms" below. */
-export function formatMs(ms: number): string {
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms)} ms`;
 }

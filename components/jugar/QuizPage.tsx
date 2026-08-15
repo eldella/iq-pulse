@@ -36,6 +36,7 @@ import {
   type SpanRunSummary,
   type WordReviewRunSummary,
 } from "@/components/jugar/practiceResults";
+import { ReactionRoundBars } from "@/components/jugar/ReactionRoundBars";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
@@ -99,6 +100,10 @@ type GameDef = {
       spanSummary?: SpanRunSummary,
       wordReview?: WordReviewRunSummary
     ) => void;
+    // Fresh per handleStart, stable across the remounts a single run's
+    // trials go through (see the key comment below) - only Stroop reads
+    // this today, to key its cross-trial scratch data (lib/stroopSession.ts).
+    sessionId?: string | null;
   }) => React.ReactElement;
 };
 
@@ -371,6 +376,15 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           extraStatCards: spanSummary.extraStatCards,
           ladder: spanSummary.ladder,
           roundLog: spanSummary.roundLog,
+          // Not applicable to a self-contained span game - it doesn't track
+          // a raw correct/total tally or a per-tap response-time series the
+          // way the shared-engine accuracy/reactionTime paths below do.
+          correctCount: null,
+          totalCount: null,
+          previousBestCorrectCount: null,
+          previousBestTotalCount: null,
+          sessionId,
+          responseTimes: [],
         });
       } else {
         const finalCorrect = domainStats[domain].correct + (isCorrect ? 1 : 0);
@@ -383,7 +397,20 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
         if (gameId === "reactionCircle" && bestTapMs !== null) {
           const { previousBest, improved } = recordPracticeReactionTime(gameId, bestTapMs);
-          setPracticeResult({ headline: "reactionTime", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
+          setPracticeResult({
+            headline: "reactionTime",
+            accuracy,
+            avgResponseMs,
+            bestTapMs,
+            previousBest,
+            improved,
+            correctCount: finalCorrect,
+            totalCount: finalAnswered,
+            previousBestCorrectCount: null,
+            previousBestTotalCount: null,
+            sessionId,
+            responseTimes: times,
+          });
         } else if (wordReview) {
           const { previousBest, improved } = recordPracticeResult(gameId, wordReview.accuracy);
           setPracticeResult({
@@ -403,9 +430,22 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               { emoji: "⏱️", value: formatMs(wordReview.totalTimeMs), label: t.quiz.resultsTimeLabel },
             ],
             ladder: wordReview.ladder,
+            // Same rationale as the span branch above - a recall review
+            // doesn't carry a raw correct/total tally or per-tap series.
+            correctCount: null,
+            totalCount: null,
+            previousBestCorrectCount: null,
+            previousBestTotalCount: null,
+            sessionId,
+            responseTimes: [],
           });
         } else {
-          const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
+          const { previousBest, improved, previousBestCorrectCount, previousBestTotalCount } = recordPracticeResult(
+            gameId,
+            accuracy,
+            finalCorrect,
+            finalAnswered
+          );
           setPracticeResult({
             headline: "accuracy",
             accuracy,
@@ -418,6 +458,12 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               gameId === "wordTyping"
                 ? [{ emoji: "🔥", value: `${maxStreakRef.current}`, label: t.quiz.wordTypingStreakLabel }]
                 : undefined,
+            correctCount: finalCorrect,
+            totalCount: finalAnswered,
+            previousBestCorrectCount,
+            previousBestTotalCount,
+            sessionId,
+            responseTimes: times,
           });
         }
       }
@@ -652,6 +698,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             onAnswer={(isCorrect, ms, spanSummary, wordReview) =>
               handleAnswer(activeGame.id, isCorrect, ms, spanSummary, wordReview)
             }
+            sessionId={sessionId}
           />
         </motion.div>
       )}
@@ -784,6 +831,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                       />
                     ))}
                   </div>
+                )}
+
+                {practiceResultsView.tapBars && (
+                  <ReactionRoundBars bars={practiceResultsView.tapBars} caption={t.quiz.practiceRoundBarsCaption} />
                 )}
 
                 {practiceResultsView.footerLines.map((line) => (
