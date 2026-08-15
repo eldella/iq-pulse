@@ -55,6 +55,9 @@
      about what --color-accent is for, and this is a second, purely
      decorative token, not a substitute for it. */
   --color-accent-secondary: 126 84 240;
+  /* Grain layer opacity/blend, theme-driven - see .bg-grain below. */
+  --grain-opacity: 0.055;
+  --grain-blend: overlay;
   color-scheme: light;
 }
 
@@ -73,11 +76,28 @@
   --color-warn: 255 214 10;
   --color-surface-hover: rgba(255, 255, 255, 0.05);
   --color-accent-secondary: 116 76 230;
+  --grain-opacity: 0.1;
+  --grain-blend: soft-light;
   color-scheme: dark;
 }
 
 * {
   border-color: var(--color-glass-border);
+}
+
+/*
+ * Grain texture for AnimatedBackground - hand-written CSS, not a Tailwind
+ * arbitrary-value class (opacity-[0.055], dark:mix-blend-soft-light, etc).
+ * This exact codebase already lost time once to Tailwind opacity-modifier
+ * utilities silently compiling to nothing (see the --color-accent comment
+ * above) - a plain class driven by theme custom properties has no JIT/purge
+ * step that can silently drop it, and is what actually caused the grain to
+ * render at full un-faded opacity instead of a subtle 5-10% texture.
+ */
+.bg-grain {
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 html,
