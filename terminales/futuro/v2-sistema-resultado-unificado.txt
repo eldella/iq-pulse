@@ -67,3 +67,14 @@ decide si vale la pena:
   b) construir la agregacion real de percentiles,
   c) la libreria de componentes compartidos nueva.
 No arrancar nada de esto sin decidirlo explicitamente primero.
+
+
+ALTERNATIVA VISUAL A CONSIDERAR (no un spec aparte, solo una nota)
+----------------------------------------------------------------------------
+Un segundo mockup ("NITIDO", terminales/reference/nitido-comparacion-reflejo.html)
+propone un dial circular en vez de la hero card con glow: aro de progreso con
+60 ticks perimetrales, marca dorada sobre el aro en la posicion del record
+personal, numero grande en el centro. Es una alternativa de presentacion para
+el mismo HeroMetric de arriba, no un sistema distinto - vale la pena mirarlo
+como opcion de layout cuando se decida construir esto, no como propuesta
+separada a evaluar por separado.

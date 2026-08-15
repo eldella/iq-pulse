@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NÍTIDO — prototipo de rediseño</title>
+<style>
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root{
+  /* superficie */
+  --void:#07070B;
+  --surface-1:#0D0D14;
+  --surface-2:#13131C;
+  --surface-3:#1A1A25;
+  --line-1:rgba(255,255,255,.075);
+  --line-2:rgba(255,255,255,.14);
+  --line-3:rgba(255,255,255,.26);
+
+  /* tinta */
+  --ink-1:#F4F1EA;      /* blanco cálido, nunca #fff puro */
+  --ink-2:#A5A0B2;
+  --ink-3:#6E6980;
+
+  /* acentos semánticos */
+  --gold:#E8B04B;       /* récord / logro / marca */
+  --gold-dim:rgba(232,176,75,.16);
+  --aqua:#5FE3C8;       /* acierto / medición en vivo */
+  --aqua-dim:rgba(95,227,200,.14);
+  --violet:#8B7BFF;     /* foco, identidad, "mente" */
+  --violet-dim:rgba(139,123,255,.16);
+  --rose:#FF7A85;       /* error, sin castigo */
+  --rose-dim:rgba(255,122,133,.14);
+
+  /* forma */
+  --r-xs:6px; --r-sm:10px; --r-md:16px; --r-lg:22px; --r-full:999px;
+
+  /* ritmo (base 4) */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
+
+  /* motion */
+  --e-out:cubic-bezier(.16,1,.3,1);
+  --e-in-out:cubic-bezier(.65,0,.35,1);
+  --t-fast:120ms; --t-mid:260ms; --t-slow:520ms;
+
+  --maxw:640px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--void);
+  color:var(--ink-1);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* retícula de fondo + halo: el "instrumento" */
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,.055) 1px, transparent 0);
+  background-size:26px 26px;
+  mask-image:radial-gradient(120% 90% at 50% 8%, #000 20%, transparent 78%);
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(52% 34% at 50% -6%, rgba(139,123,255,.16), transparent 70%),
+    radial-gradient(46% 30% at 50% 108%, rgba(95,227,200,.07), transparent 70%);
+}
+#app{position:relative; z-index:1; min-height:100%; display:flex; flex-direction:column}
+
+/* tipografía */
+.mono{font-family:ui-monospace,"SF Mono","JetBrains Mono","Roboto Mono",Menlo,monospace;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.eyebrow{
+  font-size:10.5px; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--ink-2); font-weight:600;
+}
+h1{font-size:clamp(26px,5vw,34px); line-height:1.08; letter-spacing:-.03em; font-weight:500; margin:0}
+h2{font-size:19px; line-height:1.25; letter-spacing:-.015em; font-weight:600; margin:0}
+p{margin:0}
+.caption{font-size:12.5px; color:var(--ink-2); line-height:1.5}
+
+/* ============================================================
+   CHROME: topbar
+   ============================================================ */
+.topbar{
+  height:56px; flex:0 0 auto; display:flex; align-items:center; gap:var(--s3);
+  padding:0 var(--s5); border-bottom:1px solid var(--line-1);
+  backdrop-filter:blur(14px); background:rgba(7,7,11,.6);
+  position:sticky; top:0; z-index:20;
+}
+.brand{display:flex; align-items:center; gap:9px; color:var(--ink-1); text-decoration:none}
+.brand svg{width:20px; height:20px; color:var(--gold)}
+.brand b{font-size:13px; letter-spacing:.2em; font-weight:600}
+.brand span{font-size:9.5px; letter-spacing:.16em; color:var(--ink-3); border:1px solid var(--line-2);
+  padding:2px 5px; border-radius:var(--r-xs); text-transform:uppercase}
+.topbar .spacer{flex:1}
+
+/* ============================================================
+   BOTONES
+   ============================================================ */
+.btn{
+  --bg:var(--surface-2); --bd:var(--line-2); --fg:var(--ink-1);
+  appearance:none; border:1px solid var(--bd); background:var(--bg); color:var(--fg);
+  font:inherit; font-weight:550; font-size:14px;
+  min-height:46px; padding:0 var(--s5); border-radius:var(--r-full);
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  cursor:pointer; transition:transform var(--t-fast) var(--e-out), background var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+  white-space:nowrap;
+}
+.btn:hover{--bg:var(--surface-3); --bd:var(--line-3)}
+.btn:active{transform:scale(.975)}
+.btn--primary{
+  --bg:linear-gradient(180deg,#F3C468,#DFA436); --bd:transparent; --fg:#1A1206;
+  box-shadow:0 8px 26px -12px rgba(232,176,75,.8);
+}
+.btn--primary:hover{--bg:linear-gradient(180deg,#F7CE7B,#E8B04B)}
+.btn--ghost{--bg:transparent; --bd:transparent; --fg:var(--ink-2); min-height:38px; padding:0 var(--s3)}
+.btn--ghost:hover{--fg:var(--ink-1); --bg:rgba(255,255,255,.04)}
+.btn--sm{min-height:36px; font-size:13px; padding:0 var(--s4)}
+.kbd{
+  font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.06em;
+  border:1px solid rgba(0,0,0,.22); background:rgba(0,0,0,.14); color:inherit;
+  padding:3px 6px; border-radius:var(--r-xs); opacity:.85;
+}
+.btn:not(.btn--primary) .kbd{border-color:var(--line-2); background:rgba(255,255,255,.05); color:var(--ink-2)}
+:focus-visible{outline:2px solid var(--violet); outline-offset:3px; border-radius:var(--r-sm)}
+
+/* ============================================================
+   PANTALLAS
+   ============================================================ */
+main{flex:1; display:flex; flex-direction:column}
+.screen{display:none; flex:1; flex-direction:column; align-items:center; justify-content:center;
+  padding:var(--s6) var(--s5) var(--s7); width:100%}
+#screen-result{justify-content:flex-start}
+.screen.is-active{display:flex; animation:screenIn var(--t-slow) var(--e-out) both}
+@keyframes screenIn{from{opacity:0; transform:translateY(10px) scale(.994)} to{opacity:1; transform:none}}
+.wrap{width:100%; max-width:var(--maxw); margin:0 auto}
+
+/* ============================================================
+   1 · HOME — elegir prueba
+   ============================================================ */
+.hero-head{text-align:center; margin-bottom:var(--s6)}
+.hero-head .eyebrow{color:var(--gold)}
+.hero-head h1{margin:var(--s3) 0 var(--s2)}
+.hero-head p{color:var(--ink-2); font-size:14.5px; max-width:44ch; margin:0 auto}
+
+.seg{display:flex; gap:2px; padding:3px; border:1px solid var(--line-1);
+  background:var(--surface-1); border-radius:var(--r-full); width:max-content; margin:0 auto var(--s5)}
+.seg button{
+  appearance:none; border:0; background:transparent; color:var(--ink-2); font:inherit; font-size:13px; font-weight:550;
+  padding:8px 18px; border-radius:var(--r-full); cursor:pointer; transition:color var(--t-fast), background var(--t-fast);
+}
+.seg button[aria-pressed="true"]{background:var(--surface-3); color:var(--ink-1); box-shadow:inset 0 0 0 1px var(--line-2)}
+.seg button:hover{color:var(--ink-1)}
+
+.mode-list{display:grid; gap:var(--s3)}
+.mode{
+  position:relative; display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:var(--s4);
+  padding:var(--s4) var(--s5) var(--s4) var(--s4); text-align:left; width:100%;
+  background:var(--surface-1); border:1px solid var(--line-1); border-radius:var(--r-md);
+  color:inherit; font:inherit; cursor:pointer; overflow:hidden;
+  transition:border-color var(--t-mid) var(--e-out), transform var(--t-mid) var(--e-out), background var(--t-mid);
+}
+.mode::after{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:0;
+  background:radial-gradient(70% 140% at 0% 50%, var(--tone-dim), transparent 62%);
+  transition:opacity var(--t-mid);
+}
+.mode:hover{transform:translateY(-2px); border-color:var(--line-2)}
+.mode:hover::after{opacity:1}
+.mode .glyph{
+  width:44px; height:44px; border-radius:var(--r-sm); display:grid; place-items:center;
+  border:1px solid var(--line-1); background:var(--surface-2); color:var(--tone);
+}
+.mode .glyph svg{width:22px;height:22px}
+.mode .txt strong{display:block; font-size:15.5px; font-weight:600; letter-spacing:-.01em}
+.mode .txt span{display:block; font-size:12.5px; color:var(--ink-3); margin-top:2px}
+.mode .best{text-align:right}
+.mode .best i{display:block; font-style:normal; font-size:9.5px; letter-spacing:.18em; color:var(--ink-3); text-transform:uppercase}
+.mode .best b{font-size:16px; font-weight:500; letter-spacing:-.02em; color:var(--tone)}
+.mode .best b.empty{color:var(--ink-3)}
+.mode[disabled]{opacity:.42; cursor:not-allowed}
+.mode[disabled]:hover{transform:none}
+.tag{font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3);
+  border:1px solid var(--line-2); border-radius:var(--r-xs); padding:3px 6px}
+
+.home-foot{margin-top:var(--s6); display:flex; justify-content:center; gap:var(--s5); flex-wrap:wrap}
+
+/* ============================================================
+   2 · CUENTA REGRESIVA
+   ============================================================ */
+#screen-count{justify-content:center}
+.count-stage{display:grid; place-items:center; gap:var(--s5); text-align:center}
+.count-ring{position:relative; width:190px; height:190px; display:grid; place-items:center}
+.count-ring svg{position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg)}
+.count-ring .num{font-size:76px; font-weight:300; letter-spacing:-.05em; line-height:1;
+  font-variant-numeric:tabular-nums}
+.count-ring .num.go{font-size:38px; letter-spacing:.14em; font-weight:600; color:var(--aqua)}
+.count-hint{max-width:38ch; color:var(--ink-2); font-size:14px}
+.count-hint b{color:var(--ink-1); font-weight:600}
+@keyframes pulseIn{from{opacity:0; transform:scale(.72)} 55%{opacity:1} to{opacity:1; transform:scale(1)}}
+.pulse{animation:pulseIn 620ms var(--e-out) both}
+
+/* ============================================================
+   3 · HUD de partida
+   ============================================================ */
+.hud{width:100%; max-width:var(--maxw); display:flex; align-items:center; gap:var(--s4); margin-bottom:var(--s6)}
+.hud .pips{display:flex; gap:5px; flex:1; justify-content:center}
+.pip{width:100%; max-width:26px; height:4px; border-radius:var(--r-full); background:var(--line-1);
+  transition:background var(--t-mid) var(--e-out), transform var(--t-mid) var(--e-out)}
+.pip.done{background:var(--aqua)}
+.pip.miss{background:var(--rose)}
+.pip.now{background:var(--ink-2); transform:scaleY(2)}
+.timer{position:relative; width:40px; height:40px; display:grid; place-items:center; flex:0 0 auto}
+.timer svg{position:absolute; inset:0; transform:rotate(-90deg)}
+.timer span{font-size:12.5px; font-weight:600; letter-spacing:-.02em}
+.timer.warn span{color:var(--rose)}
+.back{display:inline-flex; align-items:center; gap:6px; color:var(--ink-3); background:none; border:0;
+  font:inherit; font-size:13px; cursor:pointer; padding:6px 4px; border-radius:var(--r-xs); flex:0 0 auto}
+.back:hover{color:var(--ink-1)}
+
+.prompt-row{text-align:center; margin-bottom:var(--s5)}
+.prompt-row .chips{display:flex; gap:6px; justify-content:center; margin-bottom:var(--s3)}
+.chip{font-size:10px; letter-spacing:.16em; text-transform:uppercase; font-weight:600;
+  padding:4px 9px; border-radius:var(--r-full); border:1px solid var(--line-1); color:var(--ink-2); background:var(--surface-1)}
+.chip.streak{border-color:var(--gold-dim); color:var(--gold); background:var(--gold-dim);
+  animation:pop 340ms var(--e-out) both}
+@keyframes pop{from{transform:scale(.7); opacity:0} to{transform:scale(1); opacity:1}}
+.prompt-row h2{font-size:clamp(19px,3.6vw,23px); font-weight:500; letter-spacing:-.02em}
+
+/* tablero 2×2 — acotado para que la partida entre siempre sin scroll */
+.board{display:grid; grid-template-columns:1fr 1fr; gap:var(--s3);
+  width:min(100%, 470px, 92vh)}
+.panel{
+  position:relative; aspect-ratio:1/1; padding:0; border-radius:var(--r-md); cursor:pointer;
+  background:linear-gradient(180deg,var(--surface-2),var(--surface-1));
+  border:1px solid var(--line-1); overflow:hidden;
+  transition:transform var(--t-fast) var(--e-out), border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.panel::before{ /* retícula interna, refuerza el motivo */
+  content:""; position:absolute; inset:0; opacity:.5;
+  background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+  background-size:22px 22px;
+}
+.panel:hover{transform:translateY(-3px); border-color:var(--line-3); box-shadow:0 18px 40px -26px rgba(0,0,0,.9)}
+.panel:active{transform:scale(.985)}
+.panel .idx{
+  position:absolute; top:10px; left:12px; font-size:10.5px; color:var(--ink-3);
+  font-family:ui-monospace,monospace; opacity:0; transition:opacity var(--t-fast);
+}
+.panel:hover .idx, body.kb .panel .idx{opacity:1}
+/* punto: blanco cálido = máximo contraste, sin sesgo de color en una tarea perceptiva */
+.dot{
+  position:absolute; width:11px; height:11px; border-radius:50%;
+  background:radial-gradient(circle at 34% 30%, #FFFFFF, #EDE9F7 52%, #C9C3DE);
+  box-shadow:0 0 12px rgba(160,150,220,.42);
+  transform:translate(-50%,-50%) scale(0);
+  animation:dotIn 220ms var(--e-out) forwards;
+}
+@keyframes dotIn{to{transform:translate(-50%,-50%) scale(1)}}
+/* exposición limitada: en medio/difícil los puntos se ocultan para medir percepción, no conteo */
+.panel.hidden-dots .dot{opacity:0; transform:translate(-50%,-50%) scale(.6);
+  transition:opacity 320ms var(--e-out), transform 320ms var(--e-out)}
+.panel.hidden-dots::after{
+  content:"?"; position:absolute; inset:0; display:grid; place-items:center;
+  font-size:26px; color:var(--ink-3); font-weight:300;
+}
+.panel.pick-ok{border-color:var(--aqua); box-shadow:0 0 0 1px var(--aqua), 0 0 44px -10px var(--aqua)}
+.panel.pick-no{border-color:var(--rose); animation:shake 340ms var(--e-in-out)}
+.panel.reveal{border-color:var(--aqua); box-shadow:inset 0 0 0 1px var(--aqua-dim)}
+.panel.dimmed{opacity:.32}
+@keyframes shake{0%,100%{transform:translateX(0)}22%{transform:translateX(-7px)}46%{transform:translateX(6px)}72%{transform:translateX(-3px)}}
+.verdict{
+  position:absolute; inset:auto 0 12px; display:flex; justify-content:center; pointer-events:none;
+}
+.verdict b{
+  font-size:10px; letter-spacing:.18em; text-transform:uppercase; padding:4px 10px; border-radius:var(--r-full);
+  background:rgba(7,7,11,.86); border:1px solid currentColor;
+}
+.board-foot{margin-top:var(--s4); text-align:center; min-height:22px}
+.board-foot .live{font-size:12.5px; color:var(--ink-3)}
+
+/* ============================================================
+   4 · REFLEJO
+   ============================================================ */
+.react-stage{
+  width:100%; max-width:var(--maxw); aspect-ratio:1/.66; border-radius:var(--r-lg);
+  border:1px solid var(--line-1); background:var(--surface-1);
+  display:grid; place-items:center; text-align:center; cursor:pointer; padding:var(--s5);
+  transition:background var(--t-fast), border-color var(--t-fast); position:relative; overflow:hidden;
+}
+.react-stage .inner{display:grid; gap:10px; place-items:center}
+.react-stage .big{font-size:clamp(22px,5vw,30px); font-weight:500; letter-spacing:-.02em}
+.react-stage .sub{font-size:13.5px; color:var(--ink-2); max-width:34ch}
+.react-stage[data-state="go"]{background:radial-gradient(70% 100% at 50% 50%, #6EF0D6, #1FBF9F); border-color:#8CFFE6}
+.react-stage[data-state="go"] .big,.react-stage[data-state="go"] .sub{color:#06231D}
+.react-stage[data-state="early"]{background:var(--rose-dim); border-color:var(--rose)}
+.react-stage .taps{display:flex; gap:6px; margin-top:var(--s3)}
+.react-stage .taps i{width:22px;height:3px;border-radius:2px;background:var(--line-2);font-style:normal}
+.react-stage .taps i.on{background:var(--aqua)}
+
+/* ============================================================
+   5 · RESULTADO — plantilla única (% y ms)
+   ============================================================ */
+#screen-result .wrap{display:grid; gap:var(--s5); justify-items:center}
+.result-head{text-align:center}
+.result-head .eyebrow{color:var(--ink-3)}
+.result-head h1{margin-top:6px}
+
+/* dial */
+.dial{position:relative; width:min(268px,74vw); aspect-ratio:1; display:grid; place-items:center}
+.dial svg{position:absolute; inset:0; width:100%; height:100%}
+.dial .core{position:relative; text-align:center; display:grid; gap:4px; justify-items:center; padding:0 12px}
+.dial .core .eyebrow{color:var(--ink-2); max-width:16ch; line-height:1.5}
+.dial .core .value{
+  font-size:clamp(48px,14vw,68px); font-weight:300; letter-spacing:-.045em; line-height:1;
+  display:flex; align-items:baseline; gap:6px; font-variant-numeric:tabular-nums;
+}
+.dial .core .value u{font-size:.32em; text-decoration:none; font-weight:500; letter-spacing:0; color:var(--ink-2)}
+.dial.state-record .arc{stroke:var(--gold)}
+.dial.state-up .arc{stroke:var(--aqua)}
+.dial.state-flat .arc{stroke:var(--violet)}
+@keyframes sweep{from{opacity:0} to{opacity:1}}
+.dial .halo{opacity:0; animation:sweep 900ms var(--e-out) 250ms both}
+.mark-note{display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--ink-3); margin-top:calc(var(--s3)*-1)}
+.mark-tick{width:2px; height:12px; background:var(--gold); border-radius:2px; display:inline-block}
+
+/* delta explícito: icono + palabra, nunca sólo color */
+#deltaSlot{display:flex; gap:var(--s2); flex-wrap:wrap; justify-content:center}
+.delta{display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:550; text-align:left;
+  padding:6px 13px; border-radius:var(--r-full); border:1px solid currentColor; background:rgba(255,255,255,.02)}
+.delta svg{width:13px;height:13px}
+.delta.record{color:var(--gold); background:var(--gold-dim)}
+.delta.up{color:var(--aqua); background:var(--aqua-dim)}
+.delta.flat{color:var(--ink-2)}
+
+/* fila de stats */
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--s2); width:100%}
+.stat{
+  background:var(--surface-1); border:1px solid var(--line-1); border-radius:var(--r-md);
+  padding:var(--s4) var(--s3); text-align:center; display:grid; gap:3px; justify-items:center;
+}
+.stat .ico{width:16px;height:16px;color:var(--ink-3); margin-bottom:2px}
+.stat b{font-size:19px; font-weight:500; letter-spacing:-.025em}
+.stat b u{font-size:.6em; text-decoration:none; color:var(--ink-3); margin-left:1px}
+.stat i{font-style:normal; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); line-height:1.3}
+.stat.is-gold b{color:var(--gold)} .stat.is-gold .ico{color:var(--gold)}
+
+/* historial */
+.history{width:100%; background:var(--surface-1); border:1px solid var(--line-1); border-radius:var(--r-md); padding:var(--s4) var(--s5)}
+.history header{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:var(--s3)}
+.history header .eyebrow{color:var(--ink-3)}
+.history header span{font-size:12px; color:var(--ink-3)}
+.spark{width:100%; height:56px; display:block}
+.history .empty{font-size:13px; color:var(--ink-3); text-align:center; padding:var(--s3) 0}
+
+.actions{display:flex; gap:var(--s3); flex-wrap:wrap; justify-content:center; width:100%}
+.actions .btn{flex:1 1 180px; max-width:260px}
+.disclaimer{
+  display:flex; gap:9px; align-items:flex-start; max-width:52ch; text-align:left;
+  color:var(--ink-2); font-size:12.5px; line-height:1.55;
+  border-top:1px solid var(--line-1); padding-top:var(--s4);
+}
+.disclaimer svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px;color:var(--ink-3)}
+
+/* ============================================================
+   6 · PERFIL
+   ============================================================ */
+.profile-grid{display:grid; gap:var(--s3); width:100%}
+.prow{display:grid; grid-template-columns:1fr auto auto; gap:var(--s4); align-items:center;
+  background:var(--surface-1); border:1px solid var(--line-1); border-radius:var(--r-md); padding:var(--s4) var(--s5)}
+.prow .name{font-weight:550; font-size:14.5px}
+.prow .name span{display:block; font-size:11.5px; color:var(--ink-3); font-weight:400; margin-top:2px}
+.prow .v{text-align:right}
+.prow .v i{display:block; font-style:normal; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+.prow .v b{font-size:17px; font-weight:500; letter-spacing:-.02em}
+
+/* toast */
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translate(-50%,20px); opacity:0; pointer-events:none;
+  background:var(--surface-3); border:1px solid var(--line-2); color:var(--ink-1);
+  padding:10px 18px; border-radius:var(--r-full); font-size:13px; z-index:50;
+  transition:opacity var(--t-mid), transform var(--t-mid) var(--e-out);
+}
+.toast.show{opacity:1; transform:translate(-50%,0)}
+
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:560px){
+  .screen{padding:var(--s5) var(--s4) var(--s7)}
+  .stats{grid-template-columns:1fr; gap:var(--s2)}
+  .stat{grid-template-columns:auto 1fr auto; justify-items:start; text-align:left; align-items:center; padding:var(--s3) var(--s4)}
+  .stat .ico{margin:0}
+  .stat i{order:2; flex:1}
+  .stat b{order:3; margin-left:auto}
+  .actions .btn{flex:1 1 100%; max-width:none}
+  .mode{grid-template-columns:38px 1fr auto; gap:var(--s3); padding:var(--s3) var(--s4) var(--s3) var(--s3)}
+  .mode .glyph{width:38px;height:38px}
+  .board{gap:var(--s2)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <a class="brand" href="#" onclick="go('home');return false" aria-label="Ir al inicio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.4"/><circle cx="12" cy="12" r="4.1"/>
+        <path d="M12 .6v4.2M12 19.2v4.2M.6 12h4.2M19.2 12h4.2"/>
+      </svg>
+      <b>NÍTIDO</b>
+      <span>prototipo</span>
+    </a>
+    <div class="spacer"></div>
+    <button class="btn btn--ghost btn--sm" onclick="go('profile')">Tu perfil</button>
+  </header>
+
+  <main>
+
+    <!-- ============ HOME ============ -->
+    <section class="screen" id="screen-home" aria-labelledby="home-t">
+      <div class="wrap">
+        <div class="hero-head">
+          <p class="eyebrow">Sesión de entrenamiento</p>
+          <h1 id="home-t">Elegí qué querés medir</h1>
+          <p>Tres minutos, una métrica por prueba. El objetivo no es el puntaje: es ver cómo se mueve tu propia línea de base.</p>
+        </div>
+
+        <div class="seg" role="group" aria-label="Dificultad">
+          <button type="button" data-diff="facil" aria-pressed="true" onclick="setDiff('facil')">Fácil</button>
+          <button type="button" data-diff="medio" aria-pressed="false" onclick="setDiff('medio')">Medio</button>
+          <button type="button" data-diff="dificil" aria-pressed="false" onclick="setDiff('dificil')">Difícil</button>
+        </div>
+
+        <div class="mode-list" id="modeList"></div>
+
+        <div class="home-foot">
+          <button class="btn btn--ghost btn--sm" onclick="go('profile')">Ver historial de la sesión</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CUENTA REGRESIVA ============ -->
+    <section class="screen" id="screen-count" aria-live="polite">
+      <div class="count-stage">
+        <p class="eyebrow" id="countMode">Comparación rápida · Fácil</p>
+        <div class="count-ring">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r="46" fill="none" stroke="var(--line-1)" stroke-width="1.5"/>
+            <circle id="countArc" cx="50" cy="50" r="46" fill="none" stroke="var(--violet)" stroke-width="1.5"
+                    stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0"/>
+          </svg>
+          <div class="num mono" id="countNum">3</div>
+        </div>
+        <p class="count-hint" id="countHint"></p>
+      </div>
+    </section>
+
+    <!-- ============ COMPARACIÓN ============ -->
+    <section class="screen" id="screen-compare">
+      <div class="hud">
+        <button class="back" onclick="abort()" aria-label="Salir de la partida">← Salir</button>
+        <div class="pips" id="pips"></div>
+        <div class="timer" id="timerC">
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <circle cx="20" cy="20" r="18" fill="none" stroke="var(--line-1)" stroke-width="2.5"/>
+            <circle id="timerArc" cx="20" cy="20" r="18" fill="none" stroke="var(--violet)" stroke-width="2.5"
+                    stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0"/>
+          </svg>
+          <span class="mono" id="timerNum">30</span>
+        </div>
+      </div>
+
+      <div class="prompt-row wrap">
+        <div class="chips">
+          <span class="chip" id="chipDiff">Fácil</span>
+          <span class="chip" id="chipRound">Ronda 1/10</span>
+          <span class="chip streak" id="chipStreak" hidden>Racha ×2</span>
+        </div>
+        <h2>¿Qué cuadro tiene <em style="font-style:normal;color:var(--gold)">más</em> puntos?</h2>
+      </div>
+
+      <div class="board" id="board" role="group" aria-label="Elegí el cuadro con más puntos"></div>
+      <div class="board-foot wrap"><span class="live" id="liveMsg" aria-live="polite"></span></div>
+    </section>
+
+    <!-- ============ REFLEJO ============ -->
+    <section class="screen" id="screen-react">
+      <div class="hud">
+        <button class="back" onclick="abort()">← Salir</button>
+        <div class="pips" id="pipsR"></div>
+        <div class="timer"><span class="mono" id="reactCount">1/5</span></div>
+      </div>
+      <div class="prompt-row wrap">
+        <div class="chips"><span class="chip">Reflejo</span><span class="chip" id="chipDiffR">Fácil</span></div>
+        <h2>Tocá apenas el campo se ilumine</h2>
+      </div>
+      <div class="react-stage" id="reactStage" data-state="wait" role="button" tabindex="0" aria-live="polite">
+        <div class="inner">
+          <div class="big" id="reactBig">Esperá…</div>
+          <div class="sub" id="reactSub">Vas a ver un cambio de color. Tocá o apretá Espacio lo antes posible.</div>
+          <div class="taps" id="reactTaps"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RESULTADO ============ -->
+    <section class="screen" id="screen-result">
+      <div class="wrap">
+        <div class="result-head">
+          <p class="eyebrow" id="resMode">Comparación rápida · Fácil</p>
+          <h1 id="resTitle">Tu medición</h1>
+        </div>
+
+        <div class="dial" id="dial">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <g id="ticks" stroke="var(--line-1)" stroke-width="1"></g>
+            <circle cx="100" cy="100" r="78" fill="none" stroke="var(--line-1)" stroke-width="6"/>
+            <circle class="arc" id="dialArc" cx="100" cy="100" r="78" fill="none" stroke="var(--violet)" stroke-width="6"
+                    stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="490"
+                    transform="rotate(-90 100 100)" style="transition:stroke-dashoffset 1100ms cubic-bezier(.16,1,.3,1)"/>
+            <circle class="halo" cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width=".6" opacity=".25"/>
+          </svg>
+          <div class="core">
+            <p class="eyebrow" id="dialLabel">Precisión</p>
+            <div class="value"><span id="dialValue">0</span><u id="dialUnit">%</u></div>
+          </div>
+        </div>
+
+        <p class="mark-note" id="markNote" hidden>
+          <span class="mark-tick" aria-hidden="true"></span> La marca dorada en el aro es tu récord
+        </p>
+
+        <div id="deltaSlot"></div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="history">
+          <header>
+            <p class="eyebrow">Tus últimos intentos</p>
+            <span id="histNote"></span>
+          </header>
+          <svg class="spark" id="spark" viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <p class="empty" id="histEmpty" hidden>Jugá otra vez para empezar a ver tu tendencia.</p>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn--primary" onclick="replay()">Jugar de nuevo <span class="kbd">Espacio</span></button>
+          <button class="btn" onclick="copyResult()" id="copyBtn">Copiar resultado</button>
+        </div>
+        <div class="actions" style="margin-top:calc(var(--s3)*-1)">
+          <button class="btn btn--ghost btn--sm" onclick="go('home')">Cambiar de prueba</button>
+          <button class="btn btn--ghost btn--sm" onclick="go('profile')">Ver tu perfil</button>
+        </div>
+
+        <p class="disclaimer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <circle cx="12" cy="12" r="9.2"/><path d="M12 11v6M12 7.6v.6"/>
+          </svg>
+          <span><b style="color:var(--ink-1);font-weight:600">Medición indicativa.</b> Sirve para comparar tus propios intentos entre sí, no para diagnosticar nada: no es un test cognitivo validado y el dispositivo, la pantalla y el cansancio mueven el número.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ PERFIL ============ -->
+    <section class="screen" id="screen-profile">
+      <div class="wrap">
+        <div class="hero-head">
+          <p class="eyebrow" style="color:var(--violet)">Sesión actual</p>
+          <h1>Tu perfil</h1>
+          <p>Estos números viven sólo en esta sesión del prototipo. En producción se guardan por usuario.</p>
+        </div>
+        <div class="profile-grid" id="profileGrid"></div>
+        <div class="home-foot">
+          <button class="btn" onclick="go('home')">Volver a elegir</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   ESTADO (sólo en memoria — sin storage)
+   ============================================================ */
+const DIFFS = {
+  facil:   {label:'Fácil',   rounds:10, secs:30, ratio:[1.55,1.85], span:[6,11],  flash:null},
+  medio:   {label:'Medio',   rounds:10, secs:28, ratio:[1.28,1.42], span:[9,16],  flash:1700},
+  dificil: {label:'Difícil', rounds:12, secs:26, ratio:[1.10,1.20], span:[14,22], flash:1000},
+};
+
+const GAMES = {
+  compare:{
+    key:'compare', name:'Comparación rápida', blurb:'Elegí el cuadro con más puntos', tone:'var(--aqua)', toneDim:'var(--aqua-dim)',
+    unit:'%', metric:'Precisión', short:'Precisión', better:'high', decimals:0,
+    scale:v=>v/100,
+    glyph:'<circle cx="7" cy="7" r="1.6"/><circle cx="12" cy="5.5" r="1.6"/><circle cx="6" cy="13" r="1.6"/><circle cx="17" cy="10" r="1.6"/><circle cx="12.5" cy="16" r="1.6"/><circle cx="18" cy="17" r="1.6"/>'
+  },
+  react:{
+    key:'react', name:'Reflejo', blurb:'Tocá apenas se ilumine el campo', tone:'var(--violet)', toneDim:'var(--violet-dim)',
+    unit:'ms', metric:'Tiempo de reacción', short:'Reacción', better:'low', decimals:0,
+    scale:v=>Math.max(0,Math.min(1,(520-v)/(520-150))),
+    glyph:'<path d="M13 2 4.5 13.2h6L10 22l9-11.4h-6.2z" stroke-linejoin="round"/>'
+  },
+  memory:{
+    key:'memory', name:'Secuencia', blurb:'Repetí el patrón que se enciende', tone:'var(--gold)', toneDim:'var(--gold-dim)',
+    unit:'', metric:'Amplitud', better:'high', locked:true,
+    glyph:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>'
+  }
+};
+
+const S = {
+  diff:'facil',
+  game:null,
+  best:{compare:null, react:null},
+  history:{compare:[], react:[]},
+  run:null,
+  last:null,
+  screen:'home'
+};
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const rnd = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const fmt = (v,g) => g.unit==='%' ? Math.round(v) : Math.round(v);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1900);
+}
+function go(name){
+  S.screen=name;
+  $$('.screen').forEach(s=>s.classList.toggle('is-active', s.id==='screen-'+name));
+  if(name==='home') renderHome();
+  if(name==='profile') renderProfile();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Tab') document.body.classList.add('kb'); });
+document.addEventListener('mousedown',()=>document.body.classList.remove('kb'));
+
+function setDiff(d){
+  S.diff=d;
+  $$('.seg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.diff===d)));
+  renderHome();
+}
+function renderHome(){
+  const list=$('#modeList');
+  list.innerHTML = Object.values(GAMES).map(g=>{
+    const best=S.best[g.key];
+    const val = best==null ? '—' : `${fmt(best,g)}${g.unit}`;
+    return `
+    <button class="mode" style="--tone:${g.tone};--tone-dim:${g.toneDim}" ${g.locked?'disabled':''}
+            onclick="start('${g.key}')" aria-label="${g.name}. ${g.blurb}">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">${g.glyph}</svg></span>
+      <span class="txt"><strong>${g.name}</strong><span>${g.blurb}</span></span>
+      ${g.locked
+        ? '<span class="tag">Pronto</span>'
+        : `<span class="best"><i>Tu mejor marca</i><b class="${best==null?'empty':''}">${val}</b></span>`}
+    </button>`;
+  }).join('');
+}
+
+function start(key){
+  S.game=GAMES[key];
+  const d=DIFFS[S.diff];
+  $('#countMode').textContent = `${S.game.name} · ${d.label}`;
+  $('#countHint').innerHTML = key==='compare'
+    ? `Van a aparecer <b>4 cuadros</b>. Elegí el que tiene <b>más puntos</b>, lo más rápido que puedas. Teclas <b>1–4</b>.`
+      + (d.flash ? ` Los puntos se ocultan a los <b>${(d.flash/1000).toFixed(1).replace('.0','')} s</b>: estimá, no cuentes.` : ``)
+    : `Cuando el campo cambie de color, <b>tocá</b> o apretá <b>Espacio</b>. Si te adelantás, ese intento se repite.`;
+  go('count');
+  countdown(()=> key==='compare' ? startCompare() : startReact());
+}
+function countdown(done){
+  const nums=['3','2','1','¡Ya!']; let i=0;
+  const el=$('#countNum'), arc=$('#countArc');
+  const step=()=>{
+    if(S.screen!=='count') return;
+    el.className = 'num mono pulse' + (i===3?' go':'');
+    el.textContent = nums[i];
+    arc.style.transition='stroke-dashoffset 620ms linear';
+    arc.style.strokeDashoffset = 289*((i+1)/4);
+    void el.offsetWidth;
+    i++;
+    if(i<4) setTimeout(step,640); else setTimeout(()=>{ if(S.screen==='count') done(); },520);
+  };
+  arc.style.transition='none'; arc.style.strokeDashoffset='0';
+  step();
+}
+function abort(){ stopTimers(); go('home'); }
+function stopTimers(){
+  clearInterval(S.run?.tick); clearTimeout(S.run?.to1); clearTimeout(S.run?.to2);
+}
+
+function startCompare(){
+  const d=DIFFS[S.diff];
+  S.run={game:'compare', round:0, hits:0, streak:0, bestStreak:0, times:[], results:[], left:d.secs, lock:false};
+  $('#chipDiff').textContent=d.label;
+  $('#pips').innerHTML = Array.from({length:d.rounds},()=>'<span class="pip"></span>').join('');
+  go('compare');
+  runTimer(d.secs, ()=>finishCompare());
+  nextRound();
+}
+function runTimer(secs, onEnd){
+  const num=$('#timerNum'), arc=$('#timerArc'), box=$('#timerC');
+  S.run.left=secs; num.textContent=secs; box.classList.remove('warn');
+  arc.style.transition='none'; arc.style.strokeDashoffset='0';
+  S.run.tick=setInterval(()=>{
+    S.run.left--;
+    num.textContent=Math.max(0,S.run.left);
+    arc.style.transition='stroke-dashoffset 1s linear';
+    arc.style.strokeDashoffset = 113*(1 - S.run.left/secs);
+    if(S.run.left<=5) box.classList.add('warn');
+    if(S.run.left<=0){ clearInterval(S.run.tick); onEnd(); }
+  },1000);
+}
+function nextRound(){
+  const d=DIFFS[S.diff];
+  if(S.run.round>=d.rounds){ return finishCompare(); }
+  S.run.lock=false;
+  S.run.shownAt=performance.now();
+  $('#chipRound').textContent=`Ronda ${S.run.round+1}/${d.rounds}`;
+  $('#liveMsg').textContent='';
+  paintPips();
+
+  const second = rnd(d.span[0], d.span[1]);
+  const ratio  = d.ratio[0] + Math.random()*(d.ratio[1]-d.ratio[0]);
+  const winner = Math.max(second+2, Math.round(second*ratio));
+  const third  = Math.max(4, second - rnd(1,3));
+  const fourth = Math.max(3, third  - rnd(1,3));
+  const counts = [winner, second, third, fourth];
+  for(let i=counts.length-1;i>0;i--){const j=rnd(0,i);[counts[i],counts[j]]=[counts[j],counts[i]]}
+  const win = counts.indexOf(winner);
+
+  const ref = counts.reduce((a,b)=>a+b,0)/counts.length;
+  $('#board').innerHTML = counts.map((c,i)=>`
+    <button class="panel" data-i="${i}" onclick="pick(${i},${win})" aria-label="Cuadro ${i+1}">
+      <span class="idx mono">${i+1}</span>
+      ${dots(c, clamp(Math.pow(ref/c,.25),.74,1.28))}
+    </button>`).join('');
+
+  if(d.flash){
+    S.run.to2 = setTimeout(()=>{
+      if(S.screen==='compare' && !S.run.lock) $$('#board .panel').forEach(p=>p.classList.add('hidden-dots'));
+    }, d.flash);
+  }
+}
+function dots(n, size=1){
+  const min = Math.max(7.5, 26/Math.sqrt(n));
+  const pts=[]; let guard=0;
+  while(pts.length<n && guard<1400){
+    guard++;
+    const p={x:rnd(11,89), y:rnd(11,89)};
+    if(pts.every(q=>Math.hypot(q.x-p.x,q.y-p.y)>min)) pts.push(p);
+  }
+  const d=(11*size).toFixed(1);
+  return pts.map((p,i)=>`<span class="dot" style="left:${p.x}%;top:${p.y}%;width:${d}px;height:${d}px;animation-delay:${i*10}ms"></span>`).join('');
+}
+function paintPips(){
+  $$('#pips .pip').forEach((p,i)=>{
+    p.className='pip'+(S.run.results[i]===true?' done':S.run.results[i]===false?' miss':i===S.run.round?' now':'');
+  });
+}
+function pick(i, win){
+  if(S.run.lock) return;
+  S.run.lock=true;
+  clearTimeout(S.run.to2);
+  $$('#board .panel').forEach(p=>p.classList.remove('hidden-dots'));
+  const ok = i===win;
+  const rt = performance.now()-S.run.shownAt;
+  S.run.times.push(rt);
+  S.run.results.push(ok);
+  if(ok){ S.run.hits++; S.run.streak++; S.run.bestStreak=Math.max(S.run.bestStreak,S.run.streak); }
+  else { S.run.streak=0; }
+
+  const panels=$$('#board .panel');
+  panels.forEach((p,k)=>{
+    if(k===i) p.classList.add(ok?'pick-ok':'pick-no');
+    else if(k===win && !ok) p.classList.add('reveal');
+    else p.classList.add('dimmed');
+  });
+  panels[i].insertAdjacentHTML('beforeend',
+    `<span class="verdict"><b style="color:${ok?'var(--aqua)':'var(--rose)'}">${ok?'✓ correcto':'✕ era el '+(win+1)}</b></span>`);
+  $('#liveMsg').textContent = `${ok?'Correcto':'Incorrecto'} · ${Math.round(rt)} ms`;
+
+  const st=$('#chipStreak');
+  if(S.run.streak>=2){ st.hidden=false; st.textContent=`Racha ×${S.run.streak}`; st.style.animation='none'; void st.offsetWidth; st.style.animation=''; }
+  else st.hidden=true;
+
+  S.run.round++;
+  paintPips();
+  S.run.to1=setTimeout(()=>{ if(S.screen==='compare') nextRound(); }, ok?480:900);
+}
+function finishCompare(){
+  stopTimers();
+  const played=S.run.results.length || 1;
+  const pct = (S.run.hits/played)*100;
+  const avg = S.run.times.length? S.run.times.reduce((a,b)=>a+b,0)/S.run.times.length : 0;
+  showResult('compare', pct, {
+    hits:`${S.run.hits}/${played}`,
+    avg:Math.round(avg),
+    streak:S.run.bestStreak
+  });
+}
+
+function startReact(){
+  S.run={game:'react', tap:0, total:5, times:[], stage:'wait'};
+  $('#chipDiffR').textContent=DIFFS[S.diff].label;
+  $('#pipsR').innerHTML=Array.from({length:5},()=>'<span class="pip"></span>').join('');
+  $('#reactTaps').innerHTML=Array.from({length:5},()=>'<i></i>').join('');
+  go('react');
+  armReact();
+}
+function armReact(){
+  const st=$('#reactStage');
+  S.run.stage='wait'; st.dataset.state='wait';
+  $('#reactBig').textContent='Esperá…';
+  $('#reactSub').textContent='No toques todavía. Vas a ver el campo iluminarse.';
+  $('#reactCount').textContent=`${S.run.tap+1}/5`;
+  S.run.to1=setTimeout(()=>{
+    if(S.screen!=='react') return;
+    S.run.stage='go'; st.dataset.state='go';
+    $('#reactBig').textContent='¡Ahora!';
+    $('#reactSub').textContent='Tocá';
+    S.run.goAt=performance.now();
+  }, rnd(1200,3600));
+}
+function reactTap(){
+  if(S.screen!=='react') return;
+  const st=$('#reactStage');
+  if(S.run.stage==='wait'){
+    clearTimeout(S.run.to1);
+    S.run.stage='early'; st.dataset.state='early';
+    $('#reactBig').textContent='Te adelantaste';
+    $('#reactSub').textContent='Sin drama: repetimos este intento.';
+    S.run.to2=setTimeout(()=>{ if(S.screen==='react') armReact(); },1200);
+    return;
+  }
+  if(S.run.stage!=='go') return;
+  const ms=performance.now()-S.run.goAt;
+  S.run.times.push(ms);
+  S.run.tap++;
+  $$('#pipsR .pip')[S.run.tap-1].classList.add('done');
+  $$('#reactTaps i')[S.run.tap-1].classList.add('on');
+  S.run.stage='shown'; st.dataset.state='wait';
+  $('#reactBig').textContent=`${Math.round(ms)} ms`;
+  $('#reactSub').textContent = S.run.tap>=5 ? 'Listo, vamos al resultado.' : 'Preparate para el siguiente.';
+  S.run.to2=setTimeout(()=>{
+    if(S.screen!=='react') return;
+    if(S.run.tap>=5) finishReact(); else armReact();
+  },1000);
+}
+$('#reactStage').addEventListener('click',reactTap);
+$('#reactStage').addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter'){e.preventDefault();reactTap();} });
+function finishReact(){
+  stopTimers();
+  const t=S.run.times, avg=t.reduce((a,b)=>a+b,0)/t.length;
+  const mean=avg, sd=Math.sqrt(t.reduce((a,b)=>a+(b-mean)**2,0)/t.length);
+  showResult('react', avg, { best:Math.round(Math.min(...t)), sd:Math.round(sd), taps:t.length });
+}
+
+function showResult(key, value, extra){
+  const g=GAMES[key], d=DIFFS[S.diff];
+  const prevBest=S.best[key];
+  const isBetter = prevBest==null ? true : (g.better==='high' ? value>prevBest : value<prevBest);
+  if(isBetter) S.best[key]=value;
+  S.history[key].push(value);
+  S.last={key,value,extra,isRecord:isBetter && prevBest!=null, isFirst:prevBest==null, prevBest};
+
+  $('#resMode').textContent=`${g.name} · ${d.label}`;
+  $('#resTitle').textContent = S.last.isRecord ? 'Nueva marca personal' : 'Tu medición';
+  $('#dialLabel').textContent = g.short || g.metric;
+  $('#dialUnit').textContent = g.unit;
+
+  const dial=$('#dial');
+  const hist=S.history[key];
+  const prevAvg = hist.length>1 ? hist.slice(0,-1).reduce((a,b)=>a+b,0)/(hist.length-1) : null;
+  const aboveAvg = prevAvg==null ? false : (g.better==='high' ? value>prevAvg : value<prevAvg);
+  const state = S.last.isRecord ? 'record' : (aboveAvg ? 'up' : 'flat');
+  dial.className='dial state-'+state;
+  dial.style.color = state==='record'?'var(--gold)':state==='up'?'var(--aqua)':'var(--violet)';
+
+  const bestNow=S.best[key];
+  const showMark = !S.last.isFirst && !S.last.isRecord && bestNow!=null;
+  const markA = showMark ? clamp(g.scale(bestNow),0,1)*Math.PI*2 - Math.PI/2 : null;
+  $('#ticks').innerHTML = Array.from({length:60},(_,i)=>{
+    const a=(i/60)*Math.PI*2 - Math.PI/2, r1=92, r2=(i%5===0)?86:89;
+    return `<line x1="${100+Math.cos(a)*r1}" y1="${100+Math.sin(a)*r1}" x2="${100+Math.cos(a)*r2}" y2="${100+Math.sin(a)*r2}"/>`;
+  }).join('') + (showMark
+    ? `<line x1="${100+Math.cos(markA)*70}" y1="${100+Math.sin(markA)*70}"
+             x2="${100+Math.cos(markA)*88}" y2="${100+Math.sin(markA)*88}"
+             stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round"/>` : '');
+  $('#markNote').hidden = !showMark;
+
+  const pct=clamp(g.scale(value),0,1);
+  const arc=$('#dialArc');
+  arc.style.strokeDashoffset=490;
+  requestAnimationFrame(()=>{ arc.style.strokeDashoffset = 490*(1-pct); });
+  countUp($('#dialValue'), value, g);
+
+  const chips=[];
+  if(S.last.isFirst){
+    chips.push(`<span class="delta flat">${ICO.flag} Primer intento — tu línea de base</span>`);
+  } else if(S.last.isRecord){
+    chips.push(`<span class="delta record">${ICO.trophy} Récord — ${fmt(Math.abs(value-prevBest),g)}${g.unit} mejor que tu marca anterior</span>`);
+  } else {
+    const gap = fmt(Math.abs(value-bestNow),g);
+    const worse = g.better==='high' ? 'menos preciso' : 'más lento';
+    chips.push(`<span class="delta flat">${ICO.dash} ${gap}${g.unit} ${worse} que tu récord (${fmt(bestNow,g)}${g.unit})</span>`);
+  }
+  if(prevAvg!=null){
+    chips.push(aboveAvg
+      ? `<span class="delta up">${ICO.up} Mejor que tu promedio reciente</span>`
+      : `<span class="delta flat">${ICO.down} Por debajo de tu promedio reciente</span>`);
+  }
+  $('#deltaSlot').innerHTML=chips.join('');
+
+  const stats = key==='compare' ? [
+    {ico:ICO.check, v:extra.hits,  u:'',   l:'Aciertos'},
+    {ico:ICO.bolt,  v:extra.avg,   u:'ms', l:'Decisión media'},
+    {ico:ICO.fire,  v:'×'+extra.streak, u:'', l:'Racha máxima', gold:extra.streak>=4}
+  ] : [
+    {ico:ICO.trophy,v:fmt(S.best.react,GAMES.react), u:'ms', l:'Récord personal', gold:true},
+    {ico:ICO.bolt,  v:extra.best,  u:'ms', l:'Mejor toque'},
+    {ico:ICO.wave,  v:'±'+extra.sd,u:'ms', l:'Consistencia'}
+  ];
+  $('#stats').innerHTML = stats.map(s=>`
+    <div class="stat ${s.gold?'is-gold':''}">
+      <span class="ico">${s.ico}</span>
+      <i>${s.l}</i>
+      <b>${s.v}${s.u?`<u>${s.u}</u>`:''}</b>
+    </div>`).join('');
+
+  drawSpark(key,g);
+  go('result');
+}
+function countUp(el, target, g){
+  const dur=900, t0=performance.now();
+  const step=now=>{
+    const k=clamp((now-t0)/dur,0,1);
+    const e=1-Math.pow(1-k,3);
+    el.textContent=fmt(target*e,g);
+    if(k<1) requestAnimationFrame(step); else el.textContent=fmt(target,g);
+  };
+  requestAnimationFrame(step);
+}
+function drawSpark(key,g){
+  const h=S.history[key].slice(-12), svg=$('#spark'), empty=$('#histEmpty');
+  $('#histNote').textContent = h.length>1 ? `${h.length} intentos` : '';
+  if(h.length<2){ svg.innerHTML=''; svg.style.display='none'; empty.hidden=false; return; }
+  svg.style.display='block'; empty.hidden=true;
+  const min=Math.min(...h), max=Math.max(...h), span=(max-min)||1;
+  const X=i=> 6 + (i/(h.length-1))*288;
+  const Y=v=> 48 - ((v-min)/span)*40;
+  const pts=h.map((v,i)=>[X(i),Y(v)]);
+  const line=pts.map((p,i)=>`${i?'L':'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  const area=`${line} L294 56 L6 56 Z`;
+  const bestV = g.better==='high'?max:min;
+  svg.innerHTML=`
+    <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="var(--violet)" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="var(--violet)" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#sg)"/>
+    <path d="${line}" fill="none" stroke="var(--violet)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i===pts.length-1?3.4:2}"
+       fill="${h[i]===bestV?'var(--gold)':i===pts.length-1?'var(--ink-1)':'var(--violet)'}"/>`).join('')}`;
+}
+
+function replay(){ start(S.last?.key || 'compare'); }
+function copyResult(){
+  const {key,value}=S.last, g=GAMES[key], d=DIFFS[S.diff];
+  const txt = `NÍTIDO · ${g.name} (${d.label})\n${g.metric}: ${fmt(value,g)}${g.unit}\nMejor marca: ${fmt(S.best[key],g)}${g.unit}\n#nitido`;
+  const done=()=>{ const b=$('#copyBtn'); b.textContent='Copiado ✓'; toast('Resultado copiado'); setTimeout(()=>b.textContent='Copiar resultado',1800); };
+  if(navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(fallback);
+  else fallback();
+  function fallback(){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select();
+    try{document.execCommand('copy'); done();}catch(e){toast('No se pudo copiar');} ta.remove(); }
+}
+
+function renderProfile(){
+  $('#profileGrid').innerHTML = Object.values(GAMES).filter(g=>!g.locked).map(g=>{
+    const h=S.history[g.key], best=S.best[g.key];
+    const avg = h.length? h.reduce((a,b)=>a+b,0)/h.length : null;
+    return `<div class="prow">
+      <div class="name">${g.name}<span>${h.length} ${h.length===1?'intento':'intentos'} en esta sesión</span></div>
+      <div class="v"><i>Promedio</i><b>${avg==null?'—':fmt(avg,g)+g.unit}</b></div>
+      <div class="v"><i>Récord</i><b style="color:${best==null?'var(--ink-3)':'var(--gold)'}">${best==null?'—':fmt(best,g)+g.unit}</b></div>
+    </div>`;
+  }).join('');
+}
+
+const ICO={
+  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:1em;height:1em;vertical-align:-.12em"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v1.5A3.5 3.5 0 0 0 7 10M17 5h3v1.5A3.5 3.5 0 0 1 17 10M10 19h4M12 14v5"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:1em;height:1em;vertical-align:-.12em"><path d="M13 2 4.5 13.2h6L10 22l9-11.4h-6.2z" stroke-linejoin="round"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:1em;height:1em;vertical-align:-.12em"><path d="m4 12.5 5 5L20 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  fire:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:1em;height:1em;vertical-align:-.12em"><path d="M12 2s5 4.5 5 9a5 5 0 0 1-10 0c0-1.6.7-3 1.5-4 .3 1.2 1 2 1.8 2 1 0 1.5-1 1.2-2.6C11.2 4.8 12 2 12 2z"/></svg>',
+  wave:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:1em;height:1em;vertical-align:-.12em"><path d="M2 12c2.5 0 2.5-6 5-6s2.5 12 5 12 2.5-6 5-6 2.5 3 5 3" stroke-linecap="round"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:1em;height:1em;vertical-align:-.12em"><path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  dash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:1em;height:1em;vertical-align:-.12em"><path d="M5 12h14" stroke-linecap="round"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:1em;height:1em;vertical-align:-.12em"><path d="M12 5v14M5 12l7 7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:1em;height:1em;vertical-align:-.12em"><path d="M5 21V4m0 0h11l-2 3.5L16 11H5" stroke-linejoin="round"/></svg>'
+};
+
+document.addEventListener('keydown',e=>{
+  if(S.screen==='compare' && /^[1-4]$/.test(e.key)){
+    const p=$$('#board .panel')[+e.key-1]; if(p) p.click();
+  }
+  if(S.screen==='react' && e.key===' '){ e.preventDefault(); reactTap(); }
+  if(S.screen==='result' && e.key===' '){ e.preventDefault(); replay(); }
+  if(e.key==='Escape' && (S.screen==='compare'||S.screen==='react')) abort();
+});
+
+renderHome();
+go('home');
+</script>
+</body>
+</html>
