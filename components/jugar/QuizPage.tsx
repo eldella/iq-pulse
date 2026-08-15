@@ -194,6 +194,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   // per handleStart, read once at completion to average into practiceResult.
   const responseTimesRef = useRef<number[]>([]);
   const gameStartRef = useRef(0);
+  // Highest consecutive-correct streak reached this run - reuses the same
+  // streak the escalation ladder already tracks (see setStreak below), just
+  // remembers its peak instead of resetting to 0 on a miss. Surfaced as
+  // Palabra Rápida's "racha perfecta" stat card.
+  const maxStreakRef = useRef(0);
 
   async function handleStart(chosenPlan: readonly GameId[], { daily = false }: { daily?: boolean } = {}) {
     if (starting) return;
@@ -207,6 +212,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setPlan(chosenPlan);
       setIsDailyRun(daily);
       responseTimesRef.current = [];
+      maxStreakRef.current = 0;
       setLevel(1);
       setStreak(0);
       setQuestionIndex(0);
@@ -286,6 +292,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
     const newStreak = isCorrect ? streak + 1 : 0;
     setStreak(newStreak);
+    maxStreakRef.current = Math.max(maxStreakRef.current, newStreak);
     // Reacción's content doesn't scale with level (see ReactionCircleGame's
     // top comment) and every round already draws its own fresh 1-5s delay,
     // so there's no real difficulty to escalate - pinned at 1x instead of
@@ -371,7 +378,19 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           setPracticeResult({ headline: "reactionTime", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
         } else {
           const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
-          setPracticeResult({ headline: "accuracy", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
+          setPracticeResult({
+            headline: "accuracy",
+            accuracy,
+            avgResponseMs,
+            bestTapMs,
+            previousBest,
+            improved,
+            fractionValue: `${finalCorrect}/${finalAnswered}`,
+            extraStatCards:
+              gameId === "wordTyping"
+                ? [{ emoji: "🔥", value: `${maxStreakRef.current}`, label: t.quiz.wordTypingStreakLabel }]
+                : undefined,
+          });
         }
       }
     } catch {
