@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Check, Delete } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
-import { ANSWER_FEEDBACK_MS, flashTransition, springTransition, tapScale } from "@/lib/motion";
+import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { cn } from "@/lib/utils";
 import { contentTier } from "@/lib/scoring";
@@ -70,20 +70,9 @@ export function DigitSpanGame({
         <>
           <p className="text-sm text-muted-foreground">{t.quiz.digitSpanMemorize}</p>
           <div className="flex h-20 items-center gap-2">
-            <AnimatePresence>
-              {visibleIndex > 0 && (
-                <motion.span
-                  key={visibleIndex}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={flashTransition}
-                  className="text-5xl font-bold text-accent"
-                >
-                  {sequence[visibleIndex - 1]}
-                </motion.span>
-              )}
-            </AnimatePresence>
+            {visibleIndex > 0 && (
+              <span className="text-5xl font-bold text-accent">{sequence[visibleIndex - 1]}</span>
+            )}
           </div>
         </>
       ) : (
