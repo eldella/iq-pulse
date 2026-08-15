@@ -4,7 +4,7 @@ An independent, free-to-access project exploring cognitive measurement — an ho
 
 Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Framer Motion**.
 
-> **Status:** early stage. The leaderboard and monthly challenge now use real data. Rendimiento's "you" column is still a placeholder, clearly marked as such in the code. Login is a client-only visual demo, not real authentication.
+> **Status:** early stage. The leaderboard and monthly challenge now use real data. Rendimiento's General-vs-you comparison is live, but the "you" side is still illustrative pending real per-user auth, clearly marked as such in the code. Login is a client-only visual demo, not real authentication.
 
 ## Features
 
@@ -13,7 +13,7 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Fra
 - Editorial landing page (hero, mission manifesto, "what IQ.Pulse measures" domain grid, sustainment model, patron wall)
 - **Weekly challenge** (`components/stats/WeeklyChallengeCard.tsx`): 3 rounds, 10 seconds per round, up to 3 total mistakes before it's over. Which of 4 games is live rotates automatically week to week (`lib/weeklyPuzzle.ts`, seeded so it's identical for everyone): spot the odd hexagon, spot the mirrored (not just rotated) shape, repeat a flashed sequence, or count a flashed cluster of dots before it disappears. Rendered as SVG shapes and timed reveals, not a written description — there's no text pattern to paste into a text-only AI, and the sequence/count games go further since the content that matters only exists on screen for a moment. One attempt per week, result stored locally (`lib/weeklyChallengeState.ts`) - local-only for now, same staged approach as the Daily Challenge before it got wired to Supabase. Shown on the landing page, `/jugar`, and `/ranking`, with a countdown to next week's challenge once this week's is done
 - **Ranking** (`/ranking`): leaderboard wired to real `daily_results` data (general/times/percentiles/streaks tabs, grouped by device — the streaks tab only counts a device's streak if its last play was today or yesterday, same grace period as the local streak logic) + the weekly challenge card above
-- **Rendimiento** (`/rendimiento`): placeholder for now ("being tuned, check back soon") — the General-vs-you comparison went through several chart redesigns this pass and was pulled off the live page rather than shipped half-right; a working two-section version (separate % and seconds scales) is preserved in git history at commit `c2983b8` to resume from
+- **Rendimiento** (`/rendimiento`): General-vs-you comparison, two card grids with separate scales — average precision by domain (%) and average time by difficulty tier (seconds, including "extreme"), each row a GlassCard with a paired General/Vos bar (same card treatment as Reacción's results screen). "General" is wired to a real Supabase aggregate query (`fetchGeneralPerformance`); "Vos" stays illustrative until real per-user auth exists (the demo login is a client-only flag, no real Supabase Auth user behind it) — the whole comparison blurs behind a login prompt for logged-out visitors instead of showing fake per-row numbers
 - Demo login/profile flow (`/perfil`) — client-only session flag, no real accounts yet; deliberately separate from the real anonymous device id above (see `lib/deviceIdentity.ts`'s docstring for why they don't share state)
 - Light/dark theme (Apple-style black / white / system blue palette)
 - ES/EN language switch (client-side, no page reload), with a mobile hamburger nav
@@ -105,7 +105,6 @@ supabase/
 
 - Wire the weekly challenge's result to Supabase (real points + leaderboard) before launch - it's local-only for now
 - Daily Challenge (full version): a seeded, identical-for-everyone daily game rotation with no-restart anti-cheat, on top of the points pipeline that now exists. Today's daily run still reuses the free-choice 3-game assessment rather than a seeded daily puzzle
-- Rendimiento's General-vs-you comparison — resume from the working version at commit `c2983b8` rather than redesigning from scratch
 - Real per-user auth (distinct from the anonymous device id used for daily points) so a person's ranking can follow them across devices
 - Local/national/continental leaderboard tiers once per-user location data exists
 
