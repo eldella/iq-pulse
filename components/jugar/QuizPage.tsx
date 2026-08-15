@@ -72,6 +72,15 @@ const GAME_DURATION_MS = 30_000;
 /** Hard cap regardless of remaining time, so rapid-fire guessing can't inflate answeredCount. */
 const MAX_QUESTIONS_PER_GAME = 10;
 
+/**
+ * Reasoning puzzles (Camino Óptimo, Secuencia Numérica) measure "can you
+ * solve it", not "how fast can you go" - racing a 30s clock just adds
+ * pressure that contaminates the thing being measured. These run a fixed
+ * number of puzzles instead, no shared clock at all.
+ */
+const ATTEMPT_BASED_GAMES = new Set<GameId>(["pathfinder", "numberSequence"]);
+const ATTEMPTS_PER_GAME = 8;
+
 export type GameId =
   | "digitSpan"
   | "stroop"
@@ -254,6 +263,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   // handleAnswer).
   useEffect(() => {
     if (phase === "idle" || phase === "finished") return;
+    if (ATTEMPT_BASED_GAMES.has(phase)) return;
     const id = window.setInterval(() => {
       const remainingMs = Math.max(0, GAME_DURATION_MS - (now() - gameStartRef.current));
       setSecondsLeftInGame(Math.ceil(remainingMs / 1000));
@@ -322,7 +332,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       // Non-fatal: the run continues locally even if one write fails.
     });
 
-    if (questionIndex + 1 < MAX_QUESTIONS_PER_GAME && now() - gameStartRef.current < GAME_DURATION_MS) {
+    const withinBudget = ATTEMPT_BASED_GAMES.has(gameId)
+      ? questionIndex + 1 < ATTEMPTS_PER_GAME
+      : questionIndex + 1 < MAX_QUESTIONS_PER_GAME && now() - gameStartRef.current < GAME_DURATION_MS;
+
+    if (withinBudget) {
       setQuestionIndex((i) => i + 1);
       return;
     }
@@ -495,6 +509,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   // handleAnswer above (own clock, own lives, own level ladder) - they run
   // their own header timer instead of relying on this shared one.
   const hasOwnClock = activeGame?.id === "digitSpan" || activeGame?.id === "spatialMemory";
+  const isAttemptBased = activeGame !== null && ATTEMPT_BASED_GAMES.has(activeGame.id);
 
   // Practice always runs a single game (plan.length === 1 outside the daily
   // run), so plan[0] is the game this practiceResult belongs to.
@@ -670,23 +685,39 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                 engine timer at all - showing this one too meant two
                 different-looking countdowns on screen at once, neither
                 matching what actually ends the game. */}
-            {!hasOwnClock && (
-              <p
-                role="timer"
-                aria-label={`${t.quiz.timeRemainingLabel}: ${secondsLeftInGame}s`}
-                className="flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground"
-              >
-                <Timer className="h-3.5 w-3.5" aria-hidden="true" />
-                {secondsLeftInGame}s
-              </p>
-            )}
+            {!hasOwnClock &&
+              (isAttemptBased ? (
+                <p
+                  role="status"
+                  aria-label={`${t.quiz.attemptLabel}: ${questionIndex + 1}/${ATTEMPTS_PER_GAME}`}
+                  className="flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground"
+                >
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  {questionIndex + 1}/{ATTEMPTS_PER_GAME}
+                </p>
+              ) : (
+                <p
+                  role="timer"
+                  aria-label={`${t.quiz.timeRemainingLabel}: ${secondsLeftInGame}s`}
+                  className="flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground"
+                >
+                  <Timer className="h-3.5 w-3.5" aria-hidden="true" />
+                  {secondsLeftInGame}s
+                </p>
+              ))}
           </div>
 
           {!hasOwnClock && (
             <div className="h-1 w-full max-w-xs overflow-hidden rounded-full bg-surface-hover">
               <div
                 className="h-full bg-accent transition-[width] duration-200 ease-linear"
-                style={{ width: `${Math.max(0, Math.min(100, (secondsLeftInGame / (GAME_DURATION_MS / 1000)) * 100))}%` }}
+                style={{
+                  width: `${
+                    isAttemptBased
+                      ? Math.max(0, Math.min(100, ((questionIndex + 1) / ATTEMPTS_PER_GAME) * 100))
+                      : Math.max(0, Math.min(100, (secondsLeftInGame / (GAME_DURATION_MS / 1000)) * 100))
+                  }%`,
+                }}
               />
             </div>
           )}

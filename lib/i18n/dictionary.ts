@@ -153,6 +153,7 @@ export type Dictionary = {
     streakDaysLabel: string;
     exitToMenuCta: string;
     timeRemainingLabel: string;
+    attemptLabel: string;
     difficultyEasy: string;
     difficultyMedium: string;
     difficultyHard: string;
@@ -444,6 +445,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       streakDaysLabel: "días de racha",
       exitToMenuCta: "← Volver a elegir",
       timeRemainingLabel: "Tiempo restante",
+      attemptLabel: "Intento",
       difficultyEasy: "Fácil",
       difficultyMedium: "Medio",
       difficultyHard: "Difícil",
@@ -734,6 +736,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       streakDaysLabel: "day streak",
       exitToMenuCta: "← Back to menu",
       timeRemainingLabel: "Time remaining",
+      attemptLabel: "Attempt",
       difficultyEasy: "Easy",
       difficultyMedium: "Medium",
       difficultyHard: "Hard",
