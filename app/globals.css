@@ -55,8 +55,11 @@
      about what --color-accent is for, and this is a second, purely
      decorative token, not a substitute for it. */
   --color-accent-secondary: 126 84 240;
-  /* Grain layer opacity/blend, theme-driven - see .bg-grain below. */
-  --grain-opacity: 0.055;
+  /* Grain layer opacity/blend, theme-driven - see .bg-grain below. Two
+     prior passes (0.055, then 0.025) both still read as visible texture
+     live - grain's only job is anti-banding dither, which needs far less
+     than either. */
+  --grain-opacity: 0.012;
   --grain-blend: overlay;
   color-scheme: light;
 }
@@ -76,7 +79,7 @@
   --color-warn: 255 214 10;
   --color-surface-hover: rgba(255, 255, 255, 0.05);
   --color-accent-secondary: 116 76 230;
-  --grain-opacity: 0.1;
+  --grain-opacity: 0.02;
   --grain-blend: soft-light;
   color-scheme: dark;
 }
@@ -97,7 +100,10 @@
 .bg-grain {
   opacity: var(--grain-opacity);
   mix-blend-mode: var(--grain-blend);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* baseFrequency dropped from 0.85 to 0.6 (fewer, softer specks - the
+     original read as hard TV static rather than film grain once visible
+     live), numOctaves from 3 to 2 (less layered detail = calmer texture). */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 html,
