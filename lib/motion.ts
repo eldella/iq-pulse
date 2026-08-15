@@ -20,6 +20,18 @@ export const springExitTransition: Transition = {
   damping: 40,
 };
 
+/**
+ * Fast fade for the memorize-phase "flash" in DigitSpanGame/WordBurstGame/
+ * WordTypingGame (one digit/word/letter at a time, on a fixed interval as
+ * short as 220ms at high tiers). springTransition's ~300-400ms settle time
+ * doesn't fit in that window, and AnimatePresence's default "wait" mode
+ * makes the incoming item wait for the outgoing one to fully exit first -
+ * together that ate enough of the interval that fast items could flash by
+ * without ever reaching full opacity. This is deliberately a plain tween,
+ * short enough to always finish inside the fastest interval.
+ */
+export const flashTransition: Transition = { duration: 0.1 };
+
 /** Tap scale-down used on every primary interactive element. */
 export const tapScale = { scale: 0.95 };
 
