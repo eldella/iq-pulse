@@ -76,17 +76,22 @@ export function NumberSequenceGame({
     <div className="flex flex-col items-center gap-6">
       <p className="text-sm text-muted-foreground">{t.quiz.numberSequenceInstructions}</p>
 
-      <div className="flex flex-wrap items-center justify-center gap-2">
+      <div className="flex cursor-default flex-wrap items-center justify-center gap-2">
         {puzzle.shown.map((value, index) => (
-          <div
-            key={index}
-            className="flex h-14 min-w-14 items-center justify-center rounded-card border border-glass-border bg-glass px-3 text-xl font-semibold tabular-nums text-foreground backdrop-blur-xl"
-          >
-            {value}
+          <div key={index} className="flex items-center gap-2">
+            <span className="font-mono text-2xl font-semibold tabular-nums text-foreground">{value}</span>
+            <span className="text-sm text-muted-foreground" aria-hidden="true">
+              ·
+            </span>
           </div>
         ))}
-        <div className="flex h-14 min-w-14 items-center justify-center rounded-card border border-glass-border bg-glass px-3 text-xl font-semibold text-accent backdrop-blur-xl">
-          {selected === null ? "?" : <span className="text-success">{puzzle.answer}</span>}
+        <div
+          className={cn(
+            "flex h-14 min-w-14 items-center justify-center rounded-card border border-dashed px-3 font-mono text-2xl font-semibold tabular-nums",
+            selected === null ? "border-glass-border/70 text-muted-foreground" : "border-success text-success"
+          )}
+        >
+          {selected === null ? "?" : puzzle.answer}
         </div>
       </div>
 
