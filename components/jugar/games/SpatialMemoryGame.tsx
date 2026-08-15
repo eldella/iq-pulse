@@ -269,7 +269,13 @@ export function SpatialMemoryGame({
         <div
           role="group"
           aria-label={t.quiz.spatialMemoryTitle}
-          className="grid"
+          // `relative` isn't for positioning here - it's so this grid (a
+          // plain static-flow div) actually paints above ExposureRing's
+          // `absolute` SVG sibling. CSS stacking rules put ANY positioned
+          // element above static in-flow content regardless of DOM order,
+          // so without this the ring's stroke was drawing over the grid's
+          // corner cells instead of staying confined to the space around it.
+          className="relative grid"
           style={{
             width: "min(300px, calc(100vw - 56px))",
             height: "min(300px, calc(100vw - 56px))",
