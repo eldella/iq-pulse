@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IQ.Pulse — Fondo: actual vs. propuesta</title>
+<style>
+/* ============================================================
+   SHELL DE LA DEMO (no es parte del fondo)
+   ============================================================ */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:ui-sans-serif,-apple-system,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  background:#0d1117;color:#e6edf7;-webkit-font-smoothing:antialiased;
+  padding:28px 20px 60px;
+}
+.wrap{max-width:1120px;margin:0 auto}
+h1{font-size:19px;font-weight:650;letter-spacing:-.015em;margin:0 0 5px}
+.sub{font-size:13.5px;color:#8b97a8;margin:0 0 22px;line-height:1.55;max-width:70ch}
+.sub b{color:#c8d3e3;font-weight:600}
+
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.seg{display:flex;background:#161b23;border:1px solid #262d38;border-radius:9px;padding:3px;gap:2px}
+.seg button{all:unset;cursor:pointer;font-size:12.5px;font-weight:550;color:#8b97a8;padding:6px 14px;border-radius:6px;transition:.16s}
+.seg button[aria-pressed="true"]{background:#2b3442;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;background:#161b23;border:1px solid #262d38;border-radius:9px;padding:7px 12px;font-size:12.5px;color:#9aa6b6;transition:.16s}
+.chip:hover{border-color:#3a4453}
+.chip input{display:none}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:#3b4553;transition:.16s;flex:none}
+.chip.on{color:#e6edf7;border-color:#2f5ea8;background:#141d2c}
+.chip.on .dot{background:#4d92ff;box-shadow:0 0 9px #4d92ff}
+.hint{font-size:11.5px;color:#6d7887;margin:0 0 20px}
+
+.cap{display:flex;align-items:baseline;gap:9px;margin:0 0 8px;padding-left:2px}
+.cap b{font-size:11px;letter-spacing:.11em;text-transform:uppercase;font-weight:700}
+.cap span{font-size:12px;color:#6d7887}
+.cap--a b{color:#7b8798}
+.cap--b b{color:#4d92ff}
+
+/* ============================================================
+   MARCO
+   ============================================================ */
+.frame{
+  position:relative;height:400px;border-radius:15px;overflow:hidden;
+  border:1px solid #262d38;box-shadow:0 20px 50px -24px rgba(0,0,0,.75);
+  margin-bottom:24px;
+}
+
+/* ============================================================
+   >>> CAPAS DEL FONDO <<<
+   ============================================================ */
+.scene{position:absolute;inset:0;background:var(--bg);isolation:isolate}
+
+/* ---------- A · ACTUAL (réplica del estado presente) ---------- */
+#fA{--bg:#fff}
+#fA.dark{--bg:#000}
+.before-glow{
+  position:absolute;left:0;right:0;top:56px;bottom:0;
+  background:radial-gradient(circle at 0% 0%, rgba(74,146,255,.80) 0%, rgba(74,146,255,0) 46%);
+}
+#fA.dark .before-glow{background:radial-gradient(circle at 0% 0%, rgba(10,84,190,.62) 0%, rgba(10,84,190,0) 46%)}
+.before-dots{
+  position:absolute;left:0;right:0;top:56px;bottom:0;
+  background-image:radial-gradient(circle at 1px 1px, rgba(10,20,40,.16) 1px, transparent 0);
+  background-size:22px 22px;
+}
+#fA.dark .before-dots{background-image:radial-gradient(circle at 1px 1px, rgba(190,215,255,.13) 1px, transparent 0)}
+
+/* ---------- B · PROPUESTA ---------- */
+#fB{
+  --bg:#f5f8fd;
+  --dot:rgba(12,28,58,.17);
+  --glow-a:rgba(52,126,252,.68);
+  --glow-b:rgba(126,84,240,.30);
+  --hair:rgba(10,22,44,.08);
+  --ink:#0b1220;
+  --vig:rgba(8,18,38,.045);
+}
+#fB.dark{
+  --bg:#04070c;
+  --dot:rgba(160,196,255,.14);
+  --glow-a:rgba(30,108,235,.52);
+  --glow-b:rgba(116,76,230,.30);
+  --hair:rgba(255,255,255,.07);
+  --ink:#e8eef8;
+  --vig:rgba(0,0,0,.55);
+}
+
+/* 1 · luces que respiran — atraviesan el header */
+.aurora{
+  position:absolute;inset:0;
+  background:radial-gradient(76% 88% at 2% -8%, var(--glow-a) 0%, transparent 64%);
+  transform-origin:0% 0%;
+}
+.aurora-b{
+  position:absolute;inset:0;opacity:0;transition:opacity .5s ease;
+  background:radial-gradient(58% 70% at 100% 108%, var(--glow-b) 0%, transparent 62%);
+  transform-origin:100% 100%;
+}
+.f-second .aurora-b{opacity:1}
+.f-pulse .aurora{animation:breathe 15s ease-in-out infinite}
+.f-pulse .aurora-b{animation:breathe 15s ease-in-out infinite reverse}
+@keyframes breathe{
+  0%,100%{transform:scale(1);opacity:.86}
+  50%    {transform:scale(1.09);opacity:1}
+}
+@media (prefers-reduced-motion:reduce){.f-pulse .aurora,.f-pulse .aurora-b{animation:none}}
+
+/* 2 · retícula enmascarada */
+.mesh{
+  position:absolute;inset:0;
+  background-image:radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+  background-size:22px 22px;
+}
+.f-mask .mesh{
+  -webkit-mask-image:radial-gradient(125% 105% at 8% 0%, #000 0%, rgba(0,0,0,.42) 42%, transparent 78%);
+          mask-image:radial-gradient(125% 105% at 8% 0%, #000 0%, rgba(0,0,0,.42) 42%, transparent 78%);
+}
+
+/* 3 · grano anti-banding */
+.grain{
+  position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .35s;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.f-grain .grain{opacity:.055;mix-blend-mode:overlay}
+.f-grain.dark .grain{opacity:.10;mix-blend-mode:soft-light}
+
+/* 4 · viñeta */
+.vignette{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 95% at 45% 28%, transparent 42%, var(--vig) 100%);
+}
+
+/* ---------- UI mock idéntica en ambos ---------- */
+.hdr{position:absolute;top:0;left:0;right:0;height:56px;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+#fA .hdr{background:#fff;border-bottom:1px solid rgba(0,0,0,.10)}
+#fA.dark .hdr{background:#000;border-bottom:1px solid rgba(255,255,255,.10)}
+#fB .hdr{background:transparent;border-bottom:1px solid transparent}
+#fB.f-glass .hdr{
+  background:color-mix(in srgb, var(--bg) 55%, transparent);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+          backdrop-filter:blur(16px) saturate(150%);
+  border-bottom:1px solid var(--hair);
+}
+.mark{font-size:17px;font-weight:700;letter-spacing:-.03em}
+.mark i{font-style:normal;opacity:.42}
+.nav{display:flex;gap:20px;font-size:12.5px;opacity:.55}
+#fA .mark,#fA .nav{color:#111}
+#fA.dark .mark,#fA.dark .nav{color:#fff}
+#fB .mark,#fB .nav{color:var(--ink)}
+
+.content{position:absolute;inset:56px 0 0 0;z-index:5;padding:46px 44px;display:flex;gap:40px;align-items:flex-start}
+.copy{max-width:340px}
+.copy h2{margin:0 0 11px;font-size:27px;line-height:1.15;letter-spacing:-.03em;font-weight:660}
+.copy p{margin:0;font-size:13.5px;line-height:1.65;opacity:.6}
+#fA .copy{color:#0b1220}
+#fA.dark .copy{color:#e8eef8}
+#fB .copy{color:var(--ink)}
+
+.card{width:250px;flex:none;border-radius:14px;padding:18px 20px}
+#fA .card{background:#fff;border:1px solid rgba(0,0,0,.09);box-shadow:0 8px 24px -14px rgba(0,0,0,.2);color:#0b1220}
+#fA.dark .card{background:#0c0f14;border:1px solid rgba(255,255,255,.09);box-shadow:none;color:#e8eef8}
+#fB .card{
+  color:var(--ink);
+  background:color-mix(in srgb, var(--bg) 70%, transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+          backdrop-filter:blur(18px) saturate(150%);
+  border:1px solid var(--hair);
+  box-shadow:0 18px 44px -22px rgba(6,16,38,.45), inset 0 1px 0 rgba(255,255,255,.4);
+}
+#fB.dark .card{box-shadow:0 20px 50px -20px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.06)}
+.card .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.5;margin-bottom:8px}
+.card .v{font-size:30px;font-weight:660;letter-spacing:-.03em;line-height:1}
+.bars{display:flex;gap:4px;align-items:flex-end;height:44px;margin-top:18px}
+.bars span{flex:1;border-radius:2px;background:currentColor;opacity:.2}
+.bars span.hi{opacity:.8}
+
+/* ---------- notas + código ---------- */
+.notes{margin-top:34px;display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:12px}
+.note{background:#12171f;border:1px solid #212934;border-radius:12px;padding:15px 16px}
+.note h4{margin:0 0 6px;font-size:12.5px;font-weight:650;color:#e6edf7;display:flex;gap:8px;align-items:center}
+.note h4 em{font-style:normal;color:#4d92ff;font-size:11px;font-weight:700}
+.note p{margin:0;font-size:12.3px;line-height:1.62;color:#8b97a8}
+.note b{color:#c8d3e3;font-weight:600}
+.note code{background:#1c232d;padding:1px 5px;border-radius:4px;font-size:11.5px;color:#9fc3ff}
+
+.codehead{display:flex;align-items:center;justify-content:space-between;margin:32px 0 9px}
+.codehead h3{font-size:14px;margin:0;font-weight:620}
+.copybtn{all:unset;cursor:pointer;font-size:12px;font-weight:600;color:#9aa6b6;border:1px solid #262d38;background:#161b23;border-radius:8px;padding:7px 14px;transition:.16s}
+.copybtn:hover{color:#fff;border-color:#3a4453}
+pre{margin:0;background:#0a0e14;border:1px solid #1e252f;border-radius:12px;padding:18px 20px;overflow:auto;font-size:12px;line-height:1.62;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#a9b6c8;max-height:430px}
+pre .c{color:#5c6b7f;font-style:italic}
+pre .p{color:#7fb3ff}
+pre .n{color:#f0a868}
+
+@media(max-width:760px){
+  .frame{height:340px}
+  .content{padding:28px 22px;flex-direction:column;gap:22px}
+  .card{width:100%}
+  .copy h2{font-size:21px}
+  .nav{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>IQ.Pulse — el fondo, revisado</h1>
+  <p class="sub">Arriba el fondo <b>actual</b>, abajo la <b>propuesta</b>, con la misma UI encima para que la comparación sea justa. Los switches apagan cada capa por separado: apagá las cinco y la propuesta vuelve casi al punto de partida.</p>
+
+  <div class="bar">
+    <div class="seg" role="group" aria-label="Tema">
+      <button id="bLight" aria-pressed="true">Light</button>
+      <button id="bDark" aria-pressed="false">Dark</button>
+    </div>
+  </div>
+
+  <div class="bar" id="switches">
+    <label class="chip on"><input type="checkbox" data-f="f-pulse" checked><span class="dot"></span>Pulso</label>
+    <label class="chip on"><input type="checkbox" data-f="f-glass" checked><span class="dot"></span>Header vidrio</label>
+    <label class="chip on"><input type="checkbox" data-f="f-second" checked><span class="dot"></span>Segunda luz</label>
+    <label class="chip on"><input type="checkbox" data-f="f-mask" checked><span class="dot"></span>Retícula enmascarada</label>
+    <label class="chip on"><input type="checkbox" data-f="f-grain" checked><span class="dot"></span>Grano</label>
+  </div>
+  <p class="hint">El pulso late cada 15 s — dejalo unos segundos en pantalla para verlo.</p>
+
+  <!-- ============ A · ACTUAL ============ -->
+  <div class="cap cap--a"><b>Actual</b><span>blanco/negro puro · header opaco que corta el degradado · retícula uniforme · sin movimiento</span></div>
+  <div class="frame" id="fA">
+    <div class="scene">
+      <div class="before-glow"></div>
+      <div class="before-dots"></div>
+    </div>
+    <div class="hdr">
+      <div class="mark">IQ<i>.</i>Pulse</div>
+      <div class="nav"><span>Señales</span><span>Paneles</span><span>Cuenta</span></div>
+    </div>
+    <div class="content">
+      <div class="copy">
+        <h2>Inteligencia que late con tu operación</h2>
+        <p>Señales en tiempo real, sin ruido. Un solo panel para leer el pulso completo del sistema.</p>
+      </div>
+      <div class="card">
+        <div class="k">Pulso actual</div>
+        <div class="v">86.4</div>
+        <div class="bars"><span style="height:34%"></span><span style="height:56%"></span><span style="height:42%"></span><span class="hi" style="height:100%"></span><span style="height:63%"></span><span style="height:48%"></span><span style="height:78%"></span><span style="height:39%"></span><span style="height:58%"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ B · PROPUESTA ============ -->
+  <div class="cap cap--b"><b>Propuesta</b><span>off-white/off-black · la luz atraviesa el header · retícula enmascarada + grano · respira</span></div>
+  <div class="frame f-pulse f-glass f-second f-mask f-grain" id="fB">
+    <div class="scene">
+      <div class="aurora"></div>
+      <div class="aurora-b"></div>
+      <div class="mesh"></div>
+      <div class="grain"></div>
+      <div class="vignette"></div>
+    </div>
+    <div class="hdr">
+      <div class="mark">IQ<i>.</i>Pulse</div>
+      <div class="nav"><span>Señales</span><span>Paneles</span><span>Cuenta</span></div>
+    </div>
+    <div class="content">
+      <div class="copy">
+        <h2>Inteligencia que late con tu operación</h2>
+        <p>Señales en tiempo real, sin ruido. Un solo panel para leer el pulso completo del sistema.</p>
+      </div>
+      <div class="card">
+        <div class="k">Pulso actual</div>
+        <div class="v">86.4</div>
+        <div class="bars"><span style="height:34%"></span><span style="height:56%"></span><span style="height:42%"></span><span class="hi" style="height:100%"></span><span style="height:63%"></span><span style="height:48%"></span><span style="height:78%"></span><span style="height:39%"></span><span style="height:58%"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><h4><em>01</em>El pulso que falta</h4><p>Se llama <b>Pulse</b> y el fondo está congelado. Una respiración de 15 s en escala + opacidad de la luz alcanza: se percibe sin distraer. Respetá <code>prefers-reduced-motion</code>.</p></div>
+    <div class="note"><h4><em>02</em>El corte del header</h4><p>Hoy la barra es opaca y decapita el degradado: se leen dos superficies pegadas. Header en vidrio con la luz naciendo por detrás = una sola pieza continua.</p></div>
+    <div class="note"><h4><em>03</em>Contrapeso diagonal</h4><p>Una única luz arriba a la izquierda deja la composición volcada. Una segunda mucho más tenue —violeta, ~35 % de intensidad— abajo a la derecha genera tensión y profundidad.</p></div>
+    <div class="note"><h4><em>04</em>Retícula que nace de la luz</h4><p>Puntos uniformes de borde a borde se leen como textura por defecto. Con una máscara radial la trama emerge donde hay luz y se disuelve: deja respirar el contenido.</p></div>
+    <div class="note"><h4><em>05</em>Grano contra el banding</h4><p>Un degradado grande sobre plano siempre bandea, sobre todo en dark. Ruido SVG al 5–10 % lo disuelve y aporta materia. Mejor relación esfuerzo/resultado de la lista.</p></div>
+    <div class="note"><h4><em>06</em>Ni blanco ni negro puros</h4><p><code>#fff</code> y <code>#000</code> aplanan y cansan la vista. <code>#f5f8fd</code> y <code>#04070c</code> dan aire, funden mejor el degradado y suben el contraste percibido de las tarjetas.</p></div>
+  </div>
+
+  <div class="codehead">
+    <h3>CSS del fondo — listo para pegar</h3>
+    <button class="copybtn" id="copy">Copiar CSS</button>
+  </div>
+<pre id="code"><span class="c">/* ---------- tokens ---------- */</span>
+<span class="p">:root</span>{
+  <span class="n">--bg</span>:#f5f8fd;                  <span class="c">/* off-white, no #fff */</span>
+  <span class="n">--dot</span>:rgba(12,28,58,.17);
+  <span class="n">--glow-a</span>:rgba(52,126,252,.68);  <span class="c">/* luz principal */</span>
+  <span class="n">--glow-b</span>:rgba(126,84,240,.30);  <span class="c">/* contrapeso */</span>
+  <span class="n">--hair</span>:rgba(10,22,44,.08);
+  <span class="n">--vig</span>:rgba(8,18,38,.045);
+}
+<span class="p">[data-theme="dark"]</span>{
+  <span class="n">--bg</span>:#04070c;                  <span class="c">/* off-black, no #000 */</span>
+  <span class="n">--dot</span>:rgba(160,196,255,.14);
+  <span class="n">--glow-a</span>:rgba(30,108,235,.52);
+  <span class="n">--glow-b</span>:rgba(116,76,230,.30);
+  <span class="n">--hair</span>:rgba(255,255,255,.07);
+  <span class="n">--vig</span>:rgba(0,0,0,.55);
+}
+
+<span class="c">/* ---------- escena: fija, detrás de TODO (header incluido) ---------- */</span>
+<span class="p">.scene</span>{position:fixed;inset:0;z-index:-1;background:<span class="n">var(--bg)</span>;isolation:isolate}
+<span class="p">.scene &gt; *</span>{position:absolute;inset:0}
+
+<span class="c">/* 1 · luces que respiran */</span>
+<span class="p">.aurora</span>{
+  background:radial-gradient(76% 88% at 2% -8%, <span class="n">var(--glow-a)</span> 0%, transparent 64%);
+  transform-origin:0% 0%;
+  animation:breathe 15s ease-in-out infinite;
+}
+<span class="p">.aurora-b</span>{
+  background:radial-gradient(58% 70% at 100% 108%, <span class="n">var(--glow-b)</span> 0%, transparent 62%);
+  transform-origin:100% 100%;
+  animation:breathe 15s ease-in-out infinite reverse;
+}
+<span class="p">@keyframes breathe</span>{
+  0%,100%{transform:scale(1);   opacity:.86}
+  50%    {transform:scale(1.09);opacity:1}
+}
+<span class="p">@media (prefers-reduced-motion:reduce)</span>{
+  <span class="p">.aurora,.aurora-b</span>{animation:none}
+}
+
+<span class="c">/* 2 · retícula enmascarada */</span>
+<span class="p">.mesh</span>{
+  background-image:radial-gradient(circle at 1px 1px, <span class="n">var(--dot)</span> 1px, transparent 0);
+  background-size:22px 22px;
+  mask-image:radial-gradient(125% 105% at 8% 0%, #000 0%, rgba(0,0,0,.42) 42%, transparent 78%);
+  -webkit-mask-image:radial-gradient(125% 105% at 8% 0%, #000 0%, rgba(0,0,0,.42) 42%, transparent 78%);
+}
+
+<span class="c">/* 3 · grano anti-banding (SVG inline, 0 requests) */</span>
+<span class="p">.grain</span>{
+  opacity:.055; mix-blend-mode:overlay; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+<span class="p">[data-theme="dark"] .grain</span>{opacity:.10;mix-blend-mode:soft-light}
+
+<span class="c">/* 4 · viñeta */</span>
+<span class="p">.vignette</span>{
+  pointer-events:none;
+  background:radial-gradient(120% 95% at 45% 28%, transparent 42%, <span class="n">var(--vig)</span> 100%);
+}
+
+<span class="c">/* 5 · header vidrio — la luz lo atraviesa */</span>
+<span class="p">header</span>{
+  position:sticky;top:0;
+  background:color-mix(in srgb, <span class="n">var(--bg)</span> 55%, transparent);
+  backdrop-filter:blur(16px) saturate(150%);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+  border-bottom:1px solid <span class="n">var(--hair)</span>;
+}
+
+<span class="c">/* HTML:
+&lt;div class="scene"&gt;
+  &lt;div class="aurora"&gt;&lt;/div&gt;&lt;div class="aurora-b"&gt;&lt;/div&gt;
+  &lt;div class="mesh"&gt;&lt;/div&gt;&lt;div class="grain"&gt;&lt;/div&gt;&lt;div class="vignette"&gt;&lt;/div&gt;
+&lt;/div&gt;
+*/</span></pre>
+
+</div>
+
+<script>
+(function(){
+  var fA=document.getElementById('fA'), fB=document.getElementById('fB'),
+      bL=document.getElementById('bLight'), bD=document.getElementById('bDark');
+
+  function theme(dark){
+    fA.classList.toggle('dark',dark);
+    fB.classList.toggle('dark',dark);
+    bL.setAttribute('aria-pressed',String(!dark));
+    bD.setAttribute('aria-pressed',String(dark));
+  }
+  bL.onclick=function(){theme(false)};
+  bD.onclick=function(){theme(true)};
+
+  document.querySelectorAll('#switches input').forEach(function(inp){
+    inp.addEventListener('change',function(){
+      fB.classList.toggle(inp.dataset.f,inp.checked);
+      inp.closest('.chip').classList.toggle('on',inp.checked);
+    });
+  });
+
+  var btn=document.getElementById('copy');
+  btn.onclick=function(){
+    navigator.clipboard.writeText(document.getElementById('code').innerText).then(function(){
+      btn.textContent='Copiado ✓'; setTimeout(function(){btn.textContent='Copiar CSS'},1600);
+    },function(){
+      btn.textContent='No se pudo'; setTimeout(function(){btn.textContent='Copiar CSS'},1600);
+    });
+  };
+})();
+</script>
+</body>
+</html>

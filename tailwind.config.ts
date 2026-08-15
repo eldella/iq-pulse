@@ -18,6 +18,9 @@ const config: Config = {
         "muted-foreground": "rgb(var(--color-muted-fg) / <alpha-value>)",
         accent: "rgb(var(--color-accent) / <alpha-value>)",
         "accent-foreground": "rgb(var(--color-on-accent) / <alpha-value>)",
+        // Decorative-only counterweight for the ambient background glow -
+        // see globals.css comment. Not for buttons, badges, or text.
+        "accent-secondary": "rgb(var(--color-accent-secondary) / <alpha-value>)",
         // glass/glass-border are already rgba() literals and are only ever
         // used bare (bg-glass, border-glass-border), never with a slash
         // modifier, so they don't need the channel-value treatment.
