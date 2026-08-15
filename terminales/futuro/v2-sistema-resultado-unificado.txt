@@ -1,0 +1,69 @@
+V2 - SISTEMA DE RESULTADO UNIFICADO (pendiente, no para el rollout actual)
+================================================================================
+Referencia visual completa (colores del mockup, no los nuestros - remapear a
+los tokens reales del proyecto si se retoma): terminales/reference/sistema-resultado-unificado.html
+
+
+QUE ES
+------------
+Propuesta de reemplazar el sistema de tarjetas de resultado actual
+(components/jugar/practiceResults.ts, con sus 4 niveles record/great/good/
+neutral) por uno nuevo, compartido entre TODOS los juegos:
+
+- <ResultHero> / <StatTile> / <QuestionBreakdown> / <TapDistribution> /
+  <PercentileBar> como componentes de UI reusables.
+- computeHeroState(): el estado del resultado (record/neutral/below/first) se
+  calcula con media y desvio estandar contra el HISTORIAL COMPLETO de
+  partidas anteriores del jugador, no solo contra el mejor valor guardado.
+- Percentil real: "mejor que el 11% de quienes jugaron este nivel", contra
+  datos agregados de otros jugadores.
+- Compartir imagen del resultado (via html-to-image, ya esta en el stack)
+  en vez de "copiar resultado" como texto.
+
+
+POR QUE SE DEJA PARA DESPUES
+----------------------------------
+1. Choca con el trabajo en curso: las 5 terminales estan construyendo sobre
+   el sistema actual de practiceResults.ts. Reemplazarlo ahora invalida ese
+   trabajo en vez de sumarse a el.
+
+2. Necesita datos que HOY NO EXISTEN:
+   - Historial completo de corridas pasadas por juego (hoy solo se guarda un
+     unico mejor valor en localStorage, ver lib/practicePerformance.ts) -
+     hace falta una tabla/esquema nuevo en Supabase.
+   - Percentil real contra otros jugadores - necesita una consulta agregada
+     que no existe (lo mas parecido es fetchGeneralPerformance() de
+     Rendimiento, y esa pagina misma aclara que el lado "vos" es ilustrativo
+     todavia).
+
+3. Algunos supuestos del mockup no calzan con la mecanica real: asume
+   exactamente "5 toques" para Reaccion, pero hoy corre hasta 10 preguntas
+   variables en 30s, no un numero fijo.
+
+4. La critica de "el aura miente" (Reaccion siempre en verde) ya esta resuelta
+   en el sistema actual - ya existe el tratamiento condicional por tier
+   (record/great/good/neutral). Lo que aporta este mockup ahi es presentacion
+   mas rica (grafico de barras por toque, "+42ms sobre tu record" en vez de
+   "tu mejor marca: 180ms"), no una correccion de un bug real.
+
+
+YA EXTRAIDO Y APLICADO AL ROLLOUT ACTUAL (no esperar a la v2 para esto)
+----------------------------------------------------------------------------
+- Secuencia Numerica: separar visualmente el estimulo (5 · 9 · 13 · ?) de las
+  opciones de respuesta - ya esta en terminal-1-razonamiento.txt.
+- Frase de delta ("+X sobre tu record" en vez de "tu mejor marca: X") es
+  barata de sumar donde ya haya record - candidata a colar en cualquier spec
+  que se este escribiendo ahora, no requiere esperar a la v2.
+- Barra de progreso segmentada por pregunta: pedida por separado en Stroop,
+  Rafaga y este mockup (3 veces) - se construye centralizada en QuizPage.tsx
+  cuando toque, no es exclusiva de la v2.
+
+
+CUANDO RETOMAR
+------------------
+Despues de que el rollout actual (las 5 terminales) termine y mergee. Ahi se
+decide si vale la pena:
+  a) la migracion de Supabase para guardar historial completo por partida,
+  b) construir la agregacion real de percentiles,
+  c) la libreria de componentes compartidos nueva.
+No arrancar nada de esto sin decidirlo explicitamente primero.

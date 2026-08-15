@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rediseño — Ráfaga de palabras</title>
+<style>
+:root{
+  --bg:#050506;
+  --elev-1:#0d0e11;
+  --elev-2:#141519;
+  --line:#1e2027;
+  --line-soft:#16171c;
+  --txt:#f4f5f7;
+  --txt-2:#9aa0aa;
+  --txt-3:#5f646e;
+  --blue:#2b7fff;
+  --blue-soft:rgba(43,127,255,.13);
+  --blue-line:rgba(43,127,255,.40);
+  --green:#34d17f;
+  --green-soft:rgba(52,209,127,.12);
+  --amber:#f5a524;
+  --amber-soft:rgba(245,165,36,.12);
+  --red:#f4525c;
+  --red-soft:rgba(244,82,92,.12);
+  --r-lg:18px; --r-md:14px; --r-sm:10px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#08090c;color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv11" 1}
+body{padding:28px 20px 60px}
+
+/* ─────────── chrome del prototipo ─────────── */
+.page{max-width:1240px;margin:0 auto}
+.masthead{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.masthead h1{font-size:19px;font-weight:600;letter-spacing:-.02em}
+.masthead p{font-size:13px;color:var(--txt-3);margin-top:4px;max-width:56ch;line-height:1.5}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:flex;background:var(--elev-1);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{background:none;border:0;color:var(--txt-3);font:inherit;font-size:12.5px;font-weight:500;
+  padding:7px 14px;border-radius:999px;cursor:pointer;transition:.18s var(--ease);white-space:nowrap}
+.seg button:hover{color:var(--txt-2)}
+.seg button[aria-pressed=true]{background:var(--elev-2);color:var(--txt);box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
+.seg.accent button[aria-pressed=true]{background:var(--blue);color:#fff}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:24px;align-items:start}
+@media(max-width:1040px){.stage{grid-template-columns:1fr}}
+
+/* ─────────── frame ─────────── */
+.frame{position:relative;border:1px solid var(--line);border-radius:20px;overflow:hidden;
+  background:var(--bg);height:722px;box-shadow:0 30px 80px -40px #000}
+.frame .app{position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column}
+.grid-bg{position:absolute;inset:0;pointer-events:none;opacity:1;transition:opacity .5s var(--ease);
+  background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:22px 22px}
+.glow{position:absolute;left:50%;bottom:-32%;width:120%;height:70%;transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(38,110,255,.16),transparent 62%)}
+.app.focus .grid-bg{opacity:0}
+.col{position:relative;width:100%;max-width:440px;margin:0 auto;padding:0 22px}
+
+/* ─────────── notas ─────────── */
+.notes{border:1px solid var(--line);border-radius:18px;background:var(--elev-1);padding:20px}
+.notes h2{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--blue);font-weight:600;margin-bottom:14px}
+.notes ol{list-style:none;display:flex;flex-direction:column;gap:13px}
+.notes li{display:flex;gap:11px;font-size:13px;line-height:1.55;color:var(--txt-2)}
+.notes li b{color:var(--txt);font-weight:600}
+.dot-n{flex:none;width:19px;height:19px;border-radius:6px;background:var(--blue-soft);border:1px solid var(--blue-line);
+  color:#8bb7ff;font-size:10.5px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.notes .kicker{font-size:12px;color:var(--txt-3);margin:-6px 0 14px;line-height:1.5}
+
+/* ─────────── átomos compartidos ─────────── */
+.label{font-size:10.5px;text-transform:uppercase;letter-spacing:.15em;font-weight:600;color:var(--blue)}
+.muted{color:var(--txt-2)}
+.faint{color:var(--txt-3)}
+.btn{font:inherit;font-size:14.5px;font-weight:600;border-radius:999px;border:1px solid transparent;
+  padding:13px 22px;cursor:pointer;transition:.16s var(--ease);display:inline-flex;align-items:center;gap:9px;justify-content:center}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:#4a92ff}
+.btn-ghost{background:var(--elev-2);border-color:var(--line);color:var(--txt)}
+.btn-ghost:hover{border-color:#2c2f38}
+.btn[disabled]{opacity:.42;cursor:not-allowed;transform:none}
+.kbd{font-size:11px;font-weight:500;background:rgba(255,255,255,.16);border-radius:6px;padding:3px 7px;letter-spacing:.01em}
+
+/* topbar rediseñada */
+.topbar{position:relative;padding:14px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.iconbtn{width:34px;height:34px;border-radius:50%;border:1px solid transparent;background:none;color:var(--txt-3);
+  display:grid;place-items:center;cursor:pointer;transition:.16s var(--ease);flex:none}
+.iconbtn:hover{color:var(--txt-2);background:var(--elev-2);border-color:var(--line)}
+.crumb{font-size:11.5px;color:var(--txt-3);display:flex;align-items:center;gap:7px;letter-spacing:.01em}
+.crumb .sep{opacity:.4}
+.crumb b{color:var(--txt-2);font-weight:600}
+.timeline{position:absolute;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.07)}
+.timeline i{display:block;height:100%;background:var(--blue);width:100%;transform-origin:left;border-radius:0 2px 2px 0;
+  box-shadow:0 0 14px rgba(43,127,255,.6)}
+.timeline.warn i{background:var(--amber);box-shadow:0 0 14px rgba(245,165,36,.55)}
+.tleft{font-size:12px;font-weight:600;color:var(--amber);opacity:0;transition:opacity .3s var(--ease);
+  font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+.tleft.on{opacity:1}
+
+/* ─────────── P1 memorización (después) ─────────── */
+.mem{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;padding-bottom:56px}
+.mem .hint{font-size:13px;color:var(--txt-3);margin-bottom:26px;transition:opacity .45s var(--ease);height:18px}
+.word{font-size:clamp(46px,9.5vw,74px);font-weight:650;letter-spacing:-.035em;line-height:1;text-align:center;
+  color:var(--txt);will-change:transform,opacity}
+.word.in{animation:wordIn .2s var(--ease) both}
+.word.out{animation:wordOut .13s ease-in both}
+@keyframes wordIn{from{opacity:0;transform:scale(.955) translateY(6px)}to{opacity:1;transform:none}}
+@keyframes wordOut{to{opacity:0;transform:scale(1.02)}}
+.beats{display:flex;gap:7px;margin-top:44px}
+.beat{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.14);transition:.28s var(--ease)}
+.beat.done{background:rgba(255,255,255,.34)}
+.beat.now{width:24px;background:var(--blue);box-shadow:0 0 12px rgba(43,127,255,.65)}
+.counter{margin-top:16px;font-size:12px;color:var(--txt-3);font-variant-numeric:tabular-nums}
+.counter b{color:var(--txt-2);font-weight:600}
+
+/* ─────────── P2 recall (después) ─────────── */
+.recall{flex:1;display:flex;flex-direction:column;padding-top:18px}
+.recall .mid{flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:34px}
+.q{text-align:center;margin-bottom:24px}
+.q h2{font-size:25px;font-weight:650;letter-spacing:-.025em}
+.q p{font-size:13px;color:var(--txt-3);margin-top:7px;transition:.25s var(--ease)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{position:relative;height:62px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--elev-1);
+  color:var(--txt);font:inherit;font-size:16px;font-weight:500;cursor:pointer;transition:.15s var(--ease);
+  display:flex;align-items:center;justify-content:center;padding:0 34px 0 16px;text-align:center}
+.opt:hover{border-color:#2c3038;background:var(--elev-2)}
+.opt:active{transform:scale(.975)}
+.opt .tick{position:absolute;right:12px;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;
+  opacity:0;transform:scale(.6);transition:.18s var(--ease)}
+.opt[aria-pressed=true]{background:var(--blue-soft);border-color:var(--blue-line);color:#fff}
+.opt[aria-pressed=true] .tick{opacity:1;transform:none;background:var(--blue);color:#fff}
+.opt.ok{background:var(--green-soft);border-color:rgba(52,209,127,.45)}
+.opt.ok .tick{opacity:1;transform:none;background:var(--green);color:#03210f}
+.opt.miss{border-color:rgba(245,165,36,.5);border-style:dashed;background:var(--amber-soft)}
+.opt.bad{background:var(--red-soft);border-color:rgba(244,82,92,.45);color:#ffb9bd;text-decoration:line-through;
+  text-decoration-color:rgba(244,82,92,.7)}
+.opt .tag{position:absolute;top:-8px;right:10px;font-size:9.5px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;padding:2px 7px;border-radius:99px;background:var(--elev-2);border:1px solid var(--line)}
+.opt.miss .tag{color:var(--amber);border-color:rgba(245,165,36,.4);background:#1a1509}
+.cta{margin-top:auto;padding:18px 0 26px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.cta .btn{width:100%;max-width:300px}
+.cta .undo{background:none;border:0;color:var(--txt-3);font:inherit;font-size:12.5px;cursor:pointer;padding:4px}
+.cta .undo:hover{color:var(--txt-2)}
+
+/* ─────────── P3 resultado (después) ─────────── */
+.res{flex:1;overflow-y:auto;padding:26px 0 18px;display:flex;flex-direction:column}
+.res::-webkit-scrollbar{width:0}
+.res h1{font-size:29px;font-weight:680;letter-spacing:-.03em;text-align:center}
+.res .sub{text-align:center;margin-top:8px;margin-bottom:16px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--txt-2);background:var(--elev-1);
+  border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.hero{border:1px solid var(--blue-line);border-radius:var(--r-lg);padding:18px 18px 16px;text-align:center;
+  background:linear-gradient(180deg,rgba(43,127,255,.10),rgba(43,127,255,.01));
+  box-shadow:0 0 70px -26px rgba(43,127,255,.85), 0 1px 0 rgba(255,255,255,.05) inset}
+.hero .big{font-size:56px;font-weight:700;letter-spacing:-.045em;line-height:1.02;margin:8px 0 4px;
+  font-variant-numeric:tabular-nums}
+.hero .frac{font-size:13.5px;color:var(--txt-2)}
+.meter{height:5px;border-radius:99px;background:rgba(255,255,255,.09);margin:13px 0 11px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#2b7fff,#6aa7ff);
+  transition:width .8s var(--ease)}
+.cmp{font-size:12.5px;display:inline-flex;align-items:center;gap:7px;color:var(--txt-3)}
+.cmp .pip{width:6px;height:6px;border-radius:99px;background:currentColor}
+.cmp.best{color:var(--green)}
+
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
+.tile{background:var(--elev-1);border:1px solid var(--line);border-radius:var(--r-md);padding:11px 8px;text-align:center}
+.tile .ic{font-size:13px;line-height:1;margin-bottom:6px}
+.tile .v{font-size:18px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tile .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt-3);margin-top:4px;font-weight:600}
+.tile.warn .v{color:var(--amber)}
+
+.review{margin-top:13px;border-top:1px solid var(--line-soft);padding-top:12px}
+.review .rh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.review .rh span{font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--txt-3);font-weight:600}
+.link{background:none;border:0;color:var(--txt-3);font:inherit;font-size:11.5px;cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.2)}
+.link:hover{color:var(--txt-2)}
+.rchips{display:flex;flex-wrap:wrap;gap:7px}
+.rchip{font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:var(--elev-1);
+  color:var(--txt-3);display:inline-flex;align-items:center;gap:5px}
+.rchip.ok{color:#7ee7b0;border-color:rgba(52,209,127,.35);background:var(--green-soft)}
+.rchip.miss{color:#f7c46b;border-color:rgba(245,165,36,.35);background:var(--amber-soft)}
+.rchip.bad{color:#ffa6ac;border-color:rgba(244,82,92,.35);background:var(--red-soft)}
+.formula{font-size:11.5px;color:var(--txt-3);line-height:1.6;margin-top:10px;padding:9px 11px;border-radius:var(--r-sm);
+  background:var(--elev-1);border:1px solid var(--line-soft);display:none}
+.formula.on{display:block}
+.actions{display:flex;gap:9px;margin-top:16px}
+.actions .btn{white-space:nowrap;padding:12px 16px;font-size:14px}
+.actions .btn-ghost{flex:0 0 auto}
+.actions .btn-primary{flex:1}
+.profile{display:block;margin:12px auto 0;background:none;border:0;color:var(--txt-2);font:inherit;font-size:13px;
+  cursor:pointer;padding:7px 14px;border-radius:999px}
+.profile:hover{color:var(--txt);background:var(--elev-1)}
+.disclaim{font-size:10.5px;color:#41454d;text-align:center;line-height:1.55;margin-top:auto;padding-top:16px;max-width:36ch;
+  margin-left:auto;margin-right:auto}
+
+/* ─────────── versiones "ANTES" ─────────── */
+.before .topbar-old{display:flex;align-items:center;justify-content:space-between;padding:26px 0 0;font-size:13px}
+.before .topbar-old a{color:var(--txt-2);text-decoration:none;font-size:13px}
+.before .bar-old{height:4px;background:#1b1c20;border-radius:99px;margin-top:22px;overflow:hidden}
+.before .bar-old i{display:block;height:100%;background:var(--blue);width:72%}
+.before .stack{text-align:center;margin-top:26px}
+.before .stack .label{display:block;margin-bottom:8px}
+.before .stack h2{font-size:21px;font-weight:700;margin-bottom:16px}
+.before .stack p{font-size:13.5px;color:var(--txt-2)}
+.before .oldword{font-size:34px;font-weight:650;color:var(--blue);text-align:center;margin-top:54px}
+.before .oldopts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:30px}
+.before .oldopt{height:44px;border-radius:9px;background:#111216;border:1px solid #222429;font-size:13.5px;
+  display:grid;place-items:center;color:var(--txt)}
+.before .oldcta{display:block;margin:26px auto 0;background:#123059;color:#7ea9e8;border:0;border-radius:999px;
+  padding:12px 30px;font:inherit;font-size:14px;font-weight:600}
+.before .voidnote{margin-top:auto;text-align:center;font-size:11px;color:#33363d;padding-bottom:18px;letter-spacing:.03em}
+.before .oldres{text-align:center;padding-top:44px}
+.before .oldres h1{font-size:40px;font-weight:700;letter-spacing:-.03em}
+.before .oldres .lbl{margin-top:22px;display:block}
+.before .oldres .pct{font-size:64px;font-weight:700;letter-spacing:-.04em;margin:6px 0 4px}
+.before .oldres .grn{color:var(--green);font-size:13.5px}
+.before .oldres .line{font-size:13px;color:var(--txt-2);margin-top:12px}
+.before .oldres .line + .line{margin-top:5px}
+.before .oldres .acts{display:flex;gap:12px;justify-content:center;margin-top:26px}
+.before .oldres .prof{margin-top:20px;font-size:13.5px;color:var(--txt-2)}
+.before .oldres .dis{font-size:11px;color:#41454d;margin-top:20px;line-height:1.55}
+
+.hl{position:absolute;border:1px dashed rgba(244,82,92,.5);border-radius:12px;pointer-events:none;
+  background:rgba(244,82,92,.045);display:flex;align-items:flex-start;justify-content:flex-start}
+.hl span{font-size:9.5px;color:#ff9ba1;background:#2a0e11;border:1px solid rgba(244,82,92,.4);border-radius:6px;
+  padding:2px 6px;transform:translate(2px,-10px);white-space:nowrap;letter-spacing:.03em}
+.hl.amber{border-color:rgba(245,165,36,.5);background:rgba(245,165,36,.045)}
+.hl.amber span{color:#ffca75;background:#241a06;border-color:rgba(245,165,36,.4)}
+.hl.green{border-color:rgba(52,209,127,.5);background:rgba(52,209,127,.045)}
+.hl.green span{color:#8ce8b6;background:#082418;border-color:rgba(52,209,127,.4)}
+.hl.side{align-items:center;justify-content:flex-end}
+.hl.side span{transform:translate(calc(100% + 8px),0)}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:11.5px;color:var(--txt-3)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <div>
+      <h1>Ráfaga de palabras — rediseño de las 3 pantallas</h1>
+      <p>Mismo sistema visual (negro + azul), aplicando la lógica que ya funciona en la pantalla de resultado de tiempo de reacción: métrica héroe contenida, tiles secundarios, color con significado.</p>
+    </div>
+    <div class="controls">
+      <div class="seg" id="segScreen">
+        <button data-s="1" aria-pressed="true">1 · Memorizar</button>
+        <button data-s="2" aria-pressed="false">2 · Recall</button>
+        <button data-s="3" aria-pressed="false">3 · Resultado</button>
+      </div>
+      <div class="seg accent" id="segMode">
+        <button data-m="after" aria-pressed="true">Después</button>
+        <button data-m="before" aria-pressed="false">Antes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="frame">
+      <div class="app" id="app">
+        <div class="grid-bg"></div><div class="glow"></div>
+        <div id="view" style="position:relative;flex:1;display:flex;flex-direction:column"></div>
+      </div>
+    </div>
+    <aside class="notes">
+      <h2 id="notesTitle">Cambios</h2>
+      <p class="kicker" id="notesKicker"></p>
+      <ol id="notesList"></ol>
+      <div class="legend" id="legend"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const WORDS   = ['montaña','silla','estrella','fuego','puerta','árbol'];
+const SHOWN   = ['montaña','fuego','árbol','estrella'];
+const view    = document.getElementById('view');
+const app     = document.getElementById('app');
+let S = { screen:1, mode:'after', picked:new Set(), revealed:false, showFormula:false };
+let timers = [];
+const clear = () => { timers.forEach(clearTimeout); timers.forEach(clearInterval); timers = []; };
+const after = (fn,ms) => { const t=setTimeout(fn,ms); timers.push(t); return t; };
+
+/* ══════════════ NOTAS ══════════════ */
+const NOTES = {
+  1:{k:'La pantalla más rota de las tres: el 60% del alto está vacío y la palabra —lo único que importa— es lo más chico.',
+     n:[['Centrado real','la palabra vive en el centro óptico del viewport, no a un tercio. Se elimina el vacío inferior.'],
+        ['Escala de la palabra','de ~34px a ~72px. En una tarea de memorización la palabra <em>es</em> la interfaz.'],
+        ['Set size visible','6 beats abajo dicen cuántas palabras vienen y en cuál vas. Sin esto la tarea es injusta: no sabés si guardar memoria para 3 o para 12.'],
+        ['Un solo reloj','la barra full-bleed arriba reemplaza al contador. El número sólo aparece bajo 5s, en ámbar. Antes había dos reglas midiendo lo mismo.'],
+        ['Modo foco','la grilla de puntos desaparece durante la ráfaga. Vuelve en menús y resultado.'],
+        ['Cabecera colapsada','categoría y dificultad en una línea de 11px. La instrucción aparece 1,5s y se va: ya la leíste.'],
+        ['Salida','“Volver a elegir” pasa a ícono de baja opacidad. Durante un test cronometrado no compite.']]},
+  2:{k:'Acá el problema no es el vacío sino el tamaño del target y la ausencia del momento de feedback.',
+     n:[['Targets de 62px','de 44px en grilla de 3 a 62px en grilla de 2. Se toca con el pulgar sin mirar.'],
+        ['Estado seleccionado fuerte','relleno azul + borde + check. Antes el estado activo era casi invisible, en una pantalla donde seleccionar <em>es</em> toda la interacción.'],
+        ['CTA con contador','“Confirmar · 3” elimina la duda de cuántas marcaste sin tener que recontar.'],
+        ['Frame de feedback','800ms antes del resultado: verde acierto, ámbar la que se te escapó, rojo el falso positivo. Es el único momento en que se aprende algo.'],
+        ['Pregunta más corta','“¿Cuáles viste?” en vez de “Tocá todas las que viste”. La instrucción de gesto pasa a subtítulo y desaparece al primer toque.'],
+        ['Limpiar selección','escape para el toque accidental, que en cronómetro pasa siempre.']]},
+  3:{k:'Comparada con la pantalla de tiempo de reacción, esta perdió todo: no hay contenedor, no hay tiles, no hay revisión.',
+     n:[['Card héroe','el 25% pasa a vivir dentro de una card con borde y glow, igual que los 222 ms. Un número solo sobre negro no es una pantalla de resultado.'],
+        ['Medidor','barra de 5px bajo el número: 25% se lee antes de leerlo.'],
+        ['Fracción','“2 de 4 palabras” bajo el número. El porcentaje solo esconde el tamaño de la muestra.'],
+        ['Tiles con ícono','aciertos, falsos positivos y tiempo dejan de ser texto corrido y pasan a la misma retícula de tiles que ya usás.'],
+        ['Verde con significado','“Primera vez que jugás” en gris. El verde queda reservado a récord o mejora — si todo es verde, nada lo es.'],
+        ['Revisión','la fila de chips coloreados es el agregado más valioso: te dice <em>qué</em> fallaste. Sin esto el 25% es un juicio, no un dato.'],
+        ['Fuera “tiempo de reacción”','en un test de recall no significa nada — es la métrica del test de toque. Acá es “respuesta”.'],
+        ['Fórmula a pedido','link chico que explica de dónde sale el 25%. Un puntaje que castiga falsos positivos sin decirlo se siente arbitrario.']]}
+};
+const LEGENDS = {2:[['#34d17f','acierto'],['#f5a524','se te escapó'],['#f4525c','falso positivo']],
+                 3:[['#34d17f','acierto'],['#f5a524','se te escapó'],['#f4525c','falso positivo']]};
+
+function paintNotes(){
+  const d = NOTES[S.screen];
+  document.getElementById('notesTitle').textContent = S.mode==='after' ? 'Qué cambia y por qué' : 'Qué está fallando hoy';
+  document.getElementById('notesKicker').innerHTML = d.k;
+  document.getElementById('notesList').innerHTML =
+    d.n.map((x,i)=>`<li><span class="dot-n">${i+1}</span><span><b>${x[0]}</b> — ${x[1]}</span></li>`).join('');
+  const lg = LEGENDS[S.screen];
+  document.getElementById('legend').innerHTML = (S.mode==='after'&&lg)
+    ? lg.map(l=>`<span><i style="background:${l[0]}"></i>${l[1]}</span>`).join('') : '';
+}
+
+/* ══════════════ P1 · MEMORIZAR ══════════════ */
+function screen1(){
+  app.classList.add('focus');
+  view.innerHTML = `
+    <div class="timeline" id="tl"><i id="tlfill"></i></div>
+    <div class="col">
+      <div class="topbar">
+        <button class="iconbtn" title="Volver a elegir">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="crumb">Ráfaga de palabras <span class="sep">·</span> <b>Fácil</b></div>
+        <div class="tleft" id="tleft">5s</div>
+      </div>
+    </div>
+    <div class="mem col">
+      <div class="hint" id="hint">Memorizá estas palabras</div>
+      <div class="word in" id="w">montaña</div>
+      <div class="beats" id="beats"></div>
+      <div class="counter" id="cnt"><b>1</b> de 6</div>
+    </div>`;
+  const beats = document.getElementById('beats');
+  beats.innerHTML = WORDS.map((_,i)=>`<i class="beat ${i===0?'now':''}"></i>`).join('');
+  const fill = document.getElementById('tlfill');
+  const total = 8200;
+  fill.animate([{transform:'scaleX(1)'},{transform:'scaleX(0)'}],{duration:total,easing:'linear',fill:'forwards'});
+  after(()=>{document.getElementById('hint').style.opacity='0';},1500);
+  after(()=>{document.getElementById('tl').classList.add('warn');document.getElementById('tleft').classList.add('on');},total-2600);
+
+  let i = 0;
+  const step = () => {
+    if (S.screen!==1) return;
+    const w = document.getElementById('w'); if(!w) return;
+    w.classList.remove('in'); w.classList.add('out');
+    after(()=>{
+      i = (i+1) % WORDS.length;
+      w.textContent = WORDS[i];
+      w.classList.remove('out'); void w.offsetWidth; w.classList.add('in');
+      [...beats.children].forEach((b,n)=>{b.className='beat'+(n<i?' done':n===i?' now':'');});
+      document.getElementById('cnt').innerHTML = `<b>${i+1}</b> de 6`;
+      after(step,1180);
+    },140);
+  };
+  after(step,1180);
+}
+
+function screen1Before(){
+  app.classList.remove('focus');
+  view.innerHTML = `
+    <div class="col before" style="flex:1;display:flex;flex-direction:column;position:relative">
+      <div class="topbar-old"><a href="#">← Volver a elegir</a>
+        <span class="muted" data-hl="dos relojes midiendo lo mismo" data-hl-pad="6">⏱ 23s</span></div>
+      <div class="bar-old"><i></i></div>
+      <div class="stack">
+        <span class="label">Ráfaga de palabras</span>
+        <h2>Fácil</h2>
+        <p>Memorizá estas palabras</p>
+      </div>
+      <div class="oldword" data-hl="el contenido principal, a ~45% de la escala que necesita"
+           data-hl-tone="amber" data-voidfrom>montaña</div>
+      <div class="voidnote" data-voidlabel="~55% del alto, vacío">sin señal de cuántas palabras vienen ni en cuál vas</div>
+    </div>`;
+  requestAnimationFrame(hl);
+}
+
+/* ══════════════ P2 · RECALL ══════════════ */
+function screen2(){
+  app.classList.remove('focus');
+  const chosen = S.picked;
+  view.innerHTML = `
+    <div class="timeline"><i style="width:64%"></i></div>
+    <div class="col">
+      <div class="topbar">
+        <button class="iconbtn" title="Volver a elegir">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="crumb">Ráfaga de palabras <span class="sep">·</span> <b>Fácil</b></div>
+        <div style="width:34px"></div>
+      </div>
+    </div>
+    <div class="recall col">
+      <div class="mid">
+        <div class="q">
+          <h2>¿Cuáles viste?</h2>
+          <p id="qsub" style="opacity:${chosen.size?0:1}">Tocá para seleccionar · podés elegir varias</p>
+        </div>
+        <div class="opts" id="opts"></div>
+      </div>
+      <div class="cta">
+        <button class="btn btn-primary" id="confirm" ${chosen.size?'':'disabled'}>
+          <span id="ctxt">${chosen.size?`Confirmar · ${chosen.size}`:'Confirmar'}</span></button>
+        <button class="undo" id="undo" style="visibility:${chosen.size?'visible':'hidden'}">Limpiar selección</button>
+      </div>
+    </div>`;
+  const opts = document.getElementById('opts');
+  opts.innerHTML = WORDS.map(w=>`
+    <button class="opt" data-w="${w}" aria-pressed="${chosen.has(w)}">
+      ${w}<span class="tick"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+    </button>`).join('');
+
+  const sync = () => {
+    const n = chosen.size;
+    document.getElementById('ctxt').textContent = n ? `Confirmar · ${n}` : 'Confirmar';
+    document.getElementById('confirm').disabled = !n;
+    document.getElementById('undo').style.visibility = n ? 'visible' : 'hidden';
+    document.getElementById('qsub').style.opacity = n ? 0 : 1;
+  };
+  opts.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    if (S.revealed) return;
+    const w=b.dataset.w;
+    chosen.has(w)?chosen.delete(w):chosen.add(w);
+    b.setAttribute('aria-pressed', chosen.has(w)); sync();
+  });
+  document.getElementById('undo').onclick=()=>{chosen.clear();opts.querySelectorAll('.opt').forEach(b=>b.setAttribute('aria-pressed',false));sync();};
+  document.getElementById('confirm').onclick=()=>{
+    S.revealed = true;
+    opts.querySelectorAll('.opt').forEach(b=>{
+      const w=b.dataset.w, sel=chosen.has(w), was=SHOWN.includes(w);
+      b.setAttribute('aria-pressed','false');
+      if(sel&&was) b.classList.add('ok');
+      else if(!sel&&was){b.classList.add('miss');b.insertAdjacentHTML('beforeend','<span class="tag">estaba</span>');}
+      else if(sel&&!was) b.classList.add('bad');
+    });
+    document.getElementById('confirm').disabled=true;
+    document.getElementById('ctxt').textContent='Listo';
+    document.getElementById('undo').style.visibility='hidden';
+    document.getElementById('qsub').style.opacity=1;
+    document.getElementById('qsub').textContent='Ámbar: se te escapó · Rojo: no estaba';
+    after(()=>{ S.revealed=false; go(3); },1700);
+  };
+}
+
+function screen2Before(){
+  app.classList.remove('focus');
+  view.innerHTML = `
+    <div class="col before" style="flex:1;display:flex;flex-direction:column;position:relative">
+      <div class="topbar-old"><a href="#">← Volver a elegir</a><span class="muted">⏱ 17s</span></div>
+      <div class="bar-old"><i style="width:52%"></i></div>
+      <div class="stack">
+        <span class="label">Ráfaga de palabras</span>
+        <h2>Fácil</h2>
+        <p>Tocá todas las que viste</p>
+      </div>
+      <div class="oldopts" data-hl="targets de 44px en grilla de 3" data-hl-tone="amber">
+        ${WORDS.map(w=>`<div class="oldopt">${w}</div>`).join('')}</div>
+      <button class="oldcta" data-voidfrom>Confirmar</button>
+      <div class="voidnote" data-voidlabel="~40% del alto, vacío">sin contador en el CTA · sin estado de selección visible · sin feedback al confirmar</div>
+    </div>`;
+  requestAnimationFrame(hl);
+}
+
+/* ══════════════ P3 · RESULTADO ══════════════ */
+function stats(){
+  const sel = S.picked.size ? [...S.picked] : ['montaña','fuego','silla'];
+  const hits = sel.filter(w=>SHOWN.includes(w)).length;
+  const fp   = sel.filter(w=>!SHOWN.includes(w)).length;
+  const pct  = Math.max(0, Math.round((hits-fp)/SHOWN.length*100));
+  return {sel,hits,fp,pct};
+}
+function screen3(){
+  app.classList.remove('focus');
+  const {sel,hits,fp,pct} = stats();
+  const best = pct>0 && pct>=75;
+  view.innerHTML = `
+    <div class="res col">
+      <h1>Resultado</h1>
+      <div class="sub"><span class="chip">Ráfaga de palabras · Fácil</span></div>
+
+      <div class="hero">
+        <div class="label">Precisión</div>
+        <div class="big">${pct}%</div>
+        <div class="frac">${hits} de ${SHOWN.length} palabras</div>
+        <div class="meter"><i style="width:0%" id="mtr"></i></div>
+        <div class="cmp ${best?'best':''}"><span class="pip"></span>${best?'Récord personal':'Primera vez que jugás esto'}</div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><div class="ic">🎯</div><div class="v">${hits}/${SHOWN.length}</div><div class="k">Aciertos</div></div>
+        <div class="tile ${fp?'warn':''}"><div class="ic">⚠️</div><div class="v">${fp}</div><div class="k">Falsos +</div></div>
+        <div class="tile"><div class="ic">⏱️</div><div class="v">34s</div><div class="k">Tiempo</div></div>
+      </div>
+
+      <div class="review">
+        <div class="rh"><span>Revisión</span><button class="link" id="fx">¿Cómo se calcula?</button></div>
+        <div class="rchips">
+          ${WORDS.map(w=>{
+            const was=SHOWN.includes(w), s=sel.includes(w);
+            const cls = s&&was?'ok' : !s&&was?'miss' : s&&!was?'bad' : '';
+            const ic  = s&&was?'✓' : !s&&was?'○' : s&&!was?'✕' : '·';
+            return `<span class="rchip ${cls}">${ic} ${w}</span>`;}).join('')}
+        </div>
+        <div class="formula ${S.showFormula?'on':''}" id="fbox">
+          (aciertos − falsos positivos) ÷ palabras mostradas → (${hits} − ${fp}) ÷ ${SHOWN.length} = <b style="color:var(--txt-2)">${pct}%</b>.
+          Marcar todas no sube el puntaje: cada falso positivo resta un acierto.
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copiar</button>
+        <button class="btn btn-primary" id="again">Jugar de nuevo <span class="kbd">Espacio</span></button>
+      </div>
+      <button class="profile">Ver tu perfil →</button>
+      <p class="disclaim">Resultado ilustrativo — no reemplaza un test cognitivo validado.</p>
+    </div>`;
+  after(()=>{document.getElementById('mtr').style.width=pct+'%';},80);
+  document.getElementById('fx').onclick=()=>{S.showFormula=!S.showFormula;document.getElementById('fbox').classList.toggle('on',S.showFormula);};
+  document.getElementById('again').onclick=()=>{S.picked.clear();go(1);};
+}
+
+function screen3Before(){
+  app.classList.remove('focus');
+  view.innerHTML = `
+    <div class="col before" style="flex:1;display:flex;flex-direction:column;position:relative">
+      <div class="oldres">
+        <h1>Resultado</h1>
+        <span class="label lbl">Rendimiento</span>
+        <div class="pct" data-hl="sin contenedor, sin glow, sin medidor">25%</div>
+        <div class="grn" data-hl="verde sin mérito" data-hl-tone="green" data-hl-side="1" data-hl-pad="5">Primera vez que jugás esto</div>
+        <div data-hl="texto corrido donde deberían ir tiles" data-hl-tone="amber">
+          <div class="line">Tiempo de reacción promedio: 1838 ms</div>
+          <div class="line">Tiempo total: 34s</div>
+        </div>
+        <div class="acts">
+          <button class="btn btn-ghost" style="font-size:13.5px;padding:11px 18px">Copiar resultado</button>
+          <button class="btn btn-primary" style="font-size:13.5px;padding:11px 18px">Jugar de nuevo <span class="kbd">Espacio</span></button>
+        </div>
+        <div class="prof">Ver tu perfil</div>
+        <div class="dis" data-voidfrom>Resultado ilustrativo — mientras el motor de quiz sigue en construcción,<br>este número no reemplaza un test cognitivo validado.</div>
+      </div>
+      <div class="voidnote" data-voidlabel="~35% del alto, vacío">no decís qué palabras falló · “tiempo de reacción” no aplica a un test de recall</div>
+    </div>`;
+  requestAnimationFrame(hl);
+}
+
+/* ══════════════ anotaciones medidas sobre el DOM ══════════════ */
+function hl(){
+  const hb = view.getBoundingClientRect();
+  view.querySelectorAll('[data-hl]').forEach(el=>{
+    const r = el.getBoundingClientRect(), pad = +(el.dataset.hlPad || 8);
+    const d = document.createElement('div');
+    d.className = 'hl ' + (el.dataset.hlTone || '') + (el.dataset.hlSide ? ' side' : '');
+    d.style.cssText = `left:${r.left-hb.left-pad}px;top:${r.top-hb.top-pad}px;`
+                    + `width:${r.width+pad*2}px;height:${r.height+pad*2}px`;
+    d.innerHTML = `<span>${el.dataset.hl}</span>`;
+    view.appendChild(d);
+  });
+  const from = view.querySelector('[data-voidfrom]'), note = view.querySelector('.voidnote');
+  if(from && note){
+    const a = from.getBoundingClientRect(), b = note.getBoundingClientRect();
+    const top = a.bottom - hb.top + 20, h = (b.top - hb.top) - top - 14;
+    if(h > 50){
+      const d = document.createElement('div');
+      d.className = 'hl';
+      d.style.cssText = `left:24px;right:24px;top:${top}px;height:${h}px`;
+      d.innerHTML = `<span>${note.dataset.voidlabel || 'espacio sin usar'}</span>`;
+      view.appendChild(d);
+    }
+  }
+}
+
+/* ══════════════ router ══════════════ */
+const R = {1:[screen1,screen1Before],2:[screen2,screen2Before],3:[screen3,screen3Before]};
+function go(n){ S.screen=n; render();
+  document.querySelectorAll('#segScreen button').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.s===n));}
+function render(){ clear(); S.revealed=false; R[S.screen][S.mode==='after'?0:1](); paintNotes(); }
+document.querySelectorAll('#segScreen button').forEach(b=>b.onclick=()=>go(+b.dataset.s));
+document.querySelectorAll('#segMode button').forEach(b=>b.onclick=()=>{
+  S.mode=b.dataset.m;
+  document.querySelectorAll('#segMode button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.m===S.mode));
+  render();});
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&S.screen===3&&S.mode==='after'){e.preventDefault();S.picked.clear();go(1);}
+  if(['1','2','3'].includes(e.key)) go(+e.key);});
+render();
+</script>
+</body>
+</html>

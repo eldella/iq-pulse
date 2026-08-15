@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Memoria Espacial — rediseño de juego y resultado</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   MISMOS TOKENS QUE PALABRA RÁPIDA — la suite comparte lenguaje
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#000; --bg-elev:#0D0D0F; --bg-elev-2:#161618;
+  --grid:rgba(255,255,255,.055);
+  --fg:#FFF; --fg-dim:#8E8E93; --fg-faint:#48484A;
+  --accent:#0A84FF; --accent-glow:rgba(10,132,255,.28);
+  --good:#30D158;  --good-glow:rgba(48,209,88,.22);
+  --bad:#FF453A;   --warn:#FF9F0A;
+  --stroke:rgba(255,255,255,.10); --stroke-strong:rgba(255,255,255,.18);
+  --r-sm:12px; --r-md:16px; --r-lg:22px; --r-pill:999px;
+  --step:8px; --measure:420px;
+  --board:min(300px, calc(100vw - 56px));  /* huella FIJA del tablero: nunca cambia */
+  --ease-out:cubic-bezier(.16,1,.3,1);
+}
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ height:100%; }
+body{
+  background:var(--bg);
+  background-image: radial-gradient(circle, var(--grid) 1px, transparent 1px);
+  background-size:24px 24px;
+  color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums;
+  overflow-x:hidden;
+}
+button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer; }
+
+/* switcher de revisión — no va a producción */
+.review{
+  position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:99;
+  display:flex; gap:4px; padding:4px;
+  background:rgba(22,22,24,.82); backdrop-filter:blur(20px);
+  border:1px solid var(--stroke); border-radius:var(--r-pill);
+}
+.review button{
+  padding:6px 14px; font-size:12px; font-weight:590; color:var(--fg-dim);
+  border-radius:var(--r-pill); transition:.18s var(--ease-out);
+}
+.review button[aria-selected="true"]{ background:var(--accent); color:#fff; }
+
+.screen{ display:none; }
+.screen.is-active{ display:grid; place-items:center; min-height:100dvh; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PANTALLA 1 · JUEGO
+   ═══════════════════════════════════════════════════════════════ */
+.stage{
+  width:100%; max-width:var(--measure); margin-inline:auto;
+  height:min(100dvh, 780px);          /* se centra en pantallas altas */
+  display:grid; grid-template-rows:auto minmax(0,1fr) auto;
+  padding:56px calc(var(--step)*3) calc(var(--step)*5);
+}
+
+/* — cabecera — */
+.g-head{ display:grid; gap:calc(var(--step)*1.5); }
+.g-head-row{ display:flex; align-items:center; justify-content:space-between; }
+.back{ display:flex; align-items:center; gap:8px; font-size:14px; color:var(--fg-dim); transition:.18s; }
+.back:hover{ color:var(--fg); }
+.timer{ display:flex; align-items:baseline; gap:5px; font-size:15px; font-weight:640; letter-spacing:-.01em; }
+.timer small{ font-size:11px; font-weight:510; color:var(--fg-faint); }
+.timer.is-low{ color:var(--warn); }
+.timer.is-low small{ color:var(--warn); opacity:.6; }
+.timer .bonus{
+  font-size:12px; font-weight:640; color:var(--good); margin-left:4px; opacity:0;
+}
+.timer .bonus.show{ animation: rise 1.1s var(--ease-out); }
+@keyframes rise{ 0%{opacity:0;transform:translateY(4px)} 25%{opacity:1;transform:none} 100%{opacity:0;transform:translateY(-8px)} }
+
+.bar{ height:3px; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
+.bar i{ display:block; height:100%; background:var(--accent); transform-origin:left; transition:transform .95s linear, background .3s; }
+.bar.is-low i{ background:var(--warn); }
+
+.g-meta{
+  margin-top:calc(var(--step)*3);
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  font-size:11px; font-weight:640; letter-spacing:.09em; text-transform:uppercase;
+}
+.g-meta .tag{ color:var(--accent); }
+.g-meta .sep{ color:var(--fg-faint); }
+.g-meta .lvl{ color:var(--fg-dim); }
+
+.g-sub{
+  margin-top:6px; display:flex; align-items:center; justify-content:center; gap:10px;
+  font-size:13px; color:var(--fg-faint);
+}
+.life{
+  display:inline-flex; align-items:center; gap:5px; padding:2px 9px;
+  border:1px solid var(--stroke); border-radius:var(--r-pill);
+  font-size:11px; font-weight:590; color:var(--fg-dim);
+}
+.life.spent{ border-color:rgba(255,159,10,.4); color:var(--warn); }
+
+/* — centro — */
+.g-center{
+  display:grid; align-content:center; justify-items:center;
+  gap:calc(var(--step)*3); min-height:400px;   /* reserva fija: nada salta */
+}
+.g-cue{ font-size:15px; color:var(--fg-dim); text-align:center; height:20px; }
+.g-cue b{ color:var(--fg); font-weight:620; }
+
+/* tablero: huella fija, las celdas se achican cuando la grilla crece */
+.boardwrap{ position:relative; width:var(--board); height:var(--board); }
+.boardring{ position:absolute; inset:-11px; width:calc(100% + 22px); height:calc(100% + 22px); pointer-events:none; overflow:visible; }
+.boardring rect{
+  fill:none; stroke:var(--accent); stroke-width:2.5; stroke-linecap:round;
+  filter:drop-shadow(0 0 8px var(--accent-glow));
+  opacity:0; transition:opacity .25s var(--ease-out);
+}
+.boardring rect.on{ opacity:1; }
+
+.board{
+  width:100%; height:100%; display:grid;
+  grid-template-columns:repeat(var(--n,3), 1fr);
+  grid-template-rows:repeat(var(--n,3), 1fr);
+  gap:var(--gap, 12px);
+}
+.cell{
+  border-radius:var(--cr, 14px);
+  background:#161618; border:1px solid rgba(255,255,255,.055);
+  transition: background .18s var(--ease-out), border-color .18s, transform .18s var(--ease-out), box-shadow .18s;
+}
+.cell.tapable{ cursor:pointer; }
+.cell.tapable:hover{ background:#202024; }
+.cell.lit{                                  /* patrón a memorizar */
+  background:var(--accent); border-color:#4DA6FF;
+  box-shadow:0 0 20px -2px var(--accent-glow);
+  animation: lightup .3s var(--ease-out);
+}
+@keyframes lightup{ from{ transform:scale(.86); opacity:.3 } to{ transform:scale(1); opacity:1 } }
+.cell.pick{                                 /* elegida por el jugador */
+  background:rgba(255,255,255,.16); border-color:var(--stroke-strong);
+  transform:scale(.94);
+}
+.cell.ok{ background:var(--good); border-color:#5BE07C; box-shadow:0 0 20px -2px var(--good-glow); }
+.cell.err{ background:rgba(255,69,58,.85); border-color:var(--bad); }
+.cell.miss{                                  /* la que estaba y no marcaste */
+  background:transparent; border:2px dashed rgba(10,132,255,.75);
+}
+
+/* contador de casillas por marcar — mismo rol que los casilleros de Palabra Rápida */
+.counter{ display:flex; gap:8px; justify-content:center; align-items:center; min-height:14px; }
+.cdot{
+  width:10px; height:10px; border-radius:50%;
+  background:rgba(255,255,255,.13); transition:.18s var(--ease-out);
+}
+.cdot.on{ background:var(--accent); box-shadow:0 0 10px var(--accent-glow); transform:scale(1.15); }
+
+/* — pie — */
+.g-foot{ display:grid; gap:calc(var(--step)*1.5); justify-items:center; width:100%; }
+.g-foot .btn{ width:100%; }
+.hint{ font-size:12px; color:var(--fg-faint); height:16px; text-align:center; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PANTALLA 2 · RESULTADO
+   ═══════════════════════════════════════════════════════════════ */
+.r-stage{
+  min-height:100dvh; display:grid; align-content:center; justify-items:center;
+  max-width:var(--measure); margin-inline:auto;
+  padding:88px calc(var(--step)*3) calc(var(--step)*6);
+  gap:calc(var(--step)*3);
+}
+.r-title{ font-size:44px; font-weight:700; letter-spacing:-.025em; }
+
+.hero{
+  width:100%; padding:calc(var(--step)*4) calc(var(--step)*3); text-align:center;
+  border-radius:var(--r-lg);
+  background:linear-gradient(180deg, rgba(48,209,88,.05), rgba(48,209,88,0));
+  border:1px solid rgba(48,209,88,.42);
+  box-shadow:0 0 44px -8px var(--good-glow), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.hero.is-neutral{
+  background:linear-gradient(180deg, rgba(10,132,255,.05), rgba(10,132,255,0));
+  border-color:rgba(10,132,255,.38);
+  box-shadow:0 0 44px -8px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.hero-label{ font-size:11px; font-weight:660; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); }
+.hero-value{
+  margin-top:10px; font-size:76px; font-weight:700; line-height:1; letter-spacing:-.035em;
+  display:flex; align-items:baseline; justify-content:center; gap:10px;
+}
+.hero-value .unit{ font-size:22px; font-weight:600; color:var(--fg-dim); letter-spacing:-.01em; }
+.hero-best{ margin-top:12px; font-size:14px; font-weight:560; color:var(--good); }
+
+/* escalera de niveles — el equivalente espacial de los puntitos */
+.ladder{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+.rung{
+  min-width:30px; height:30px; padding:0 6px; display:grid; place-items:center;
+  border-radius:9px; font-size:12px; font-weight:640;
+  background:rgba(255,255,255,.05); color:var(--fg-faint);
+  border:1px solid transparent;
+}
+.rung.ok{ background:rgba(48,209,88,.16); color:var(--good); border-color:rgba(48,209,88,.35); }
+.rung.err{ background:rgba(255,69,58,.14); color:var(--bad); border-color:rgba(255,69,58,.35); }
+.ladder-cap{ font-size:11px; color:var(--fg-faint); text-align:center; margin-top:-4px; }
+
+.cards{ width:100%; display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--step)*1.5); }
+.card{ padding:calc(var(--step)*2.5) var(--step); text-align:center; background:var(--bg-elev); border:1px solid var(--stroke); border-radius:var(--r-md); }
+.card-ico{ font-size:19px; line-height:1; }
+.card-val{ margin-top:8px; font-size:23px; font-weight:680; letter-spacing:-.02em; }
+.card-val small{ font-size:13px; font-weight:560; color:var(--fg-dim); margin-left:2px; }
+.card-key{ margin-top:6px; font-size:10px; font-weight:640; letter-spacing:.08em; text-transform:uppercase; color:var(--fg-dim); }
+
+.review-words{ width:100%; }
+.rw-toggle{
+  width:100%; padding:13px; font-size:13px; font-weight:560; color:var(--fg-dim);
+  border:1px solid var(--stroke); border-radius:var(--r-md);
+  display:flex; align-items:center; justify-content:center; gap:7px; transition:.18s;
+}
+.rw-toggle:hover{ color:var(--fg); border-color:var(--stroke-strong); }
+.rw-toggle .chev{ transition:transform .25s var(--ease-out); }
+.rw-toggle[aria-expanded="true"] .chev{ transform:rotate(180deg); }
+.rw-body{ display:none; margin-top:var(--step); }
+.rw-body.open{ display:block; animation:fade .3s var(--ease-out); }
+@keyframes fade{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+.rw-row{ display:flex; align-items:center; gap:10px; padding:10px 13px; border-radius:var(--r-sm); font-size:14px; }
+.rw-row + .rw-row{ margin-top:5px; }
+.rw-row.ok{ background:rgba(48,209,88,.07); }
+.rw-row.err{ background:rgba(255,69,58,.07); }
+.rw-n{ font-size:11px; color:var(--fg-faint); width:52px; }
+.rw-word{ font-weight:620; }
+.rw-row.ok .rw-word{ color:var(--good); }
+.rw-yours{ margin-left:auto; font-size:12px; color:var(--fg-faint); }
+
+.actions{ display:flex; gap:var(--step); width:100%; }
+.btn{
+  flex:1; height:52px; padding-inline:14px; border-radius:var(--r-pill);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:14.5px; font-weight:600; white-space:nowrap; transition:.2s var(--ease-out);
+}
+.btn-ghost{ background:var(--bg-elev-2); border:1px solid var(--stroke); }
+.btn-ghost:hover{ background:#1E1E21; border-color:var(--stroke-strong); }
+.btn-primary{ background:var(--accent); color:#fff; box-shadow:0 6px 24px -6px var(--accent-glow); }
+.btn-primary:hover{ background:#3D9DFF; transform:translateY(-1px); }
+.btn-primary .kbd{ padding:3px 7px; border-radius:6px; background:rgba(255,255,255,.2); font-size:10.5px; font-weight:590; }
+.btn:disabled{ opacity:.32; cursor:default; transform:none; box-shadow:none; background:var(--bg-elev-2); color:var(--fg-dim); }
+.link{ font-size:14px; color:var(--fg-dim); text-decoration:none; }
+.link:hover{ color:var(--fg); }
+.disclaimer{ max-width:340px; text-align:center; font-size:11px; line-height:1.55; color:var(--fg-faint); }
+
+@media (max-width:420px){
+  .r-title{ font-size:36px; }
+  .hero-value{ font-size:62px; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="review" role="tablist">
+  <button role="tab" aria-selected="true"  data-go="game">Juego</button>
+  <button role="tab" aria-selected="false" data-go="result">Resultado</button>
+</div>
+
+<!-- ══════════════ PANTALLA 1 · JUEGO ══════════════ -->
+<section class="screen is-active" id="screen-game">
+  <div class="stage">
+
+    <header class="g-head">
+      <div class="g-head-row">
+        <button class="back">← Volver a elegir</button>
+        <div class="timer" id="timer">30<small>s</small><span class="bonus" id="bonus">+4s</span></div>
+      </div>
+      <div class="bar" id="bar"><i style="transform:scaleX(1)"></i></div>
+
+      <div class="g-meta">
+        <span class="tag">Memoria espacial</span>
+        <span class="sep">·</span>
+        <span class="lvl">Fácil</span>
+      </div>
+      <div class="g-sub">
+        <span id="level">Nivel 1 · 3 casillas</span>
+        <span class="life" id="life">♥ 1 vida</span>
+      </div>
+    </header>
+
+    <main class="g-center">
+      <p class="g-cue" id="cue">Memorizá <b>3 casillas</b></p>
+
+      <div class="boardwrap">
+        <svg class="boardring" aria-hidden="true">
+          <rect id="ring" x="1.5" y="1.5" rx="22"></rect>
+        </svg>
+        <div class="board" id="board" style="--n:3"></div>
+      </div>
+
+      <div class="counter" id="counter"></div>
+    </main>
+
+    <footer class="g-foot">
+      <button class="btn btn-primary" id="check" disabled>Comprobar <span class="kbd">Enter</span></button>
+      <div class="hint" id="hint">Mirá el patrón…</div>
+    </footer>
+
+  </div>
+</section>
+
+<!-- ══════════════ PANTALLA 2 · RESULTADO ══════════════ -->
+<section class="screen" id="screen-result">
+  <div class="r-stage">
+    <h1 class="r-title">Resultado</h1>
+
+    <div class="hero" id="hero">
+      <div class="hero-label">Span espacial</div>
+      <div class="hero-value"><span id="rv">6</span><span class="unit">casillas</span></div>
+      <div class="hero-best" id="rbest">Tu mejor marca: 8 casillas</div>
+    </div>
+
+    <div class="ladder" id="ladder"></div>
+    <div class="ladder-cap" id="ladderCap">Hasta dónde llegó tu memoria esta vez</div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-ico">🏆</div>
+        <div class="card-val" id="cRecord">8<small>casillas</small></div>
+        <div class="card-key">Récord personal</div>
+      </div>
+      <div class="card">
+        <div class="card-ico">⚡</div>
+        <div class="card-val" id="cSpeed">2,6<small>s</small></div>
+        <div class="card-key">Velocidad promedio</div>
+      </div>
+    </div>
+
+    <div class="review-words">
+      <button class="rw-toggle" id="rwToggle" aria-expanded="false">
+        Ver los niveles <span class="chev">⌄</span>
+      </button>
+      <div class="rw-body" id="rwBody"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="copy">⧉ Copiar resultado</button>
+      <button class="btn btn-primary" data-go="game">Jugar de nuevo <span class="kbd">Espacio</span></button>
+    </div>
+
+    <a class="link" href="#">Ver tu perfil</a>
+
+    <p class="disclaimer">
+      Resultado ilustrativo — mientras el motor de quiz sigue en construcción,
+      este número no reemplaza un test cognitivo validado.
+    </p>
+  </div>
+</section>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   PROGRESIÓN — más rápida y con más cuadros
+   nivel n → casillas = n + 2 ; la grilla salta a 4×4, 5×5 y 6×6
+   ═══════════════════════════════════════════════════════════════ */
+const DIFF = { facil: 1.15, medio: 1.0, dificil: .82 };
+const CONFIG = {
+  difficulty: 'facil',
+  startSec: 30,
+  bonusSec: 4,        // cada nivel superado suma tiempo: la partida tiene aire
+  lives: 1,
+  level(n){
+    const cells = n + 2;                                   // 3,4,5,6,7,8,9,10,11,12…
+    const size  = cells <= 4 ? 3 : cells <= 7 ? 4 : cells <= 10 ? 5 : 6;
+    const expo  = Math.round((700 + cells * 160) * DIFF[this.difficulty]);
+    return { cells, size, expo };
+  }
+};
+
+const $ = s => document.querySelector(s);
+const els = {
+  board:$('#board'), ring:$('#ring'), cue:$('#cue'), counter:$('#counter'),
+  check:$('#check'), hint:$('#hint'), level:$('#level'), life:$('#life'),
+  timer:$('#timer'), bar:$('#bar'), bonus:$('#bonus')
+};
+
+let RUN = 0;              // token de partida: invalida timers de la corrida anterior
+let G = { n:1, spec:null, pattern:[], picks:new Set(), phase:'show',
+          lives:CONFIG.lives, log:[], t0:0, timeLeft:CONFIG.startSec,
+          maxSec:CONFIG.startSec, tick:null, span:0 };
+const alive = tok => tok === RUN && $('#screen-game').classList.contains('is-active');
+
+/* ---------- navegación ---------- */
+function go(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('is-active'));
+  $('#screen-' + name).classList.add('is-active');
+  document.querySelectorAll('.review [data-go]').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.go === name)));
+  window.scrollTo(0,0);
+  if(name === 'game') startGame();
+  if(name === 'result') paintResult();
+}
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+
+/* ---------- juego ---------- */
+function startGame(){
+  clearInterval(G.tick);
+  RUN++; stopRing();
+  G = { n:1, spec:null, pattern:[], picks:new Set(), phase:'show',
+        lives:CONFIG.lives, log:[], t0:0, timeLeft:CONFIG.startSec,
+        maxSec:CONFIG.startSec, tick:null, span:0 };
+  paintLife();
+  runClock();
+  nextLevel();
+}
+
+function runClock(){
+  paintClock();
+  G.tick = setInterval(() => { G.timeLeft--; paintClock(); if(G.timeLeft <= 0) finish('tiempo'); }, 1000);
+}
+function paintClock(){
+  els.timer.firstChild.textContent = Math.max(0, G.timeLeft);
+  els.bar.firstElementChild.style.transform = 'scaleX(' + Math.max(0, G.timeLeft / G.maxSec) + ')';
+  const low = G.timeLeft <= 8;
+  els.timer.classList.toggle('is-low', low);
+  els.bar.classList.toggle('is-low', low);
+}
+function paintLife(){
+  els.life.textContent = G.lives > 0 ? '♥ 1 vida' : '⚠ última chance';
+  els.life.classList.toggle('spent', G.lives === 0);
+}
+
+function nextLevel(){
+  G.spec = CONFIG.level(G.n);
+  G.phase = 'show';
+  G.picks.clear();
+
+  const { cells, size, expo } = G.spec;
+  els.level.textContent = `Nivel ${G.n} · ${cells} casillas`;
+  els.cue.innerHTML = `Memorizá <b>${cells} casillas</b>`;
+  els.check.disabled = true;
+  els.hint.textContent = 'Mirá el patrón…';
+
+  buildBoard(size);
+  buildCounter(cells);
+
+  /* patrón aleatorio sin repetir */
+  const total = size * size, pool = [...Array(total).keys()];
+  for(let i = pool.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [pool[i],pool[j]] = [pool[j],pool[i]]; }
+  G.pattern = pool.slice(0, cells);
+
+  /* el patrón entra escalonado; el cronómetro de exposición arranca
+     recién cuando está completo, así "1,4 s" son 1,4 s reales de mirarlo */
+  const tok = RUN, stagger = 30, reveal = cells * stagger;
+  const kids = [...els.board.children];
+  G.pattern.forEach((idx,k) => setTimeout(() => { if(alive(tok)) kids[idx]?.classList.add('lit'); }, k * stagger));
+
+  setTimeout(() => {
+    if(!alive(tok) || G.phase !== 'show') return;
+    runRing(expo);
+    setTimeout(() => { if(alive(tok)) toRecall(); }, expo);
+  }, reveal);
+}
+
+/* anillo de exposición: se vacía mientras el patrón está visible.
+   Medimos el largo real del trazo — así funciona en cualquier tamaño. */
+let ringAnim = null;
+function runRing(ms){
+  const svg = els.ring.ownerSVGElement;
+  const w = svg.clientWidth, h = svg.clientHeight;
+  if(!w || !h) return;                         // pantalla oculta: nada que dibujar
+  els.ring.setAttribute('width',  Math.max(0, w - 3));
+  els.ring.setAttribute('height', Math.max(0, h - 3));
+  let L; try{ L = els.ring.getTotalLength(); }catch{ return; }
+  els.ring.style.strokeDasharray = L;
+  els.ring.classList.add('on');
+  ringAnim?.cancel();
+  ringAnim = els.ring.animate(
+    [{ strokeDashoffset: 0 }, { strokeDashoffset: L }],
+    { duration: ms, easing: 'linear', fill: 'forwards' }
+  );
+}
+function stopRing(){ ringAnim?.cancel(); ringAnim = null; els.ring.classList.remove('on'); }
+
+function buildBoard(n){
+  /* huella fija: sólo cambian celda y gap, el tablero NO se mueve */
+  const gap = n <= 3 ? 12 : n === 4 ? 10 : n === 5 ? 8 : 7;
+  els.board.style.setProperty('--n', n);
+  els.board.style.setProperty('--gap', gap + 'px');
+  els.board.style.setProperty('--cr', (n <= 3 ? 14 : n === 4 ? 12 : n === 5 ? 10 : 8) + 'px');
+  if(els.board.children.length !== n*n){
+    els.board.innerHTML = '';
+    for(let i=0;i<n*n;i++){
+      const c = document.createElement('div');
+      c.className = 'cell'; c.dataset.i = i;
+      els.board.appendChild(c);
+    }
+  } else {
+    [...els.board.children].forEach(c => c.className = 'cell');
+  }
+}
+
+function buildCounter(n){
+  els.counter.innerHTML = '';
+  for(let i=0;i<n;i++){
+    const d = document.createElement('span'); d.className = 'cdot';
+    els.counter.appendChild(d);
+  }
+}
+function paintCounter(){
+  [...els.counter.children].forEach((d,i) => d.classList.toggle('on', i < G.picks.size));
+  els.check.disabled = G.picks.size !== G.spec.cells;
+}
+
+function toRecall(){
+  if(G.phase !== 'show') return;
+  G.phase = 'recall';
+  G.t0 = performance.now();
+  stopRing();
+  [...els.board.children].forEach(c => { c.classList.remove('lit'); c.classList.add('tapable'); });
+  els.cue.innerHTML = `Marcá las <b>${G.spec.cells}</b> que recordás`;
+  els.hint.textContent = 'Tocá para marcar o desmarcar';
+  paintCounter();
+}
+
+els.board.addEventListener('click', e => {
+  const c = e.target.closest('.cell');
+  if(!c || G.phase !== 'recall') return;
+  const i = +c.dataset.i;
+  if(G.picks.has(i)){ G.picks.delete(i); c.classList.remove('pick'); }
+  else{
+    if(G.picks.size >= G.spec.cells) return;      // no deja pasarse
+    G.picks.add(i); c.classList.add('pick');
+  }
+  paintCounter();
+});
+
+els.check.addEventListener('click', submit);
+document.addEventListener('keydown', e => {
+  if($('#screen-game').classList.contains('is-active') && e.key === 'Enter'){ e.preventDefault(); submit(); }
+  if($('#screen-result').classList.contains('is-active') && e.code === 'Space'){ e.preventDefault(); go('game'); }
+});
+
+function submit(){
+  if(G.phase !== 'recall' || G.picks.size !== G.spec.cells) return;
+  G.phase = 'feedback';
+  const set = new Set(G.pattern);
+  const ok = [...G.picks].every(i => set.has(i));
+  const secs = (performance.now() - G.t0) / 1000;
+
+  const kids = [...els.board.children];
+  kids.forEach((c,i) => {
+    c.classList.remove('tapable','pick');
+    if(G.picks.has(i)) c.classList.add(set.has(i) ? 'ok' : 'err');
+    else if(set.has(i)) c.classList.add('miss');          // te muestra lo que fallaste
+  });
+
+  G.log.push({ n:G.n, cells:G.spec.cells, size:G.spec.size, ok, secs });
+  els.check.disabled = true;
+  els.hint.textContent = '';
+
+  const tok = RUN;
+  if(ok){
+    G.span = G.spec.cells;
+    els.cue.innerHTML = `<b style="color:var(--good)">¡Perfecto!</b>`;
+    G.timeLeft += CONFIG.bonusSec; G.maxSec = Math.max(G.maxSec, G.timeLeft);
+    els.bonus.classList.remove('show'); void els.bonus.offsetWidth; els.bonus.classList.add('show');
+    paintClock();
+    G.n++;
+    setTimeout(() => { if(alive(tok) && G.timeLeft > 0) nextLevel(); }, 1000);
+  } else if(G.lives > 0){
+    G.lives--; paintLife();
+    els.cue.innerHTML = `<b style="color:var(--warn)">Casi — te queda una</b>`;
+    setTimeout(() => { if(alive(tok) && G.timeLeft > 0) nextLevel(); }, 1400);   // repite el mismo nivel
+  } else {
+    els.cue.innerHTML = `<b style="color:var(--bad)">Se cortó acá</b>`;
+    setTimeout(() => { if(alive(tok)) finish(); }, 1400);
+  }
+}
+
+function finish(){ clearInterval(G.tick); go('result'); }
+
+/* ---------- resultado ---------- */
+const SAMPLE = {
+  span: 6,
+  log: [
+    {n:1, cells:3,  size:3, ok:true,  secs:1.8},
+    {n:2, cells:4,  size:3, ok:true,  secs:2.1},
+    {n:3, cells:5,  size:4, ok:true,  secs:2.4},
+    {n:4, cells:6,  size:4, ok:true,  secs:2.9},
+    {n:5, cells:7,  size:4, ok:false, secs:3.3},
+    {n:5, cells:7,  size:4, ok:false, secs:3.1}
+  ]
+};
+const RECORD = 8;
+const MAXRUNG = 12;
+
+function paintResult(){
+  const log  = G.log.length ? G.log : SAMPLE.log;
+  const span = G.log.length ? G.span : SAMPLE.span;
+  const secs = log.map(l => l.secs);
+  const avg  = secs.length ? secs.reduce((a,b)=>a+b,0)/secs.length : 0;
+  const isPB = span >= RECORD;
+
+  $('#rv').textContent = span;
+  $('#hero').classList.toggle('is-neutral', !isPB);
+  $('#rbest').innerHTML = isPB ? '✦ ¡Nuevo récord personal!' : `Tu mejor marca: ${RECORD} casillas`;
+  $('#cRecord').innerHTML = Math.max(RECORD, span) + '<small>casillas</small>';
+  $('#cSpeed').innerHTML = avg.toFixed(1).replace('.',',') + '<small>s</small>';
+
+  /* escalera: cada peldaño es una cantidad de casillas */
+  const failedAt = (log.find(l => !l.ok) || {}).cells ?? null;
+  let rungs = '';
+  for(let c = 3; c <= MAXRUNG; c++){
+    const cls = c <= span ? 'ok' : (c === failedAt ? 'err' : '');
+    rungs += `<span class="rung ${cls}">${c}</span>`;
+  }
+  $('#ladder').innerHTML = rungs;
+  $('#ladderCap').textContent = failedAt
+    ? `Superaste hasta ${span} · te trabaste en ${failedAt}`
+    : `Superaste hasta ${span} casillas`;
+
+  $('#rwBody').innerHTML = log.map(l => `
+    <div class="rw-row ${l.ok?'ok':'err'}">
+      <span class="rw-n">Nivel ${l.n}</span>
+      <span class="rw-word">${l.cells} casillas</span>
+      <span class="rw-yours">${l.size}×${l.size} · ${l.secs.toFixed(1).replace('.',',')}s</span>
+    </div>`).join('');
+  $('#rwToggle').firstChild.textContent = `Ver los ${log.length} niveles `;
+
+  $('#copy').onclick = () => {
+    const txt = `Memoria Espacial · Fácil\nSpan: ${span} casillas · ${avg.toFixed(1).replace('.',',')} s por patrón\nRécord: ${Math.max(RECORD,span)} casillas`;
+    navigator.clipboard?.writeText(txt);
+    $('#copy').textContent = '✓ Copiado';
+    setTimeout(() => $('#copy').innerHTML = '⧉ Copiar resultado', 1600);
+  };
+}
+
+$('#rwToggle').onclick = e => {
+  const open = $('#rwBody').classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+};
+
+startGame();
+</script>
+</body>
+</html>
