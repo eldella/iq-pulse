@@ -482,7 +482,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                     className="block h-full w-full text-left focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
                   >
                     <GlassCard
-                      variant="plain"
                       className="relative flex h-full flex-col items-center gap-2 p-5 text-center shadow-sm transition-shadow hover:shadow-md"
                     >
                       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
