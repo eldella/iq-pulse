@@ -207,7 +207,6 @@ export type Dictionary = {
     practiceRecordLabel: string;
     practiceNewRecordBadge: string;
     practiceCloseToRecordLabel: string;
-    practiceStroopCostLabel: string;
     practiceRoundBarsCaption: string;
     playAgainShortcutHint: string;
     practiceReactionShareLead: string;
@@ -510,7 +509,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceRecordLabel: "Récord personal",
       practiceNewRecordBadge: "¡Nuevo récord!",
       practiceCloseToRecordLabel: "Cerca de tu récord",
-      practiceStroopCostLabel: "Costo Stroop",
       practiceRoundBarsCaption: "Tus rondas, en orden · más bajo es más rápido",
       playAgainShortcutHint: "Espacio",
       practiceReactionShareLead: "¡Hice",
@@ -803,7 +801,6 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceRecordLabel: "Personal record",
       practiceNewRecordBadge: "New record!",
       practiceCloseToRecordLabel: "Close to your record",
-      practiceStroopCostLabel: "Stroop cost",
       practiceRoundBarsCaption: "Your rounds, in order · lower is faster",
       playAgainShortcutHint: "Space",
       practiceReactionShareLead: "I got",

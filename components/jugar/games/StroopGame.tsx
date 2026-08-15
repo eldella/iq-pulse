@@ -8,7 +8,7 @@ import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
 import { contentTier } from "@/lib/scoring";
-import { getStroopOrder, recordStroopTrial } from "@/lib/stroopSession";
+import { getStroopOrder } from "@/lib/stroopSession";
 
 // Red + standard green is the classic confusion pair for protanopia/
 // deuteranopia (the most common color-vision deficiencies), and this is a
@@ -128,7 +128,6 @@ export function StroopGame({
     const responseTimeMs = Math.round((eventTimeStamp || now()) - stimAtRef.current);
     const isCorrect = colorKey === trial.ink.key;
     setSelected(colorKey);
-    recordStroopTrial(sessionId ?? null, { correct: isCorrect, responseTimeMs, congruent: trial.congruent });
     window.setTimeout(() => onAnswer(isCorrect, responseTimeMs), ANSWER_FEEDBACK_MS);
   }
 

@@ -383,7 +383,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           totalCount: null,
           previousBestCorrectCount: null,
           previousBestTotalCount: null,
-          sessionId,
           responseTimes: [],
         });
       } else {
@@ -408,7 +407,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             totalCount: finalAnswered,
             previousBestCorrectCount: null,
             previousBestTotalCount: null,
-            sessionId,
             responseTimes: times,
           });
         } else if (wordReview) {
@@ -436,7 +434,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             totalCount: null,
             previousBestCorrectCount: null,
             previousBestTotalCount: null,
-            sessionId,
             responseTimes: [],
           });
         } else {
@@ -462,7 +459,6 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             totalCount: finalAnswered,
             previousBestCorrectCount,
             previousBestTotalCount,
-            sessionId,
             responseTimes: times,
           });
         }

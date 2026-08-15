@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
 import { ANSWER_FEEDBACK_MS } from "@/lib/motion";
-import { now } from "@/lib/timing";
+import { now, formatMs } from "@/lib/timing";
 import { cn } from "@/lib/utils";
 
 const MIN_WAIT_MS = 1200;
@@ -143,7 +143,7 @@ export function ReactionCircleGame({
           : stage === "anticipated"
             ? t.quiz.reactionCircleAnticipated
             : reactionMs !== null
-              ? `${reactionMs} ms`
+              ? formatMs(reactionMs)
               : "";
 
   return (

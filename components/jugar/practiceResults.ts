@@ -1,7 +1,6 @@
 import type { GameId } from "@/components/jugar/QuizPage";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { formatElapsed, formatMs } from "@/lib/timing";
-import { getStroopCostMs } from "@/lib/stroopSession";
 
 export type PracticeResult = {
   // Reacción's "correct" answer is nearly always 100% (only an early tap
@@ -45,10 +44,6 @@ export type PracticeResult = {
   // when previousBest !== null.
   previousBestCorrectCount: number | null;
   previousBestTotalCount: number | null;
-  // Set from QuizPage's sessionId state - only read by games whose card
-  // needs cross-trial scratch data keyed by session (currently just
-  // Stroop's cost metric, see lib/stroopSession.ts).
-  sessionId?: string | null;
   // Every correct answer's response time this run, in order - only
   // populated for reactionCircle today, to draw the per-round bars.
   responseTimes: number[];
@@ -204,10 +199,6 @@ type AccuracyCardConfig = {
   // tracked both for this run and (via previousBestCorrectCount/
   // previousBestTotalCount) for the stored record.
   recordAsRawFraction?: boolean;
-  // Adds a 3rd stat card with the live Stroop-cost metric (mean incongruent
-  // RT minus mean congruent RT, see lib/stroopSession.ts) - "-" until at
-  // least one correct answer of each type exists this run.
-  showStroopCost?: boolean;
 };
 
 // A game whose "card" treatment needs a shape beyond these three kinds
@@ -235,7 +226,6 @@ const CARD_CONFIG: Partial<Record<GameId, CardConfig>> = {
     closeToRecordFraction: ACCURACY_CLOSE_TO_RECORD,
     recordEmoji: "🎯",
     speedEmoji: "⚡",
-    showStroopCost: true,
   },
   quickCompare: {
     kind: "accuracy",
@@ -277,18 +267,18 @@ function buildReactionMsView(config: ReactionMsCardConfig, result: PracticeResul
         ? `🎉 ${t.quiz.practiceNewRecordBadge}`
         : isCloseToRecord
           ? t.quiz.practiceCloseToRecordLabel
-          : `${t.quiz.practiceBestLabel} ${result.previousBest} ms`;
+          : `${t.quiz.practiceBestLabel} ${formatMs(result.previousBest)}`;
 
   return {
     headlineLabel: t.quiz.practiceAvgResponseLabel,
-    headlineValue: `${avgResponseMs} ms`,
+    headlineValue: formatMs(avgResponseMs),
     tier,
     badgeText,
     badgeTone: isNewRecord ? "success" : "neutral",
     showConfetti: isNewRecord,
     statCards: [
-      { emoji: config.recordEmoji, value: `${recordMs} ms`, label: t.quiz.practiceRecordLabel },
-      { emoji: config.bestEmoji, value: `${bestTapMs} ms`, label: t.quiz.practiceBestTapLabel },
+      { emoji: config.recordEmoji, value: formatMs(recordMs), label: t.quiz.practiceRecordLabel },
+      { emoji: config.bestEmoji, value: formatMs(bestTapMs), label: t.quiz.practiceBestTapLabel },
     ],
     // No "total time" card here on purpose: Reacción's rounds take long
     // enough (1-5s wait each) that the 30s clock almost always runs out
@@ -339,15 +329,6 @@ function buildAccuracyView(config: AccuracyCardConfig, result: PracticeResult, t
   if (result.avgResponseMs !== null) {
     statCards.push({ emoji: config.speedEmoji, value: formatMs(result.avgResponseMs), label: t.quiz.practiceAvgResponseLabel });
   }
-  if (config.showStroopCost) {
-    const costMs = getStroopCostMs(result.sessionId ?? null);
-    statCards.push({
-      emoji: "⇄",
-      value: costMs === null ? "-" : `${costMs >= 0 ? "+" : ""}${costMs} ms`,
-      label: t.quiz.practiceStroopCostLabel,
-    });
-  }
-
   let subtext: string | undefined;
   if (config.showRawCountSubtext && result.correctCount !== null && result.totalCount !== null) {
     const countText = `${result.correctCount} ${t.quiz.practiceRawCountConnector} ${result.totalCount} ${t.quiz.practiceRawCountSuffix}`;
@@ -417,7 +398,7 @@ function buildPlainAccuracyView(result: PracticeResult, t: Dictionary, elapsedMs
   const footerLines: PracticeFooterLine[] = [];
   if (result.avgResponseMs !== null) {
     footerLines.push({
-      text: `${t.quiz.practiceAvgResponseLabel}: ${result.avgResponseMs} ms`,
+      text: `${t.quiz.practiceAvgResponseLabel}: ${formatMs(result.avgResponseMs)}`,
       className: "tabular-nums text-sm text-muted-foreground",
     });
   }
