@@ -34,6 +34,7 @@ import {
   type PracticeResult,
   type PracticeResultTier,
   type SpanRunSummary,
+  type WordReviewRunSummary,
 } from "@/components/jugar/practiceResults";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
@@ -47,7 +48,7 @@ import { WordTypingGame } from "@/components/jugar/games/WordTypingGame";
 import { startSession, recordAnswer, completeSession, upsertDailyResult } from "@/lib/supabase/quiz";
 import { classifyIQ, levelToBucket, nextLevel, type Domain } from "@/lib/scoring";
 import { springTransition, tapScale } from "@/lib/motion";
-import { now, formatElapsed } from "@/lib/timing";
+import { now, formatElapsed, formatMs } from "@/lib/timing";
 import {
   DAILY_TARGET_COUNT,
   getCurrentStreak,
@@ -88,10 +89,16 @@ type GameDef = {
   Component: (props: {
     level: number;
     // spanSummary is only passed by games that run their own independent
-    // level ladder (see the exception list in handleAnswer below) - every
-    // other game leaves it undefined and QuizPage builds the practice
-    // result from isCorrect/responseTimeMs as before.
-    onAnswer: (isCorrect: boolean, responseTimeMs: number, spanSummary?: SpanRunSummary) => void;
+    // level ladder (see the exception list in handleAnswer below); wordReview
+    // is only passed by Ráfaga de Palabras, for its per-round miss detail.
+    // Every other game leaves both undefined and QuizPage builds the
+    // practice result from isCorrect/responseTimeMs as before.
+    onAnswer: (
+      isCorrect: boolean,
+      responseTimeMs: number,
+      spanSummary?: SpanRunSummary,
+      wordReview?: WordReviewRunSummary
+    ) => void;
   }) => React.ReactElement;
 };
 
@@ -278,7 +285,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     gameId: GameId,
     isCorrect: boolean,
     responseTimeMs: number,
-    spanSummary?: SpanRunSummary
+    spanSummary?: SpanRunSummary,
+    wordReview?: WordReviewRunSummary
   ) {
     if (!sessionId) return;
     const domain = GAMES[gameId].domain;
@@ -376,6 +384,26 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
         if (gameId === "reactionCircle" && bestTapMs !== null) {
           const { previousBest, improved } = recordPracticeReactionTime(gameId, bestTapMs);
           setPracticeResult({ headline: "reactionTime", accuracy, avgResponseMs, bestTapMs, previousBest, improved });
+        } else if (wordReview) {
+          const { previousBest, improved } = recordPracticeResult(gameId, wordReview.accuracy);
+          setPracticeResult({
+            headline: "accuracy",
+            accuracy: wordReview.accuracy,
+            // Not applicable to a recall test the way it is for a
+            // stimulus-response one - dropped in favor of the "tiempo"
+            // stat tile below (confirmed in the brief).
+            avgResponseMs: null,
+            bestTapMs: null,
+            previousBest,
+            improved,
+            fractionValue: wordReview.fractionValue,
+            extraStatCards: [
+              { emoji: "✅", value: `${wordReview.hits}`, label: t.quiz.wordBurstHitsLabel },
+              { emoji: "⚠️", value: `${wordReview.falsePositives}`, label: t.quiz.wordBurstFalsePositivesLabel },
+              { emoji: "⏱️", value: formatMs(wordReview.totalTimeMs), label: t.quiz.resultsTimeLabel },
+            ],
+            ladder: wordReview.ladder,
+          });
         } else {
           const { previousBest, improved } = recordPracticeResult(gameId, accuracy);
           setPracticeResult({
@@ -622,7 +650,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
           <activeGame.Component
             level={level}
-            onAnswer={(isCorrect, ms, spanSummary) => handleAnswer(activeGame.id, isCorrect, ms, spanSummary)}
+            onAnswer={(isCorrect, ms, spanSummary, wordReview) =>
+              handleAnswer(activeGame.id, isCorrect, ms, spanSummary, wordReview)
+            }
           />
         </motion.div>
       )}

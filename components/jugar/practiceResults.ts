@@ -40,6 +40,24 @@ export type PracticeResult = {
 export type PracticeRoundLogEntry = { label: string; value: string };
 
 /**
+ * What Ráfaga de Palabras hands QuizPage's onAnswer alongside the ordinary
+ * isCorrect/ms pair - unlike DigitSpanGame/SpatialMemoryGame this game
+ * still plays inside QuizPage's shared engine (one call per round, not
+ * once for a whole run), but the round-scoped detail a miss needs to show
+ * (which words were false positives, which were missed) only exists
+ * inside the round's own component instance, not in anything QuizPage
+ * tracks generically.
+ */
+export type WordReviewRunSummary = {
+  fractionValue: string;
+  accuracy: number;
+  hits: number;
+  falsePositives: number;
+  totalTimeMs: number;
+  ladder: PracticeLadderStep[];
+};
+
+/**
  * One chip in the results-screen strip - reused for two different things:
  * a game's own level ladder (Retención de Dígitos, Memoria Espacial) and
  * Ráfaga de Palabras' per-word review row. `tone` is why one shape covers
