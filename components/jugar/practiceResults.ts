@@ -442,6 +442,12 @@ function buildAccuracyTierView(config: AccuracyTierCardConfig, result: PracticeR
         ? `🎉 ${t.quiz.practiceNewRecordBadge}`
         : `${t.quiz.practiceBestLabel} ${Math.round(result.previousBest * 100)}%`;
 
+  // One bar per correctly-typed word, in order - only populated for games
+  // that report a per-answer responseTimeMs through the shared engine
+  // (wordTyping today; wordBurst goes through buildAccuracyTierView too but
+  // reports once per whole run, so its responseTimes is always empty here).
+  const bestMs = result.responseTimes.length > 0 ? Math.min(...result.responseTimes) : null;
+
   return {
     headlineLabel: t.quiz.practiceAccuracyLabel,
     headlineValue: result.fractionValue ?? `${Math.round(result.accuracy * 100)}%`,
@@ -452,6 +458,8 @@ function buildAccuracyTierView(config: AccuracyTierCardConfig, result: PracticeR
     statCards: result.extraStatCards ?? [],
     footerLines: result.extraFooterLines ?? [],
     ladder: result.ladder,
+    tapBars:
+      bestMs !== null ? result.responseTimes.map((ms) => ({ ms, isBest: ms === bestMs })) : undefined,
   };
 }
 
