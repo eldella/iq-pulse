@@ -172,6 +172,7 @@ export type Dictionary = {
     spatialMemoryCellsLabel: string;
     spatialMemoryAvgSpeedLabel: string;
     spatialMemoryLifeLabel: string;
+    resultsRoundLogCta: string;
     wordTypingStreakLabel: string;
     wordTypingRetryCta: string;
     wordTypingNewWordCta: string;
@@ -459,6 +460,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       spatialMemoryCellsLabel: "casillas",
       spatialMemoryAvgSpeedLabel: "Velocidad promedio",
       spatialMemoryLifeLabel: "Vida",
+      resultsRoundLogCta: "Ver detalle por ronda",
       wordTypingStreakLabel: "Racha perfecta",
       wordTypingRetryCta: "Reintentar esta palabra",
       wordTypingNewWordCta: "Nueva palabra",
@@ -745,6 +747,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       spatialMemoryCellsLabel: "cells",
       spatialMemoryAvgSpeedLabel: "Average speed",
       spatialMemoryLifeLabel: "Life",
+      resultsRoundLogCta: "See round-by-round detail",
       wordTypingStreakLabel: "Perfect streak",
       wordTypingRetryCta: "Retry this word",
       wordTypingNewWordCta: "New word",

@@ -33,7 +33,11 @@ export type PracticeResult = {
   extraStatCards?: PracticeStatCard[];
   extraFooterLines?: PracticeFooterLine[];
   ladder?: PracticeLadderStep[];
+  roundLog?: PracticeRoundLogEntry[];
 };
+
+/** One row of a collapsible "detail per round" disclosure on the results screen (Memoria Espacial's rounds table). */
+export type PracticeRoundLogEntry = { label: string; value: string };
 
 /**
  * One chip in the results-screen strip - reused for two different things:
@@ -61,6 +65,7 @@ export type SpanRunSummary = {
   avgResponseMs: number | null;
   extraStatCards: PracticeStatCard[];
   ladder: PracticeLadderStep[];
+  roundLog?: PracticeRoundLogEntry[];
 };
 
 /**
@@ -92,6 +97,7 @@ export type PracticeResultsView = {
   statCards: PracticeStatCard[];
   footerLines: PracticeFooterLine[];
   ladder?: PracticeLadderStep[];
+  roundLog?: PracticeRoundLogEntry[];
 };
 
 /**
@@ -226,6 +232,7 @@ function buildSpanView(result: PracticeResult, t: Dictionary): PracticeResultsVi
     statCards: result.extraStatCards ?? [],
     footerLines,
     ladder: result.ladder,
+    roundLog: result.roundLog,
   };
 }
 

@@ -355,6 +355,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
           spanNote: spanSummary.spanNote,
           extraStatCards: spanSummary.extraStatCards,
           ladder: spanSummary.ladder,
+          roundLog: spanSummary.roundLog,
         });
       } else {
         const finalCorrect = domainStats[domain].correct + (isCorrect ? 1 : 0);
@@ -739,6 +740,25 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                     {line.text}
                   </p>
                 ))}
+
+                {practiceResultsView.roundLog && practiceResultsView.roundLog.length > 0 && (
+                  <details className="w-full text-left">
+                    <summary className="cursor-pointer text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+                      {t.quiz.resultsRoundLogCta}
+                    </summary>
+                    <ul className="mt-2 flex flex-col gap-1">
+                      {practiceResultsView.roundLog.map((entry, index) => (
+                        <li
+                          key={index}
+                          className="flex items-center justify-between gap-2 text-xs text-muted-foreground"
+                        >
+                          <span>{entry.label}</span>
+                          <span className="tabular-nums text-foreground">{entry.value}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
               </div>
             ))
           )}
