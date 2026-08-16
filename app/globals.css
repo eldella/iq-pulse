@@ -55,6 +55,16 @@
      about what --color-accent is for, and this is a second, purely
      decorative token, not a substitute for it. */
   --color-accent-secondary: 126 84 240;
+  /* Cognitive-domain colors for the /jugar game-card grid only - reasoning
+     reuses --color-accent (already the app's one interactive color), memory
+     and speed get their own tokens rather than reusing --color-accent-secondary
+     (that one's documented above as decorative-only, background-glow
+     exclusive) or --color-danger/--color-success/--color-warn (those carry
+     fixed correct/incorrect/warning meaning elsewhere in the same flow -
+     reusing them here would make a domain color look like feedback).
+     Apple HIG system pink/orange (light variants). */
+  --color-domain-memory: 255 45 85;
+  --color-domain-speed: 255 149 0;
   /* Grain layer opacity/blend, theme-driven - see .bg-grain below. Two
      prior passes (0.055, then 0.025) both still read as visible texture
      live - grain's only job is anti-banding dither, which needs far less
@@ -79,6 +89,9 @@
   --color-warn: 255 214 10;
   --color-surface-hover: rgba(255, 255, 255, 0.05);
   --color-accent-secondary: 116 76 230;
+  /* Apple HIG system pink/orange (dark variants). */
+  --color-domain-memory: 255 55 95;
+  --color-domain-speed: 255 159 10;
   --grain-opacity: 0.02;
   --grain-blend: soft-light;
   color-scheme: dark;

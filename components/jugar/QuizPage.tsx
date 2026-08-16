@@ -135,6 +135,17 @@ const GAMES: Record<GameId, GameDef> = {
   reactionCircle: { id: "reactionCircle", domain: "speed", Icon: CircleDot, Component: ReactionCircleGame },
 };
 
+// Free-practice card color per cognitive domain - reasoning reuses the app's
+// one interactive accent (already what every card used before this), memory
+// and speed get their own tokens (see globals.css). Kept as literal Tailwind
+// class strings, not built from the domain name, since Tailwind only picks up
+// classes it can see verbatim in source at build time.
+const DOMAIN_STYLE: Record<Domain, { iconBg: string; iconFg: string; hoverBorder: string }> = {
+  reasoning: { iconBg: "bg-accent/10", iconFg: "text-accent", hoverBorder: "hover:border-accent/30" },
+  memory: { iconBg: "bg-domain-memory/10", iconFg: "text-domain-memory", hoverBorder: "hover:border-domain-memory/30" },
+  speed: { iconBg: "bg-domain-speed/10", iconFg: "text-domain-speed", hoverBorder: "hover:border-domain-speed/30" },
+};
+
 // The default "full assessment" - one game per domain. Pathfinder is a
 // second reasoning-domain game, selectable on its own but not part of the
 // default 3-game sequence, so that sequence's meaning stays stable.
@@ -623,8 +634,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             className="grid grid-cols-1 gap-3 sm:grid-cols-2"
           >
             {(Object.keys(GAMES) as GameId[]).map((id) => {
-              const { Icon } = GAMES[id];
+              const { Icon, domain } = GAMES[id];
               const { title, description } = gameCopy(id, t);
+              const style = DOMAIN_STYLE[domain];
               return (
                 <motion.div
                   key={id}
@@ -637,12 +649,21 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                     type="button"
                     disabled={starting}
                     onClick={() => handleStart([id])}
-                    className="block h-full w-full text-left focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+                    className="group block h-full w-full text-left focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
                   >
                     <GlassCard
-                      className="relative flex h-full flex-col items-center gap-2 p-5 text-center shadow-sm transition-shadow hover:shadow-md"
+                      className={cn(
+                        "relative flex h-full flex-col items-center gap-2.5 p-5 text-center shadow-sm transition-[box-shadow,border-color] duration-200 hover:shadow-md",
+                        style.hoverBorder
+                      )}
                     >
-                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/10 text-accent">
+                      <span
+                        className={cn(
+                          "flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-105",
+                          style.iconBg,
+                          style.iconFg
+                        )}
+                      >
                         {starting ? (
                           <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
                         ) : (
@@ -650,7 +671,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                         )}
                       </span>
                       <p className="text-sm font-semibold text-foreground">{title}</p>
-                      <p className="text-xs text-muted-foreground">{description}</p>
+                      <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
                     </GlassCard>
                   </button>
                 </motion.div>

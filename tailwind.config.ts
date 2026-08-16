@@ -21,6 +21,10 @@ const config: Config = {
         // Decorative-only counterweight for the ambient background glow -
         // see globals.css comment. Not for buttons, badges, or text.
         "accent-secondary": "rgb(var(--color-accent-secondary) / <alpha-value>)",
+        // Cognitive-domain colors for the /jugar game-card grid - see the
+        // globals.css comment next to --color-domain-memory.
+        "domain-memory": "rgb(var(--color-domain-memory) / <alpha-value>)",
+        "domain-speed": "rgb(var(--color-domain-speed) / <alpha-value>)",
         // glass/glass-border are already rgba() literals and are only ever
         // used bare (bg-glass, border-glass-border), never with a slash
         // modifier, so they don't need the channel-value treatment.
