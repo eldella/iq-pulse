@@ -76,10 +76,17 @@ const MAX_QUESTIONS_PER_GAME = 10;
  * Reasoning puzzles (Camino Óptimo, Secuencia Numérica) measure "can you
  * solve it", not "how fast can you go" - racing a 30s clock just adds
  * pressure that contaminates the thing being measured. These run a fixed
- * number of puzzles instead, no shared clock at all.
+ * number of puzzles instead, no shared clock at all. Reacción already draws
+ * its own fresh 1-5s delay each round (see handleAnswer's streak comment),
+ * so the 30s clock was just cutting rounds short at an arbitrary point -
+ * fixed at 5 rounds instead, matching how Retención de Dígitos/Memoria
+ * Espacial were independized from this same clock.
  */
-const ATTEMPT_BASED_GAMES = new Set<GameId>(["pathfinder", "numberSequence"]);
-const ATTEMPTS_PER_GAME = 8;
+const ATTEMPTS_PER_GAME: Partial<Record<GameId, number>> = {
+  pathfinder: 8,
+  numberSequence: 8,
+  reactionCircle: 5,
+};
 
 export type GameId =
   | "digitSpan"
@@ -263,7 +270,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   // handleAnswer).
   useEffect(() => {
     if (phase === "idle" || phase === "finished") return;
-    if (ATTEMPT_BASED_GAMES.has(phase)) return;
+    if (phase in ATTEMPTS_PER_GAME) return;
     const id = window.setInterval(() => {
       const remainingMs = Math.max(0, GAME_DURATION_MS - (now() - gameStartRef.current));
       setSecondsLeftInGame(Math.ceil(remainingMs / 1000));
@@ -332,9 +339,11 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       // Non-fatal: the run continues locally even if one write fails.
     });
 
-    const withinBudget = ATTEMPT_BASED_GAMES.has(gameId)
-      ? questionIndex + 1 < ATTEMPTS_PER_GAME
-      : questionIndex + 1 < MAX_QUESTIONS_PER_GAME && now() - gameStartRef.current < GAME_DURATION_MS;
+    const attemptsForGame = ATTEMPTS_PER_GAME[gameId];
+    const withinBudget =
+      attemptsForGame !== undefined
+        ? questionIndex + 1 < attemptsForGame
+        : questionIndex + 1 < MAX_QUESTIONS_PER_GAME && now() - gameStartRef.current < GAME_DURATION_MS;
 
     if (withinBudget) {
       setQuestionIndex((i) => i + 1);
@@ -509,7 +518,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   // handleAnswer above (own clock, own lives, own level ladder) - they run
   // their own header timer instead of relying on this shared one.
   const hasOwnClock = activeGame?.id === "digitSpan" || activeGame?.id === "spatialMemory";
-  const isAttemptBased = activeGame !== null && ATTEMPT_BASED_GAMES.has(activeGame.id);
+  const attemptsForActiveGame = activeGame !== null ? ATTEMPTS_PER_GAME[activeGame.id] : undefined;
+  const isAttemptBased = attemptsForActiveGame !== undefined;
 
   // Practice always runs a single game (plan.length === 1 outside the daily
   // run), so plan[0] is the game this practiceResult belongs to.
@@ -686,14 +696,14 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                 different-looking countdowns on screen at once, neither
                 matching what actually ends the game. */}
             {!hasOwnClock &&
-              (isAttemptBased ? (
+              (isAttemptBased && attemptsForActiveGame !== undefined ? (
                 <p
                   role="status"
-                  aria-label={`${t.quiz.attemptLabel}: ${questionIndex + 1}/${ATTEMPTS_PER_GAME}`}
+                  aria-label={`${t.quiz.attemptLabel}: ${questionIndex + 1}/${attemptsForActiveGame}`}
                   className="flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground"
                 >
                   <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                  {questionIndex + 1}/{ATTEMPTS_PER_GAME}
+                  {questionIndex + 1}/{attemptsForActiveGame}
                 </p>
               ) : (
                 <p
@@ -713,8 +723,8 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                 className="h-full bg-accent transition-[width] duration-200 ease-linear"
                 style={{
                   width: `${
-                    isAttemptBased
-                      ? Math.max(0, Math.min(100, ((questionIndex + 1) / ATTEMPTS_PER_GAME) * 100))
+                    isAttemptBased && attemptsForActiveGame !== undefined
+                      ? Math.max(0, Math.min(100, ((questionIndex + 1) / attemptsForActiveGame) * 100))
                       : Math.max(0, Math.min(100, (secondsLeftInGame / (GAME_DURATION_MS / 1000)) * 100))
                   }%`,
                 }}
