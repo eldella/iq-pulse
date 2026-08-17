@@ -34,6 +34,14 @@ export type PracticeResult = {
   extraFooterLines?: PracticeFooterLine[];
   ladder?: PracticeLadderStep[];
   roundLog?: PracticeRoundLogEntry[];
+  // Camino Óptimo only - one entry per round, for the clickable per-round
+  // board review strip (see PathfinderReviewStrip.tsx). Filled in by
+  // QuizPage from PathfinderGame's onAnswer pathReview param, accumulated
+  // across the run - unlike spanSummary/wordReview this arrives once per
+  // round, not once at the end, since Camino Óptimo still plays inside the
+  // shared engine (one PathfinderGame mount per round, not a self-contained
+  // whole-run component).
+  pathReview?: PathfinderRoundReview[];
   // Raw tally behind `accuracy` (e.g. 16/20) - null for reactionTime-headline
   // runs. Kept alongside the fraction because some cards (Comparación
   // rápida) show the count itself, not just the derived percentage.
@@ -51,6 +59,22 @@ export type PracticeResult = {
 
 /** One row of a collapsible "detail per round" disclosure on the results screen (Memoria Espacial's rounds table). */
 export type PracticeRoundLogEntry = { label: string; value: string };
+
+/**
+ * One Camino Óptimo round's board state, for the results screen's clickable
+ * per-round review (spec: terminales/terminal-1-razonamiento.txt, "RESULTADO").
+ * Cell/Move are redeclared here (not imported from PathfinderGame.tsx) to
+ * avoid a type-only import cycle - PathfinderGame.tsx imports this type back
+ * from this file, the same direction DigitSpanGame imports SpanRunSummary.
+ */
+export type PathfinderRoundReview = {
+  correct: boolean;
+  size: number;
+  goal: [number, number];
+  obstacles: [number, number][];
+  correctPath: ("R" | "D")[];
+  selectedPath: ("R" | "D")[];
+};
 
 /**
  * What Ráfaga de Palabras hands QuizPage's onAnswer alongside the ordinary
@@ -135,6 +159,7 @@ export type PracticeResultsView = {
   footerLines: PracticeFooterLine[];
   ladder?: PracticeLadderStep[];
   roundLog?: PracticeRoundLogEntry[];
+  pathReview?: PathfinderRoundReview[];
   // One bar per tap this run, in order, for a chart below the stat cards -
   // additive to the card system, doesn't replace anything in it. Undefined
   // means no game asked for this yet.
@@ -292,6 +317,20 @@ function buildReactionMsView(config: ReactionMsCardConfig, result: PracticeResul
     // user).
     footerLines: [],
     tapBars: result.responseTimes.map((ms) => ({ ms, isBest: ms === bestTapMs })),
+  };
+}
+
+/** Reacción when every tap missed (bestTapMs null) - the ms-based headline has nothing to show, so this replaces it instead of falling back to the generic accuracy view (which read as a broken "0%" for a game that was never about accuracy). */
+function buildReactionAllMissedView(t: Dictionary): PracticeResultsView {
+  return {
+    headlineLabel: t.quiz.practiceAvgResponseLabel,
+    headlineValue: "—",
+    tier: "neutral",
+    badgeText: t.quiz.practiceReactionAllMissedBadge,
+    badgeTone: "neutral",
+    showConfetti: false,
+    statCards: [],
+    footerLines: [],
   };
 }
 
@@ -458,6 +497,7 @@ function buildAccuracyTierView(config: AccuracyTierCardConfig, result: PracticeR
     statCards: result.extraStatCards ?? [],
     footerLines: result.extraFooterLines ?? [],
     ladder: result.ladder,
+    pathReview: result.pathReview,
     tapBars:
       bestMs !== null ? result.responseTimes.map((ms) => ({ ms, isBest: ms === bestMs })) : undefined,
   };
@@ -471,8 +511,10 @@ export function buildPracticeResultsView(
   elapsedMs: number
 ): PracticeResultsView {
   const config = CARD_CONFIG[gameId];
-  if (config?.kind === "reactionMs" && result.avgResponseMs !== null && result.bestTapMs !== null) {
-    return buildReactionMsView(config, result, t);
+  if (config?.kind === "reactionMs") {
+    return result.avgResponseMs !== null && result.bestTapMs !== null
+      ? buildReactionMsView(config, result, t)
+      : buildReactionAllMissedView(t);
   }
   if (config?.kind === "accuracyTier") {
     return buildAccuracyTierView(config, result, t);

@@ -120,6 +120,15 @@ export type Dictionary = {
     pathfinderTitle: string;
     pathfinderDescription: string;
     pathfinderInstructions: string;
+    pathfinderReviewCaption: string;
+    pathfinderRoundLabel: string;
+    pathfinderReviewCorrectStatus: string;
+    pathfinderReviewIncorrectStatus: string;
+    pathfinderReviewCrashCaption: string;
+    pathfinderReviewLegendStart: string;
+    pathfinderReviewLegendGoal: string;
+    pathfinderReviewLegendCorrectPath: string;
+    pathfinderReviewLegendCrash: string;
     wordBurstTitle: string;
     wordBurstDescription: string;
     wordBurstMemorize: string;
@@ -132,6 +141,7 @@ export type Dictionary = {
     quickCompareTitle: string;
     quickCompareDescription: string;
     quickCompareInstructions: string;
+    perQuestionTimeoutCaption: string;
     reactionCircleTitle: string;
     reactionCircleDescription: string;
     reactionCircleInstructions: string;
@@ -206,6 +216,7 @@ export type Dictionary = {
     practiceRecordLabel: string;
     practiceNewRecordBadge: string;
     practiceCloseToRecordLabel: string;
+    practiceReactionAllMissedBadge: string;
     practiceRoundBarsCaption: string;
     playAgainShortcutHint: string;
     practiceReactionShareLead: string;
@@ -412,6 +423,15 @@ export const dictionary: Record<Lang, Dictionary> = {
       pathfinderTitle: "Camino óptimo",
       pathfinderDescription: "Encontrá el camino que llega a la meta sin cruzar los obstáculos.",
       pathfinderInstructions: "Elegí el camino que llega a la bandera sin pasar por ninguna X.",
+      pathfinderReviewCaption: "Revisá cada ronda",
+      pathfinderRoundLabel: "Ronda",
+      pathfinderReviewCorrectStatus: "acertaste",
+      pathfinderReviewIncorrectStatus: "fallaste",
+      pathfinderReviewCrashCaption: "Tu camino chocó acá",
+      pathfinderReviewLegendStart: "Inicio",
+      pathfinderReviewLegendGoal: "Meta",
+      pathfinderReviewLegendCorrectPath: "Camino correcto",
+      pathfinderReviewLegendCrash: "Dónde chocaste",
       wordBurstTitle: "Ráfaga de palabras",
       wordBurstDescription: "Memorizá las palabras que aparecen y luego marcalas entre las opciones.",
       wordBurstMemorize: "Memorizá estas palabras",
@@ -424,6 +444,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       quickCompareTitle: "Comparación rápida",
       quickCompareDescription: "Elegí rápido el cuadro con más figuras.",
       quickCompareInstructions: "¿Cuál cuadro tiene más?",
+      perQuestionTimeoutCaption: "Se acabó el tiempo - esta es la respuesta correcta",
       reactionCircleTitle: "Reacción",
       reactionCircleDescription: "Esperá el círculo verde y tocá lo más rápido posible.",
       reactionCircleInstructions: "Esperá a que se ponga verde.",
@@ -507,6 +528,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceRecordLabel: "Récord personal",
       practiceNewRecordBadge: "¡Nuevo récord!",
       practiceCloseToRecordLabel: "Cerca de tu récord",
+      practiceReactionAllMissedBadge: "No llegaste a tiempo en ninguna ronda - probá de nuevo",
       practiceRoundBarsCaption: "Tus rondas, en orden · más bajo es más rápido",
       playAgainShortcutHint: "Espacio",
       practiceReactionShareLead: "¡Hice",
@@ -703,6 +725,15 @@ export const dictionary: Record<Lang, Dictionary> = {
       pathfinderTitle: "Best path",
       pathfinderDescription: "Find the path that reaches the goal without crossing the obstacles.",
       pathfinderInstructions: "Pick the path that reaches the flag without crossing any X.",
+      pathfinderReviewCaption: "Review each round",
+      pathfinderRoundLabel: "Round",
+      pathfinderReviewCorrectStatus: "correct",
+      pathfinderReviewIncorrectStatus: "incorrect",
+      pathfinderReviewCrashCaption: "Your path crashed here",
+      pathfinderReviewLegendStart: "Start",
+      pathfinderReviewLegendGoal: "Goal",
+      pathfinderReviewLegendCorrectPath: "Correct path",
+      pathfinderReviewLegendCrash: "Where you crashed",
       wordBurstTitle: "Word Burst",
       wordBurstDescription: "Memorize the words that appear, then tap them out of a larger grid.",
       wordBurstMemorize: "Memorize these words",
@@ -715,6 +746,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       quickCompareTitle: "Quick compare",
       quickCompareDescription: "Quickly pick the box with more shapes.",
       quickCompareInstructions: "Which box has more?",
+      perQuestionTimeoutCaption: "Time's up - here's the correct answer",
       reactionCircleTitle: "Reaction",
       reactionCircleDescription: "Wait for the green circle and tap as fast as you can.",
       reactionCircleInstructions: "Wait for it to turn green.",
@@ -798,6 +830,7 @@ export const dictionary: Record<Lang, Dictionary> = {
       practiceRecordLabel: "Personal record",
       practiceNewRecordBadge: "New record!",
       practiceCloseToRecordLabel: "Close to your record",
+      practiceReactionAllMissedBadge: "You didn't tap in time on any round - try again",
       practiceRoundBarsCaption: "Your rounds, in order · lower is faster",
       playAgainShortcutHint: "Space",
       practiceReactionShareLead: "I got",

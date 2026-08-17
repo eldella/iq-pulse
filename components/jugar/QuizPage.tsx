@@ -35,11 +35,13 @@ import {
   type PracticeResultTier,
   type SpanRunSummary,
   type WordReviewRunSummary,
+  type PathfinderRoundReview,
 } from "@/components/jugar/practiceResults";
 import { ReactionRoundBars } from "@/components/jugar/ReactionRoundBars";
 import { DigitSpanGame } from "@/components/jugar/games/DigitSpanGame";
 import { StroopGame } from "@/components/jugar/games/StroopGame";
 import { PathfinderGame } from "@/components/jugar/games/PathfinderGame";
+import { PathfinderReviewStrip } from "@/components/jugar/games/PathfinderReviewStrip";
 import { WordBurstGame } from "@/components/jugar/games/WordBurstGame";
 import { NumberSequenceGame } from "@/components/jugar/games/NumberSequenceGame";
 import { SpatialMemoryGame } from "@/components/jugar/games/SpatialMemoryGame";
@@ -86,6 +88,13 @@ const ATTEMPTS_PER_GAME: Partial<Record<GameId, number>> = {
   pathfinder: 8,
   numberSequence: 8,
   reactionCircle: 5,
+  // Stroop/Comparación rápida moved off the shared 30s clock to a 5s-per-
+  // question timer with a fixed 10-attempt cap instead (see
+  // PER_QUESTION_TIMEOUT_MS in lib/motion.ts) - the per-question countdown
+  // itself lives in each game component, this only drives the shared
+  // header's "N/10" counter and progress bar.
+  stroop: 10,
+  quickCompare: 10,
 };
 
 export type GameId =
@@ -107,14 +116,17 @@ type GameDef = {
     level: number;
     // spanSummary is only passed by games that run their own independent
     // level ladder (see the exception list in handleAnswer below); wordReview
-    // is only passed by Ráfaga de Palabras, for its per-round miss detail.
-    // Every other game leaves both undefined and QuizPage builds the
-    // practice result from isCorrect/responseTimeMs as before.
+    // is only passed by Ráfaga de Palabras, for its per-round miss detail;
+    // pathReview is only passed by Camino Óptimo, once per round (not once
+    // per run like the two above), for the results screen's per-round board
+    // review. Every other game leaves all three undefined and QuizPage
+    // builds the practice result from isCorrect/responseTimeMs as before.
     onAnswer: (
       isCorrect: boolean,
       responseTimeMs: number,
       spanSummary?: SpanRunSummary,
-      wordReview?: WordReviewRunSummary
+      wordReview?: WordReviewRunSummary,
+      pathReview?: PathfinderRoundReview
     ) => void;
     // Fresh per handleStart, stable across the remounts a single run's
     // trials go through (see the key comment below) - only Stroop reads
@@ -232,6 +244,9 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
   // meaningful for a single-game run (practice always plays one game), reset
   // per handleStart, read once at completion to average into practiceResult.
   const responseTimesRef = useRef<number[]>([]);
+  // Camino Óptimo only - one entry per round, accumulated across the run for
+  // the results screen's per-round board review (see PathfinderReviewStrip).
+  const pathfinderRoundsRef = useRef<PathfinderRoundReview[]>([]);
   const gameStartRef = useRef(0);
   // Highest consecutive-correct streak reached this run - reuses the same
   // streak the escalation ladder already tracks (see setStreak below), just
@@ -251,6 +266,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
       setPlan(chosenPlan);
       setIsDailyRun(daily);
       responseTimesRef.current = [];
+      pathfinderRoundsRef.current = [];
       maxStreakRef.current = 0;
       setLevel(1);
       setStreak(0);
@@ -319,10 +335,13 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
     isCorrect: boolean,
     responseTimeMs: number,
     spanSummary?: SpanRunSummary,
-    wordReview?: WordReviewRunSummary
+    wordReview?: WordReviewRunSummary,
+    pathReview?: PathfinderRoundReview
   ) {
     if (!sessionId) return;
     const domain = GAMES[gameId].domain;
+
+    if (pathReview) pathfinderRoundsRef.current.push(pathReview);
 
     setDomainStats((prev) => ({
       ...prev,
@@ -450,6 +469,25 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             previousBestTotalCount: null,
             responseTimes: times,
           });
+        } else if (gameId === "reactionCircle") {
+          // Every tap missed this run (no correct taps means no response
+          // time to record or compare against a best) - still route through
+          // the "reactionTime" headline so the results screen shows a
+          // reaction-appropriate message instead of falling to the generic
+          // accuracy view (see buildReactionAllMissedView).
+          setPracticeResult({
+            headline: "reactionTime",
+            accuracy,
+            avgResponseMs: null,
+            bestTapMs: null,
+            previousBest: null,
+            improved: false,
+            correctCount: finalCorrect,
+            totalCount: finalAnswered,
+            previousBestCorrectCount: null,
+            previousBestTotalCount: null,
+            responseTimes: times,
+          });
         } else if (wordReview) {
           const { previousBest, improved } = recordPracticeResult(gameId, wordReview.accuracy);
           setPracticeResult({
@@ -495,6 +533,7 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
               gameId === "wordTyping"
                 ? [{ emoji: "🔥", value: `${maxStreakRef.current}`, label: t.quiz.wordTypingStreakLabel }]
                 : undefined,
+            pathReview: gameId === "pathfinder" ? pathfinderRoundsRef.current : undefined,
             correctCount: finalCorrect,
             totalCount: finalAnswered,
             previousBestCorrectCount,
@@ -724,7 +763,16 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                   className="flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground"
                 >
                   <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                  {questionIndex + 1}/{attemptsForActiveGame}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.span
+                      key={questionIndex}
+                      initial={shouldReduceMotion ? false : { scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={springTransition}
+                    >
+                      {questionIndex + 1}/{attemptsForActiveGame}
+                    </motion.span>
+                  </AnimatePresence>
                 </p>
               ) : (
                 <p
@@ -740,15 +788,22 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
 
           {!hasOwnClock && (
             <div className="h-1 w-full max-w-xs overflow-hidden rounded-full bg-surface-hover">
-              <div
-                className="h-full bg-accent transition-[width] duration-200 ease-linear"
-                style={{
+              <motion.div
+                className="h-full bg-accent"
+                animate={{
                   width: `${
                     isAttemptBased && attemptsForActiveGame !== undefined
                       ? Math.max(0, Math.min(100, ((questionIndex + 1) / attemptsForActiveGame) * 100))
                       : Math.max(0, Math.min(100, (secondsLeftInGame / (GAME_DURATION_MS / 1000)) * 100))
                   }%`,
                 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : isAttemptBased
+                      ? springTransition
+                      : { duration: 0.2, ease: "linear" }
+                }
               />
             </div>
           )}
@@ -757,23 +812,29 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
               {gameCopy(activeGame.id, t).title}
             </p>
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.p
-                key={level}
-                initial={shouldReduceMotion || activeGame.id === "reactionCircle" ? false : { scale: 0.6, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={springTransition}
-                className="text-lg font-bold text-foreground"
-              >
-                {difficultyLabel(level, t)}
-              </motion.p>
-            </AnimatePresence>
+            {/* Reacción is pinned at a fixed difficulty (see the "Reacción
+                multiplier bug" fix) - a "Fácil" label that never changes
+                just reads as clutter, so this game skips it entirely
+                (confirmed with the user). */}
+            {activeGame.id !== "reactionCircle" && (
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.p
+                  key={level}
+                  initial={shouldReduceMotion ? false : { scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={springTransition}
+                  className="text-lg font-bold text-foreground"
+                >
+                  {difficultyLabel(level, t)}
+                </motion.p>
+              </AnimatePresence>
+            )}
           </div>
 
           <activeGame.Component
             level={level}
-            onAnswer={(isCorrect, ms, spanSummary, wordReview) =>
-              handleAnswer(activeGame.id, isCorrect, ms, spanSummary, wordReview)
+            onAnswer={(isCorrect, ms, spanSummary, wordReview, pathReview) =>
+              handleAnswer(activeGame.id, isCorrect, ms, spanSummary, wordReview, pathReview)
             }
             sessionId={sessionId}
           />
@@ -919,6 +980,10 @@ export function QuizPage({ initialGameId }: { initialGameId?: GameId } = {}) {
                     {line.text}
                   </p>
                 ))}
+
+                {practiceResultsView.pathReview && practiceResultsView.pathReview.length > 0 && (
+                  <PathfinderReviewStrip rounds={practiceResultsView.pathReview} />
+                )}
 
                 {practiceResultsView.roundLog && practiceResultsView.roundLog.length > 0 && (
                   <details className="w-full text-left">

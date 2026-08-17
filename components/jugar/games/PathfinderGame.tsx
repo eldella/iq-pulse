@@ -9,6 +9,7 @@ import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
 import { contentTier } from "@/lib/scoring";
+import type { PathfinderRoundReview, SpanRunSummary, WordReviewRunSummary } from "@/components/jugar/practiceResults";
 
 export type Move = "R" | "D";
 export type Cell = [number, number];
@@ -282,7 +283,16 @@ export function PathfinderGame({
   onAnswer,
 }: {
   level: number;
-  onAnswer: (isCorrect: boolean, responseTimeMs: number) => void;
+  // spanSummary/wordReview are never actually passed by this game - declared
+  // here only so this matches GameDef's onAnswer signature positionally
+  // (pathReview is the 5th param there too, see QuizPage.tsx).
+  onAnswer: (
+    isCorrect: boolean,
+    responseTimeMs: number,
+    spanSummary?: SpanRunSummary,
+    wordReview?: WordReviewRunSummary,
+    pathReview?: PathfinderRoundReview
+  ) => void;
 }) {
   const { t } = useLanguage();
   const puzzle = useMemo(() => generatePuzzle(level), [level]);
@@ -293,7 +303,20 @@ export function PathfinderGame({
     if (selected) return;
     const responseTimeMs = Math.round(now() - startTimeRef.current);
     setSelected(path);
-    window.setTimeout(() => onAnswer(path.join("") === puzzle.correct.join(""), responseTimeMs), ANSWER_FEEDBACK_MS);
+    const isCorrect = path.join("") === puzzle.correct.join("");
+    // See "RESULTADO" in terminales/terminal-1-razonamiento.txt - the results
+    // screen's per-round review needs this round's whole board state, not
+    // just isCorrect/ms, to trace the correct path and (on a miss) show
+    // exactly where the player's choice ran into an obstacle.
+    const pathReview: PathfinderRoundReview = {
+      correct: isCorrect,
+      size: puzzle.size,
+      goal: puzzle.goal,
+      obstacles: puzzle.obstacles,
+      correctPath: puzzle.correct,
+      selectedPath: path,
+    };
+    window.setTimeout(() => onAnswer(isCorrect, responseTimeMs, undefined, undefined, pathReview), ANSWER_FEEDBACK_MS);
   }
 
   // Keyboard 1-4 answers the option in that display position (options are

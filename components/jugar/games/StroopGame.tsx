@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
-import { ANSWER_FEEDBACK_MS, springTransition, tapScale } from "@/lib/motion";
+import { ANSWER_FEEDBACK_MS, PER_QUESTION_TIMEOUT_MS, springTransition, tapScale } from "@/lib/motion";
 import { now } from "@/lib/timing";
 import { shuffle } from "@/lib/random";
 import { cn } from "@/lib/utils";
@@ -131,6 +131,23 @@ export function StroopGame({
     window.setTimeout(() => onAnswer(isCorrect, responseTimeMs), ANSWER_FEEDBACK_MS);
   }
 
+  // 5s to answer once the stimulus is actually visible - running out counts
+  // as a miss and auto-advances, same as an explicit wrong tap (decided per
+  // game, see PER_QUESTION_TIMEOUT_MS).
+  useEffect(() => {
+    if (!stimReady || !trial) return;
+    const timeoutId = window.setTimeout(() => {
+      if (answeredRef.current) return;
+      answeredRef.current = true;
+      setSelected("__timeout__");
+      window.setTimeout(() => onAnswer(false, PER_QUESTION_TIMEOUT_MS), ANSWER_FEEDBACK_MS);
+    }, PER_QUESTION_TIMEOUT_MS);
+    return () => window.clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stimReady, trial]);
+
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="flex flex-col items-center gap-8">
       <p className="text-sm text-muted-foreground">{t.quiz.stroopInstructions}</p>
@@ -143,6 +160,17 @@ export function StroopGame({
         <p className="text-5xl font-light text-muted-foreground opacity-55" aria-hidden="true">
           +
         </p>
+      )}
+
+      {trial && stimReady && selected === null && !shouldReduceMotion && (
+        <div className="h-1 w-40 overflow-hidden rounded-full bg-surface-hover">
+          <motion.div
+            className="h-full bg-accent"
+            initial={{ width: "100%" }}
+            animate={{ width: "0%" }}
+            transition={{ duration: PER_QUESTION_TIMEOUT_MS / 1000, ease: "linear" }}
+          />
+        </div>
       )}
 
       <div className="flex flex-wrap justify-center gap-3">
@@ -159,6 +187,9 @@ export function StroopGame({
               aria-label={lang === "es" ? color.es : color.en}
               whileHover={!locked ? { y: -2 } : undefined}
               whileTap={!locked ? tapScale : undefined}
+              animate={
+                selected !== null && isCorrectOption && !shouldReduceMotion ? { scale: [1, 1.18, 1] } : { scale: 1 }
+              }
               transition={springTransition}
               className={cn(
                 "h-12 w-12 rounded-full border-2 backdrop-blur-xl focus-visible:outline-none sm:h-14 sm:w-14",
@@ -175,6 +206,8 @@ export function StroopGame({
           );
         })}
       </div>
+
+      {selected === "__timeout__" && <p className="text-xs text-danger">{t.quiz.perQuestionTimeoutCaption}</p>}
     </div>
   );
 }

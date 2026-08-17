@@ -30,3 +30,11 @@ export const tapScale = { scale: 0.95 };
  * 30-second timed round.
  */
 export const ANSWER_FEEDBACK_MS = 650;
+
+/**
+ * Per-question time limit for Stroop and Comparación rápida (5s, 10 fixed
+ * attempts instead of the shared 30s clock - decided per-game, not a
+ * blanket rule other games inherit). A question that runs out counts as a
+ * miss and auto-advances, same as an explicit wrong tap.
+ */
+export const PER_QUESTION_TIMEOUT_MS = 5000;
